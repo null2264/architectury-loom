@@ -220,7 +220,7 @@ public class LoomGradleExtension {
 	}
 
 	public Dependency officialMojangMappings() {
-		return layered(LayeredMappingSpecBuilder::officalMojangMappings);
+		return layered(LayeredMappingSpecBuilder::officialMojangMappings);
 	}
 
 	public Dependency layered(Action<LayeredMappingSpecBuilder> action) {
