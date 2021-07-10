@@ -53,11 +53,11 @@ dependencies {
 	implementation ('org.zeroturnaround:zt-zip:1.14')
 	implementation ('com.google.code.gson:gson:2.8.6')
 	implementation ('com.google.guava:guava:30.1-jre')
-	implementation ('org.ow2.asm:asm:9.1')
-	implementation ('org.ow2.asm:asm-analysis:9.1')
-	implementation ('org.ow2.asm:asm-commons:9.1')
-	implementation ('org.ow2.asm:asm-tree:9.1')
-	implementation ('org.ow2.asm:asm-util:9.1')
+	implementation ('org.ow2.asm:asm:9.2')
+	implementation ('org.ow2.asm:asm-analysis:9.2')
+	implementation ('org.ow2.asm:asm-commons:9.2')
+	implementation ('org.ow2.asm:asm-tree:9.2')
+	implementation ('org.ow2.asm:asm-util:9.2')
 	implementation ('me.tongfei:progressbar:0.9.0')
 
 	// game handling utils
@@ -81,7 +81,7 @@ dependencies {
 
 	// decompilers
 	implementation ('net.fabricmc:fabric-fernflower:1.3.0')
-	implementation ('org.benf:cfr:0.150')
+	implementation ('org.benf:cfr:0.151')
 
 	// source code remapping
 	implementation ('dev.architectury:mercury:0.1.0.10')
