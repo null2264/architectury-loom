@@ -24,7 +24,9 @@
 
 package net.fabricmc.loom.util.srg;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -41,6 +43,12 @@ import java.util.regex.Pattern;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import dev.architectury.mappingslayers.api.mutable.MutableClassDef;
+import dev.architectury.mappingslayers.api.mutable.MutableFieldDef;
+import dev.architectury.mappingslayers.api.mutable.MutableMethodDef;
+import dev.architectury.mappingslayers.api.mutable.MutableTinyTree;
+import dev.architectury.mappingslayers.api.utils.MappingsUtils;
+import org.apache.commons.io.IOUtils;
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.lorenz.io.srg.tsrg.TSrgReader;
 import org.cadixdev.lorenz.model.ClassMapping;
@@ -180,15 +188,41 @@ public class MCPReader {
 	private Map<MemberToken, String> readSrg() throws IOException {
 		Map<MemberToken, String> tokens = new HashMap<>();
 
-		try (TSrgReader reader = new TSrgReader(Files.newBufferedReader(srgTsrgPath, StandardCharsets.UTF_8))) {
-			MappingSet mappingSet = reader.read();
+		try (BufferedReader reader = Files.newBufferedReader(srgTsrgPath, StandardCharsets.UTF_8)) {
+			String content = IOUtils.toString(reader);
 
-			for (TopLevelClassMapping classMapping : mappingSet.getTopLevelClassMappings()) {
-				appendClass(tokens, classMapping);
+			if (content.startsWith("tsrg2")) {
+				readTsrg2(tokens, content);
+			} else {
+				MappingSet mappingSet = new TSrgReader(new StringReader(content)).read();
+
+				for (TopLevelClassMapping classMapping : mappingSet.getTopLevelClassMappings()) {
+					appendClass(tokens, classMapping);
+				}
 			}
 		}
 
 		return tokens;
+	}
+
+	private void readTsrg2(Map<MemberToken, String> tokens, String content) {
+		MutableTinyTree tree = MappingsUtils.deserializeFromTsrg2(content);
+		int obfIndex = tree.getMetadata().index("obf");
+		int srgIndex = tree.getMetadata().index("srg");
+
+		for (MutableClassDef classDef : tree.getClassesMutable()) {
+			MemberToken ofClass = MemberToken.ofClass(classDef.getName(obfIndex));
+			tokens.put(ofClass, classDef.getName(srgIndex));
+
+			for (MutableFieldDef fieldDef : classDef.getFieldsMutable()) {
+				tokens.put(MemberToken.ofField(ofClass, fieldDef.getName(obfIndex)), fieldDef.getName(srgIndex));
+			}
+
+			for (MutableMethodDef methodDef : classDef.getMethodsMutable()) {
+				tokens.put(MemberToken.ofMethod(ofClass, methodDef.getName(obfIndex), methodDef.getDescriptor(obfIndex)),
+						methodDef.getName(srgIndex));
+			}
+		}
 	}
 
 	private void injectMcp(Path mcpJar, Map<String, String> intermediaryToSrgMap, Map<String, String[]> intermediaryToDocsMap, Map<String, Map<Integer, String>> intermediaryToParamsMap)
