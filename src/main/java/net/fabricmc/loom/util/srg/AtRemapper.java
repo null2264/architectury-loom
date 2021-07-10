@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.function.UnaryOperator;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.logging.log4j.util.Strings;
 import org.gradle.api.logging.Logger;
 
 import net.fabricmc.loom.util.function.CollectionUtil;
@@ -63,7 +62,7 @@ public final class AtRemapper {
 				for (int i = 0; i < lines.length; i++) {
 					String line = lines[i].trim();
 
-					if (line.startsWith("#") || Strings.isBlank(line)) {
+					if (line.startsWith("#") || line.trim().isEmpty()) {
 						output.add(i, line);
 						continue;
 					}
