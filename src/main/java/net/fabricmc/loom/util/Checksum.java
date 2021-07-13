@@ -26,6 +26,7 @@ package net.fabricmc.loom.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 import com.google.common.hash.HashCode;
@@ -66,5 +67,14 @@ public class Checksum {
 	public static byte[] sha256(String string) {
 		HashCode hash = Hashing.sha256().hashString(string, StandardCharsets.UTF_8);
 		return hash.asBytes();
+	}
+
+	public static String truncatedSha256(File file) {
+		try {
+			HashCode hash = Files.asByteSource(file).hash(Hashing.sha256());
+			return hash.toString().substring(0, 12);
+		} catch (IOException e) {
+			throw new UncheckedIOException("Failed to get file hash of " + file, e);
+		}
 	}
 }
