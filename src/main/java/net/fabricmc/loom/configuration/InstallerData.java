@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2016, 2017, 2018 FabricMC
+ * Copyright (c) 2021 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,44 +22,44 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test.integration
+package net.fabricmc.loom.configuration;
 
-import net.fabricmc.loom.test.util.ArchiveAssertionsTrait
-import net.fabricmc.loom.test.util.ProjectTestTrait
-import spock.lang.Specification
-import spock.lang.Unroll
+import java.util.Objects;
 
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import com.google.gson.JsonObject;
 
-class SimpleProjectTest extends Specification implements ProjectTestTrait, ArchiveAssertionsTrait {
+public final class InstallerData {
+	private final String version;
+	private final JsonObject installerJson;
+
+	InstallerData(String version, JsonObject installerJson) {
+		this.version = version;
+		this.installerJson = installerJson;
+	}
+
+	public String version() {
+		return version;
+	}
+
+	public JsonObject installerJson() {
+		return installerJson;
+	}
+
 	@Override
-	String name() {
-		"simple"
+	public boolean equals(Object obj) {
+		if (obj == this) return true;
+		if (obj == null || obj.getClass() != this.getClass()) return false;
+		InstallerData that = (InstallerData) obj;
+		return Objects.equals(this.version, that.version) && Objects.equals(this.installerJson, that.installerJson);
 	}
 
-	@Unroll
-	def "build (gradle #gradle)"() {
-		when:
-			def result = create("build", gradle)
-		then:
-			result.task(":build").outcome == SUCCESS
-			getArchiveEntry("fabric-example-mod-1.0.0.jar", "META-INF/MANIFEST.MF").contains("Fabric-Loom-Version: 0.0.0+unknown")
-		where:
-			gradle              | _
-			DEFAULT_GRADLE      | _
-			PRE_RELEASE_GRADLE  | _
+	@Override
+	public int hashCode() {
+		return Objects.hash(version, installerJson);
 	}
 
-	@Unroll
-	def "#ide config generation"() {
-		when:
-			def result = create(ide)
-		then:
-			result.task(":${ide}").outcome == SUCCESS
-		where:
-			ide 		| _
-			'idea' 		| _
-			'eclipse'	| _
-			'vscode'	| _
+	@Override
+	public String toString() {
+		return "InstallerData[" + "version=" + version + ", " + "installerJson=" + installerJson + ']';
 	}
 }

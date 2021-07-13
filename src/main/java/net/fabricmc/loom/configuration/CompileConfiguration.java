@@ -29,7 +29,6 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
-import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
@@ -203,7 +202,7 @@ public final class CompileConfiguration {
 			if (extension.remapMod) {
 				RemapConfiguration.setupDefaultRemap(project);
 			} else {
-				AbstractArchiveTask jarTask = (AbstractArchiveTask) project.getTasks().getByName("jar");
+				Jar jarTask = (Jar) project.getTasks().getByName("jar");
 				extension.getUnmappedModCollection().from(jarTask);
 			}
 
