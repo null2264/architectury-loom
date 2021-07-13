@@ -126,6 +126,14 @@ public final class LoomTasks {
 
 		project.afterEvaluate(p -> {
 			MappingsProvider mappingsProvider = extension.getMappingsProvider();
+
+			if (mappingsProvider.mappedProvider == null) {
+				// If this is ever null something has gone badly wrong,
+				// for some reason for another this afterEvaluate still gets called when something has gone badly
+				// wrong, returning here seems to produce nicer errors.
+				return;
+			}
+
 			File inputJar = mappingsProvider.mappedProvider.getMappedJar();
 
 			if (mappingsProvider.hasUnpickDefinitions()) {
