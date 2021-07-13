@@ -25,6 +25,7 @@
 package net.fabricmc.loom.configuration;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -33,6 +34,7 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.UnknownTaskException;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.api.tasks.bundling.Jar;
 import org.jetbrains.annotations.ApiStatus;
@@ -149,7 +151,8 @@ public class RemapConfiguration {
 			RemapSourcesJarTask remapSourcesJarTask = (RemapSourcesJarTask) project.getTasks().findByName(remapSourcesJarTaskName);
 			Preconditions.checkNotNull(remapSourcesJarTask, "Could not find " + remapSourcesJarTaskName + " in " + project.getName());
 			remapSourcesJarTask.setOutput(sourcesTask.getArchivePath());
-			sourcesTask.setClassifier(sourcesTask.getClassifier() == null ? "dev" : sourcesTask.getClassifier() + "-dev");
+			String sourcesTaskClassifer = getTaskClassifier(sourcesTask);
+			setTaskClassifier(sourcesTask, sourcesTaskClassifer == null ? "dev" : sourcesTaskClassifer + "-dev");
 			remapSourcesJarTask.setInput(sourcesTask.getArchivePath());
 			remapSourcesJarTask.dependsOn(sourcesTask);
 
@@ -171,6 +174,28 @@ public class RemapConfiguration {
 			parentTask.dependsOn(remapSourcesJarTask);
 		} catch (UnknownTaskException ignored) {
 			// pass
+		}
+	}
+
+	private static String getTaskClassifier(AbstractArchiveTask sourcesTask) {
+		try {
+			Property<String> property = (Property<String>) AbstractArchiveTask.class.getDeclaredMethod("getArchiveClassifier").invoke(sourcesTask);
+			return property.get();
+		} catch (NoSuchMethodException e) {
+			return sourcesTask.getClassifier();
+		} catch (InvocationTargetException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static void setTaskClassifier(AbstractArchiveTask sourcesTask, String s) {
+		try {
+			Property<String> property = (Property<String>) AbstractArchiveTask.class.getDeclaredMethod("getArchiveClassifier").invoke(sourcesTask);
+			property.set(s);
+		} catch (NoSuchMethodException e) {
+			sourcesTask.setClassifier(s);
+		} catch (InvocationTargetException | IllegalAccessException e) {
+			throw new RuntimeException(e);
 		}
 	}
 }
