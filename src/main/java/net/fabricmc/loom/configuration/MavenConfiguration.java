@@ -69,6 +69,11 @@ public class MavenConfiguration {
 			});
 		});
 
+		project.getRepositories().maven(repo -> {
+			repo.setName("Architectury");
+			repo.setUrl("https://maven.architectury.dev/");
+		});
+
 		project.getRepositories().mavenCentral();
 	}
 }

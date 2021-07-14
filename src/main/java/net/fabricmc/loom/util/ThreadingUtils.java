@@ -34,9 +34,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 
 public class ThreadingUtils {
@@ -136,25 +138,34 @@ public class ThreadingUtils {
 	}
 
 	public static class TaskCompleter implements Function<Throwable, Void> {
+		private final ReentrantLock lock = new ReentrantLock();
+		private boolean canAdd = true;
 		Stopwatch stopwatch = Stopwatch.createUnstarted();
 		List<CompletableFuture<?>> tasks = new ArrayList<>();
 		ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		List<UnsafeConsumer<Stopwatch>> completionListener = new ArrayList<>();
 
 		public TaskCompleter add(UnsafeRunnable job) {
-			if (!stopwatch.isRunning()) {
-				stopwatch.start();
-			}
+			Preconditions.checkArgument(canAdd);
+			lock.lock();
 
-			tasks.add(CompletableFuture.runAsync(() -> {
-				try {
-					job.run();
-				} catch (Throwable throwable) {
-					throw new RuntimeException(throwable);
+			try {
+				if (!stopwatch.isRunning()) {
+					stopwatch.start();
 				}
-			}, service).exceptionally(this));
 
-			return this;
+				tasks.add(CompletableFuture.runAsync(() -> {
+					try {
+						job.run();
+					} catch (Throwable throwable) {
+						throw new RuntimeException(throwable);
+					}
+				}, service).exceptionally(this));
+
+				return this;
+			} finally {
+				lock.unlock();
+			}
 		}
 
 		public TaskCompleter onComplete(UnsafeConsumer<Stopwatch> consumer) {
@@ -163,6 +174,8 @@ public class ThreadingUtils {
 		}
 
 		public void complete() {
+			canAdd = false;
+
 			try {
 				CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).exceptionally(this).get();
 				service.shutdownNow();

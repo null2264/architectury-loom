@@ -166,6 +166,10 @@ public class ModProcessor {
 		remapper.readClassPathAsync(mc);
 		remapper.readClassPathAsync(mcDeps);
 
+		if (extension.isForge()) {
+			remapper.readClassPathAsync(mappedProvider.getForgeSrgJar().toPath());
+		}
+
 		final Map<ModDependencyInfo, InputTag> tagMap = new HashMap<>();
 		final Map<ModDependencyInfo, OutputConsumerPath> outputConsumerMap = new HashMap<>();
 		final Map<ModDependencyInfo, byte[]> accessWidenerMap = new HashMap<>();

@@ -95,10 +95,17 @@ public final class CompileConfiguration {
 			forgeUniversalConfig.setTransitive(false);
 			Configuration forgeDependencies = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_DEPENDENCIES);
 			forgeDependencies.setTransitive(false);
+			Configuration forgeNamed = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_NAMED);
+			forgeNamed.setTransitive(false);
 			Configuration mcpConfig = project.getConfigurations().maybeCreate(Constants.Configurations.MCP_CONFIG);
 			mcpConfig.setTransitive(false);
 
 			extendsFrom(Constants.Configurations.MINECRAFT_DEPENDENCIES, Constants.Configurations.FORGE_DEPENDENCIES, project);
+
+			extendsFrom(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED, project);
+			extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED, project);
+			extendsFrom(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED, project);
+			extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED, project);
 		}
 
 		if (project.getExtensions().getByType(LoomGradleExtension.class).supportsInclude()) {
