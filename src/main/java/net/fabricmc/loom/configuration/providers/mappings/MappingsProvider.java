@@ -569,6 +569,14 @@ public class MappingsProvider extends DependencyProvider {
 		return hasUnpickDefinitions;
 	}
 
+	public File intermediaryTinyFile() {
+		try {
+			return getIntermediaryTiny().toFile();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to get intermediary", e);
+		}
+	}
+
 	public static class UnpickMetadata {
 		public final String unpickGroup;
 		public final String unpickVersion;

@@ -67,8 +67,11 @@ import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.McpConfigProvider;
 import net.fabricmc.loom.configuration.providers.forge.PatchProvider;
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
+import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
+import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpec;
+import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpecBuilder;
+import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingsDependency;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProvider;
-import net.fabricmc.loom.configuration.providers.mappings.MojangMappingsDependency;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftMappedProvider;
 import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.function.LazyBool;
@@ -217,7 +220,14 @@ public class LoomGradleExtension {
 	}
 
 	public Dependency officialMojangMappings() {
-		return new MojangMappingsDependency(project, this);
+		return layered(LayeredMappingSpecBuilder::officalMojangMappings);
+	}
+
+	public Dependency layered(Action<LayeredMappingSpecBuilder> action) {
+		LayeredMappingSpecBuilder builder = new LayeredMappingSpecBuilder(this);
+		action.execute(builder);
+		LayeredMappingSpec builtSpec = builder.build();
+		return new LayeredMappingsDependency(new GradleMappingContext(project, "layers_" + builtSpec.getVersion().replace("+", "_").replace(".", "_")), builtSpec, builtSpec.getVersion());
 	}
 
 	public LoomGradleExtension(Project project) {
