@@ -84,10 +84,6 @@ public final class SrgMerger {
 		MappingSet arr = readSrg(srg);
 		TinyTree foss;
 
-		try (TSrgReader reader = new TSrgReader(Files.newBufferedReader(srg))) {
-			arr = reader.read();
-		}
-
 		try (BufferedReader reader = Files.newBufferedReader(tiny)) {
 			foss = TinyMappingFactory.loadWithDetection(reader);
 		}
