@@ -48,6 +48,6 @@ public class IntermediaryMappingsSpec implements MappingsSpec<IntermediaryMappin
 
 	@Override
 	public IntermediaryMappingLayer createLayer(MappingContext context) {
-		return new IntermediaryMappingLayer(context.mappingsProvider().intermediaryTinyFile());
+		return new IntermediaryMappingLayer(context.mappingsProvider()::intermediaryTinyFile);
 	}
 }

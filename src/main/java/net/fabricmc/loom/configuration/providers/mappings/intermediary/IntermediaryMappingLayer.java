@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import net.fabricmc.loom.configuration.providers.mappings.MappingLayer;
 import net.fabricmc.loom.configuration.providers.mappings.MappingNamespace;
@@ -39,14 +40,14 @@ import net.fabricmc.mappingio.adapter.MappingNsCompleter;
 import net.fabricmc.mappingio.format.Tiny2Reader;
 
 public class IntermediaryMappingLayer implements MappingLayer {
-	private final File tinyFile;
+	private final Supplier<File> tinyFile;
 
-	public IntermediaryMappingLayer(File tinyFile) {
+	public IntermediaryMappingLayer(Supplier<File> tinyFile) {
 		this.tinyFile = tinyFile;
 	}
 
 	public File tinyFile() {
-		return tinyFile;
+		return tinyFile.get();
 	}
 
 	@Override
