@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2016, 2017, 2018 FabricMC
+ * Copyright (c) 2021 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,26 +22,40 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.configuration.providers.minecraft;
+package net.fabricmc.loom.test.integration
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import net.fabricmc.loom.test.util.ProjectTestTrait
+import spock.lang.Specification
+import spock.lang.Unroll
 
-public class ManifestVersion {
-	public final List<Versions> versions = new ArrayList<>();
-	public final Map<String, String> latest = new HashMap<>();
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-	public List<Versions> versions() {
-		return versions;
-	}
+class ExperimentalVersionsTest extends Specification implements ProjectTestTrait {
+    @Override
+    String name() {
+        "minimalBase"
+    }
 
-	public Map<String, String> latest() {
-		return latest;
-	}
+    @Override
+    def filesReady() {
+        buildGradle() << '''
+            dependencies {
+                minecraft "com.mojang:minecraft:1.18_experimental-snapshot-1"
+                mappings "net.fabricmc:yarn:1.18_experimental-snapshot-1+build.2:v2"
+                modImplementation "net.fabricmc:fabric-loader:0.11.6"
+            }
+        '''
+    }
 
-	public static class Versions {
-		public String id, url, sha1;
-	}
+    @Unroll
+    def "experimental versions (gradle #gradle)"() {
+        when:
+            def result = create("build", gradle)
+        then:
+            result.task(":build").outcome == SUCCESS
+        where:
+            gradle              | _
+            DEFAULT_GRADLE      | _
+            PRE_RELEASE_GRADLE  | _
+    }
 }
