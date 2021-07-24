@@ -101,6 +101,7 @@ public final class RunConfigSettings implements Named {
 
 	private final Project project;
 	private final LoomGradleExtension extension;
+	private List<Runnable> evaluateLater = new ArrayList<>();
 
 	public RunConfigSettings(Project project, String baseName) {
 		this.baseName = baseName;
@@ -110,6 +111,20 @@ public final class RunConfigSettings implements Named {
 
 		source("main");
 		runDir("run");
+	}
+
+	@ApiStatus.Internal
+	public void evaluateLater(Runnable runnable) {
+		this.evaluateLater.add(runnable);
+	}
+
+	@ApiStatus.Internal
+	public void evaluateNow() {
+		for (Runnable runnable : this.evaluateLater) {
+			runnable.run();
+		}
+
+		this.evaluateLater.clear();
 	}
 
 	public Project getProject() {

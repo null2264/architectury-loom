@@ -198,6 +198,7 @@ public class RunConfig {
 	}
 
 	public static RunConfig runConfig(Project project, RunConfigSettings settings) {
+		settings.evaluateNow();
 		LoomGradleExtension extension = project.getExtensions().getByType(LoomGradleExtension.class);
 		String name = settings.getName();
 

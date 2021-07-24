@@ -71,6 +71,7 @@ import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
 import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpec;
 import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingsDependency;
+import net.fabricmc.loom.configuration.providers.mappings.MappingContext;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftMappedProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftVersionMeta;
@@ -228,10 +229,14 @@ public class LoomGradleExtension {
 		LayeredMappingSpecBuilder builder = new LayeredMappingSpecBuilder(this);
 		action.execute(builder);
 		LayeredMappingSpec builtSpec = builder.build();
-		return new LayeredMappingsDependency(new GradleMappingContext(project, () -> {
+		return new LayeredMappingsDependency(createMappingContext(builtSpec::getVersion), builtSpec, builtSpec.getVersion());
+	}
+
+	public MappingContext createMappingContext(Supplier<String> version) {
+		return new GradleMappingContext(project, () -> {
 			MinecraftVersionMeta versionInfo = getMinecraftProvider().getVersionInfo();
-			return "layers/" + versionInfo.getId() + "_" + builtSpec.getVersion().replace("+", "_").replace(".", "_");
-		}), builtSpec, builtSpec.getVersion());
+			return "layers/" + versionInfo.getId() + "_" + version.get().replace("+", "_").replace(".", "_");
+		});
 	}
 
 	public LoomGradleExtension(Project project) {

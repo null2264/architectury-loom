@@ -24,12 +24,17 @@
 
 package net.fabricmc.loom.configuration.providers.forge;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.function.Consumer;
 
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.FileSystemUtil;
 
 public class ForgeProvider extends DependencyProvider {
 	private ForgeVersion version = new ForgeVersion(null);
@@ -43,6 +48,8 @@ public class ForgeProvider extends DependencyProvider {
 		version = new ForgeVersion(dependency.getResolvedVersion());
 		addDependency(dependency.getDepString() + ":userdev", Constants.Configurations.FORGE_USERDEV);
 		addDependency(dependency.getDepString() + ":installer", Constants.Configurations.FORGE_INSTALLER);
+
+		
 	}
 
 	public ForgeVersion getVersion() {
@@ -55,10 +62,13 @@ public class ForgeProvider extends DependencyProvider {
 	}
 
 	public static final class ForgeVersion {
+		private final String combined;
 		private final String minecraftVersion;
 		private final String forgeVersion;
 
 		public ForgeVersion(String combined) {
+			this.combined = combined;
+
 			if (combined == null) {
 				this.minecraftVersion = "NO_VERSION";
 				this.forgeVersion = "NO_VERSION";
@@ -82,6 +92,10 @@ public class ForgeProvider extends DependencyProvider {
 
 		public String getForgeVersion() {
 			return forgeVersion;
+		}
+
+		public String getCombined() {
+			return combined;
 		}
 	}
 }

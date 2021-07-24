@@ -61,6 +61,7 @@ import net.fabricmc.loom.configuration.accesswidener.AccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
 import net.fabricmc.loom.configuration.processors.MinecraftProcessedProvider;
 import net.fabricmc.loom.configuration.providers.MinecraftProvider;
+import net.fabricmc.loom.configuration.providers.forge.McpConfigProvider;
 import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider;
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftMappedProvider;
@@ -237,7 +238,7 @@ public class MappingsProvider extends DependencyProvider {
 		if (getExtension().shouldGenerateSrgTiny()) {
 			if (Files.notExists(tinyMappingsWithSrg) || isRefreshDeps()) {
 				// Merge tiny mappings with srg
-				SrgMerger.mergeSrg(getExtension().getSrgProvider().getSrg().toPath(), tinyMappings.toPath(), tinyMappingsWithSrg, true);
+				SrgMerger.mergeSrg(getRawSrgFile(), tinyMappings.toPath(), tinyMappingsWithSrg, true);
 			}
 		}
 
@@ -300,6 +301,17 @@ public class MappingsProvider extends DependencyProvider {
 		mappedProvider.provide(dependency, postPopulationScheduler);
 	}
 
+	protected Path getRawSrgFile() throws IOException {
+		LoomGradleExtension extension = getExtension();
+		McpConfigProvider mcpConfigProvider = extension.getMcpConfigProvider();
+
+		if (mcpConfigProvider.isOfficial()) {
+			return patchedProvider.getMojmapTSrg2EpicWhyDoesThisExist(false);
+		}
+
+		return extension.getSrgProvider().getSrg().toPath();
+	}
+
 	public void manipulateMappings(Path mappingsJar) throws IOException { }
 
 	private void storeMappings(Project project, MinecraftProvider minecraftProvider, Path yarnJar, Consumer<Runnable> postPopulationScheduler)
@@ -351,7 +363,7 @@ public class MappingsProvider extends DependencyProvider {
 			provider.provide(DependencyInfo.create(getProject(), configuration.getDependencies().iterator().next(), configuration), postPopulationScheduler);
 		}
 
-		Path srgPath = provider.getSrg().toPath();
+		Path srgPath = getRawSrgFile();
 
 		TinyFile file = new MCPReader(intermediaryTinyPath, srgPath).read(mcpJar);
 		TinyV2Writer.write(file, tinyMappings.toPath());

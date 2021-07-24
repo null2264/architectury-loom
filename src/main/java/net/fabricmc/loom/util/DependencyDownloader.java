@@ -43,8 +43,18 @@ public final class DependencyDownloader {
 	 * @return the resolved files
 	 */
 	public static FileCollection download(Project project, String dependencyNotation) {
+		return download(project, dependencyNotation, false);
+	}
+
+	public static FileCollection download(Project project, String dependencyNotation, boolean resolve) {
 		Dependency dependency = project.getDependencies().create(dependencyNotation);
 		Configuration config = project.getConfigurations().detachedConfiguration(dependency);
-		return config.fileCollection(dep -> true);
+		FileCollection files = config.fileCollection(dep -> true);
+
+		if (resolve) {
+			files = project.files(files.getFiles());
+		}
+
+		return files;
 	}
 }

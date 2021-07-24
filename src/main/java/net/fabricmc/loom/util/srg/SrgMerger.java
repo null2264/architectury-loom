@@ -35,11 +35,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import dev.architectury.mappingslayers.api.mutable.MutableClassDef;
-import dev.architectury.mappingslayers.api.mutable.MutableFieldDef;
-import dev.architectury.mappingslayers.api.mutable.MutableMethodDef;
-import dev.architectury.mappingslayers.api.mutable.MutableTinyTree;
-import dev.architectury.mappingslayers.api.utils.MappingsUtils;
 import org.apache.commons.io.IOUtils;
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.lorenz.io.srg.tsrg.TSrgReader;
@@ -56,6 +51,7 @@ import net.fabricmc.mapping.tree.FieldDef;
 import net.fabricmc.mapping.tree.MethodDef;
 import net.fabricmc.mapping.tree.TinyMappingFactory;
 import net.fabricmc.mapping.tree.TinyTree;
+import net.fabricmc.mappingio.format.TsrgReader;
 import net.fabricmc.stitch.commands.tinyv2.TinyClass;
 import net.fabricmc.stitch.commands.tinyv2.TinyField;
 import net.fabricmc.stitch.commands.tinyv2.TinyFile;
@@ -121,25 +117,12 @@ public final class SrgMerger {
 		}
 	}
 
-	private static MappingSet readTsrg2(String content) {
-		MappingSet set = MappingSet.create();
-		MutableTinyTree tree = MappingsUtils.deserializeFromTsrg2(content);
-		int obfIndex = tree.getMetadata().index("obf");
-		int srgIndex = tree.getMetadata().index("srg");
+	private static MappingSet readTsrg2(String content) throws IOException {
+		MappingSet set;
 
-		for (MutableClassDef classDef : tree.getClassesMutable()) {
-			ClassMapping<?, ?> classMapping = set.getOrCreateClassMapping(classDef.getName(obfIndex));
-			classMapping.setDeobfuscatedName(classDef.getName(srgIndex));
-
-			for (MutableFieldDef fieldDef : classDef.getFieldsMutable()) {
-				FieldMapping fieldMapping = classMapping.getOrCreateFieldMapping(fieldDef.getName(obfIndex));
-				fieldMapping.setDeobfuscatedName(fieldDef.getName(srgIndex));
-			}
-
-			for (MutableMethodDef methodDef : classDef.getMethodsMutable()) {
-				MethodMapping methodMapping = classMapping.getOrCreateMethodMapping(methodDef.getName(obfIndex), methodDef.getDescriptor(obfIndex));
-				methodMapping.setDeobfuscatedName(methodDef.getName(srgIndex));
-			}
+		try (Tsrg2Utils.MappingsIO2LorenzWriter lorenzWriter = new Tsrg2Utils.MappingsIO2LorenzWriter(0, false)) {
+			TsrgReader.read(new StringReader(content), lorenzWriter);
+			set = lorenzWriter.read();
 		}
 
 		return set;

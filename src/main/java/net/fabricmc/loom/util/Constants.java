@@ -109,6 +109,7 @@ public class Constants {
 		public static final String FORGE_RUNTIME = "dev.architectury:architectury-loom-forge-runtime:";
 		public static final String ACCESS_TRANSFORMERS = "net.minecraftforge:accesstransformers:";
 		public static final String SPECIAL_SOURCE = "net.md-5:SpecialSource:";
+		public static final String VIGNETTE = "net.minecraftforge.lex:vignette:";
 
 		private Dependencies() {
 		}
@@ -123,8 +124,9 @@ public class Constants {
 			public static final String JETBRAINS_ANNOTATIONS = "19.0.0";
 			public static final String JAVAX_ANNOTATIONS = "3.0.2";
 			public static final String FORGE_RUNTIME = "$LOOM_VERSION"; // replaced with current version at build time
-			public static final String ACCESS_TRANSFORMERS = "2.2.0";
-			public static final String SPECIAL_SOURCE = "1.8.3";
+			public static final String ACCESS_TRANSFORMERS = "8.0.4";
+			public static final String SPECIAL_SOURCE = "1.10.0";
+			public static final String VIGNETTE = "0.2.0.10";
 
 			private Versions() {
 			}

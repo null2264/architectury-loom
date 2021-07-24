@@ -32,19 +32,30 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaPlugin;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
+import net.fabricmc.loom.configuration.ide.RunConfigSettings;
+import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.DependencyDownloader;
 
 public class ForgeUserdevProvider extends DependencyProvider {
 	private File userdevJar;
+	private JsonObject json;
 
 	public ForgeUserdevProvider(Project project) {
 		super(project);
@@ -68,8 +79,6 @@ public class ForgeUserdevProvider extends DependencyProvider {
 			}
 		}
 
-		JsonObject json;
-
 		try (Reader reader = Files.newBufferedReader(configJson)) {
 			json = new Gson().fromJson(reader, JsonObject.class);
 		}
@@ -92,6 +101,92 @@ public class ForgeUserdevProvider extends DependencyProvider {
 		// TODO: Read launch configs from the JSON too
 		// TODO: Should I copy the patches from here as well?
 		//       That'd require me to run the "MCP environment" fully up to merging.
+		for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject("runs").entrySet()) {
+			LaunchProviderSettings launchSettings = getExtension().getLaunchConfigs().findByName(entry.getKey());
+			RunConfigSettings settings = getExtension().getRunConfigs().findByName(entry.getKey());
+			JsonObject value = entry.getValue().getAsJsonObject();
+
+			launchSettings.evaluateLater(() -> {
+				launchSettings.arg(filterAlreadySeen(StreamSupport.stream(value.getAsJsonArray("args").spliterator(), false)
+						.map(JsonElement::getAsString)
+						.collect(Collectors.toList())).stream()
+						.map(this::processTemplates)
+						.collect(Collectors.toList()));
+
+				for (Map.Entry<String, JsonElement> props : value.getAsJsonObject("props").entrySet()) {
+					String string = processTemplates(props.getValue().getAsString());
+
+					settings.property(props.getKey(), string);
+				}
+			});
+
+			settings.evaluateLater(() -> {
+				settings.defaultMainClass(value.getAsJsonPrimitive("main").getAsString());
+				settings.vmArgs(StreamSupport.stream(value.getAsJsonArray("jvmArgs").spliterator(), false)
+						.map(JsonElement::getAsString)
+						.map(this::processTemplates)
+						.collect(Collectors.toList()));
+			});
+		}
+	}
+
+	private List<String> filterAlreadySeen(List<String> args) {
+		String last = null;
+
+		for (int i = 0; i < args.size(); i++) {
+			String current = args.get(i);
+
+			if (Objects.equals(last, "--assetIndex") || Objects.equals(last, "--assetsDir")) {
+				args.remove(i - 1);
+				args.remove(i - 1);
+				i -= 2;
+			}
+
+			last = current;
+		}
+
+		return args;
+	}
+
+	public String processTemplates(String string) {
+		if (string.startsWith("{")) {
+			String key = string.substring(1, string.length() - 1);
+
+			// TODO: Look into ways to not hardcode
+			if (key.equals("runtime_classpath")) {
+				Set<File> mcLibs = getProject().getConfigurations().getByName(Constants.Configurations.FORGE_DEPENDENCIES).resolve();
+				mcLibs.addAll(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_NAMED).resolve());
+				mcLibs.addAll(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_NAMED).resolve());
+				string = mcLibs.stream()
+						.map(File::getAbsolutePath)
+//						.filter(s -> s.contains("cpw") || s.contains("minecraftforge") || s.contains("jopt-simple") || s.contains("log4j") || s.contains("night-config"))
+						.collect(Collectors.joining(File.pathSeparator));
+			} else if (json.has(key)) {
+				JsonElement element = json.get(key);
+
+				if (element.isJsonArray()) {
+					string = StreamSupport.stream(element.getAsJsonArray().spliterator(), false)
+							.map(JsonElement::getAsString)
+							.map(str -> {
+								if (str.contains(":")) {
+									return DependencyDownloader.download(getProject(), str, false).getFiles().stream()
+											.map(File::getAbsolutePath)
+											.skip(1)
+											.collect(Collectors.joining(File.pathSeparator));
+								}
+
+								return str;
+							})
+							.collect(Collectors.joining(File.pathSeparator));
+				} else {
+					string = element.toString();
+				}
+			} else {
+				getProject().getLogger().warn("Unrecognized template! " + string);
+			}
+		}
+
+		return string;
 	}
 
 	public File getUserdevJar() {

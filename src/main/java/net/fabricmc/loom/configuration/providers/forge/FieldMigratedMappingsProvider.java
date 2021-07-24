@@ -105,7 +105,7 @@ public class FieldMigratedMappingsProvider extends MappingsProvider {
 	@Override
 	public void manipulateMappings(Path mappingsJar) throws IOException {
 		LoomGradleExtension extension = getExtension();
-		Path mappingsFolder = getMappedVersionedDir(removeSuffix).resolve("forge/" + extension.getPatchProvider().forgeVersion);
+		Path mappingsFolder = getMappedVersionedDir(removeSuffix).resolve("forge/" + extension.getForgeProvider().getVersion().getCombined());
 		this.rawTinyMappings = tinyMappings.toPath();
 		this.rawTinyMappingsWithSrg = tinyMappingsWithSrg;
 		String mappingsJarName = mappingsJar.getFileName().toString();
@@ -113,7 +113,7 @@ public class FieldMigratedMappingsProvider extends MappingsProvider {
 		if (getExtension().shouldGenerateSrgTiny()) {
 			if (Files.notExists(rawTinyMappingsWithSrg) || isRefreshDeps()) {
 				// Merge tiny mappings with srg
-				SrgMerger.mergeSrg(getExtension().getSrgProvider().getSrg().toPath(), rawTinyMappings, rawTinyMappingsWithSrg, true);
+				SrgMerger.mergeSrg(getRawSrgFile(), rawTinyMappings, rawTinyMappingsWithSrg, true);
 			}
 		}
 

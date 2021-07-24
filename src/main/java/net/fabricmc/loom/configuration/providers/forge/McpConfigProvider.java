@@ -25,18 +25,25 @@
 package net.fabricmc.loom.configuration.providers.forge;
 
 import java.io.File;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.FileSystemUtil;
 
 public class McpConfigProvider extends DependencyProvider {
 	private File mcp;
+	private Path configJson;
+	private Boolean official;
+	private String mappingsPath;
 
 	public McpConfigProvider(Project project) {
 		super(project);
@@ -46,23 +53,41 @@ public class McpConfigProvider extends DependencyProvider {
 	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
 		init(dependency.getDependency().getVersion());
 
-		if (mcp.exists() && !isRefreshDeps()) {
-			return; // No work for us to do here
-		}
-
 		Path mcpZip = dependency.resolveFile().orElseThrow(() -> new RuntimeException("Could not resolve MCPConfig")).toPath();
 
-		if (!mcp.exists() || isRefreshDeps()) {
+		if (!mcp.exists() || !Files.exists(configJson) || isRefreshDeps()) {
 			Files.copy(mcpZip, mcp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+			try (FileSystemUtil.FileSystemDelegate fs = FileSystemUtil.getJarFileSystem(mcp, false)) {
+				Files.copy(fs.get().getPath("config.json"), configJson, StandardCopyOption.REPLACE_EXISTING);
+			}
 		}
+
+		JsonObject json;
+
+		try (Reader reader = Files.newBufferedReader(configJson)) {
+			json = new Gson().fromJson(reader, JsonObject.class);
+		}
+
+		official = json.has("official") && json.getAsJsonPrimitive("official").getAsBoolean();
+		mappingsPath = json.get("data").getAsJsonObject().get("mappings").getAsString();
 	}
 
 	private void init(String version) {
 		mcp = new File(getExtension().getUserCache(), "mcp-" + version + ".zip");
+		configJson = getExtension().getUserCache().toPath().resolve("mcp-config-" + version + ".json");
 	}
 
 	public File getMcp() {
 		return mcp;
+	}
+
+	public boolean isOfficial() {
+		return official;
+	}
+
+	public String getMappingsPath() {
+		return mappingsPath;
 	}
 
 	@Override

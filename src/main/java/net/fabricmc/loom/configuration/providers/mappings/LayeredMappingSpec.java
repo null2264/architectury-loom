@@ -60,6 +60,6 @@ public class LayeredMappingSpec {
 
 	public String getVersion() {
 		// TODO something better?
-		return String.format("layered+hash.%d", Math.abs(hashCode()));
+		return String.format("layered+hash+%d", Math.abs(hashCode()));
 	}
 }

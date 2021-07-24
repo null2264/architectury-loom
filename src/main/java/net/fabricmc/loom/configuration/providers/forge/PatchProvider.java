@@ -43,7 +43,6 @@ import net.fabricmc.loom.util.Constants;
 public class PatchProvider extends DependencyProvider {
 	public Path clientPatches;
 	public Path serverPatches;
-	public String forgeVersion;
 	public Path projectCacheFolder;
 
 	public PatchProvider(Project project) {
@@ -67,7 +66,6 @@ public class PatchProvider extends DependencyProvider {
 	}
 
 	private void init(String forgeVersion) {
-		this.forgeVersion = forgeVersion;
 		projectCacheFolder = getExtension().getProjectPersistentCache().toPath().resolve(forgeVersion);
 		clientPatches = projectCacheFolder.resolve("patches-client.lzma");
 		serverPatches = projectCacheFolder.resolve("patches-server.lzma");

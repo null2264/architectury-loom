@@ -72,19 +72,6 @@ public class LaunchProvider extends DependencyProvider {
 					// Should match YarnNamingService.PATH_TO_MAPPINGS in forge-runtime
 					.property("fabric.yarnWithSrg.path", getExtension().getMappingsProvider().tinyMappingsWithSrg.toAbsolutePath().toString())
 
-					.argument("--fml.mcVersion")
-					.argument(getExtension().getMinecraftProvider().getMinecraftVersion())
-					.argument("--fml.forgeVersion")
-					.argument(getExtension().getForgeProvider().getVersion().getForgeVersion())
-
-					.argument("client", "--launchTarget")
-					.argument("client", "fmluserdevclient")
-
-					.argument("server", "--launchTarget")
-					.argument("server", "fmluserdevserver")
-
-					.argument("data", "--launchTarget")
-					.argument("data", "fmluserdevdata")
 					.argument("data", "--all")
 					.argument("data", "--mod")
 					.argument("data", String.join(",", getExtension().getDataGenMods()))
@@ -109,7 +96,19 @@ public class LaunchProvider extends DependencyProvider {
 			}
 		}
 
+		addDependency(Constants.Dependencies.DEV_LAUNCH_INJECTOR + Constants.Dependencies.Versions.DEV_LAUNCH_INJECTOR, Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES);
+		addDependency(Constants.Dependencies.TERMINAL_CONSOLE_APPENDER + Constants.Dependencies.Versions.TERMINAL_CONSOLE_APPENDER, Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES);
+		addDependency(Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
+
+		if (getExtension().isForge()) {
+			addDependency(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
+			addDependency(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME);
+			addDependency(Constants.Dependencies.JAVAX_ANNOTATIONS + Constants.Dependencies.Versions.JAVAX_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
+		}
+
 		for (LaunchProviderSettings settings : getExtension().getLaunchConfigs()) {
+			settings.evaluateNow();
+
 			for (String argument : settings.getArguments()) {
 				launchConfig.argument(settings.getName(), argument);
 			}
@@ -128,16 +127,6 @@ public class LaunchProvider extends DependencyProvider {
 
 		writeLog4jConfig();
 		FileUtils.writeStringToFile(getExtension().getDevLauncherConfig(), launchConfig.asString(), StandardCharsets.UTF_8);
-
-		addDependency(Constants.Dependencies.DEV_LAUNCH_INJECTOR + Constants.Dependencies.Versions.DEV_LAUNCH_INJECTOR, Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES);
-		addDependency(Constants.Dependencies.TERMINAL_CONSOLE_APPENDER + Constants.Dependencies.Versions.TERMINAL_CONSOLE_APPENDER, Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES);
-		addDependency(Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
-
-		if (getExtension().isForge()) {
-			addDependency(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
-			addDependency(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME);
-			addDependency(Constants.Dependencies.JAVAX_ANNOTATIONS + Constants.Dependencies.Versions.JAVAX_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
-		}
 
 		postPopulationScheduler.accept(this::writeRemapClassPath);
 	}

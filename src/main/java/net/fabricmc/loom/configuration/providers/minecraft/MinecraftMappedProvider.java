@@ -24,10 +24,14 @@
 
 package net.fabricmc.loom.configuration.providers.minecraft;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -48,6 +52,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.configuration.providers.MinecraftProvider;
+import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.tr.OutputRemappingHandler;
 import net.fabricmc.loom.configuration.sources.ForgeSourcesRemapper;
@@ -162,7 +167,7 @@ public class MinecraftMappedProvider extends DependencyProvider {
 			getProject().getRepositories().flatDir(repository -> repository.dir(new File(getJarDirectory(getExtension().getUserCache(), "mapped"), "forge")));
 
 			getProject().getDependencies().add(Constants.Configurations.FORGE_NAMED,
-					getProject().getDependencies().module("net.minecraftforge-loom:forge:" + getJarVersionString("mapped")));
+					getProject().getDependencies().module("net.minecraftforge-loom:forge:" + getForgeVersion() + getJarVersionString("mapped")));
 
 			getProject().afterEvaluate(project -> {
 				if (!OperatingSystem.isCIBuild()) {
@@ -271,6 +276,8 @@ public class MinecraftMappedProvider extends DependencyProvider {
 	}
 
 	public void remap(TinyRemapper remapper, Info vanilla, @Nullable Info forge, String fromM) throws IOException {
+		Set<String> classNames = InnerClassRemapper.readClassNames(vanilla.input);
+
 		for (String toM : getExtension().isForge() ? Arrays.asList("intermediary", "srg", "named") : Arrays.asList("intermediary", "named")) {
 			Path output = "named".equals(toM) ? vanilla.outputMapped : "srg".equals(toM) ? vanilla.outputSrg : vanilla.outputIntermediary;
 			Path outputForge = forge == null ? null : "named".equals(toM) ? forge.outputMapped : "srg".equals(toM) ? forge.outputSrg : forge.outputIntermediary;
@@ -285,7 +292,7 @@ public class MinecraftMappedProvider extends DependencyProvider {
 				remapper.readInputs(forgeTag, forge.input);
 			}
 
-			remapper.replaceMappings(getMappings(vanilla.input, fromM, toM));
+			remapper.replaceMappings(getMappings(classNames, fromM, toM));
 			OutputRemappingHandler.remap(remapper, vanilla.assets, output, null, vanillaTag);
 
 			if (forge != null) {
@@ -325,19 +332,63 @@ public class MinecraftMappedProvider extends DependencyProvider {
 		return builder.build();
 	}
 
-	public Set<IMappingProvider> getMappings(@Nullable Path fromJar, String fromM, String toM) throws IOException {
+	public Set<IMappingProvider> getMappings(@Nullable Set<String> fromClassNames, String fromM, String toM) throws IOException {
 		Set<IMappingProvider> providers = new HashSet<>();
 		providers.add(TinyRemapperMappingsHelper.create(getExtension().isForge() ? getExtension().getMappingsProvider().getMappingsWithSrg() : getExtension().getMappingsProvider().getMappings(), fromM, toM, true));
 
 		if (getExtension().isForge()) {
-			if (fromJar != null) {
-				providers.add(InnerClassRemapper.of(fromJar, getExtension().getMappingsProvider().getMappingsWithSrg(), fromM, toM));
+			if (fromClassNames != null) {
+				providers.add(InnerClassRemapper.of(fromClassNames, getExtension().getMappingsProvider().getMappingsWithSrg(), fromM, toM));
 			}
 		} else {
 			providers.add(out -> JSR_TO_JETBRAINS.forEach(out::acceptClass));
 		}
 
 		return providers;
+	}
+
+	public static void check(Iterable<IMappingProvider> providers) throws IOException {
+		Path check = Files.createTempFile("CHECK", null);
+
+		try (BufferedWriter writer = Files.newBufferedWriter(check, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+			Consumer<String> write = s -> {
+				try {
+					writer.write(s);
+					writer.newLine();
+				} catch (IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			};
+
+			for (IMappingProvider provider : providers) {
+				provider.load(new IMappingProvider.MappingAcceptor() {
+					@Override
+					public void acceptClass(String s, String s1) {
+						write.accept(provider + ": " + s + " -> " + s1);
+					}
+
+					@Override
+					public void acceptMethod(IMappingProvider.Member member, String s) {
+
+					}
+
+					@Override
+					public void acceptMethodArg(IMappingProvider.Member member, int i, String s) {
+
+					}
+
+					@Override
+					public void acceptMethodVar(IMappingProvider.Member member, int i, int i1, int i2, String s) {
+
+					}
+
+					@Override
+					public void acceptField(IMappingProvider.Member member, String s) {
+
+					}
+				});
+			}
+		}
 	}
 
 	public static Path[] getRemapClasspath(Project project) {
@@ -363,8 +414,12 @@ public class MinecraftMappedProvider extends DependencyProvider {
 			inputForgeJar = mappingsProvider.patchedProvider.getForgeMergedJar();
 			forgeIntermediaryJar = new File(getExtension().getUserCache(), "forge-" + getJarVersionString("intermediary") + ".jar");
 			forgeSrgJar = new File(getExtension().getUserCache(), "forge-" + getJarVersionString("srg") + ".jar");
-			forgeMappedJar = new File(getJarDirectory(getExtension().getUserCache(), "mapped"), "forge/forge-" + getJarVersionString("mapped") + ".jar");
+			forgeMappedJar = new File(getJarDirectory(getExtension().getUserCache(), "mapped"), "forge/forge-" + getForgeVersion() + getJarVersionString("mapped") + ".jar");
 		}
+	}
+
+	private String getForgeVersion() {
+		return getExtension().getForgeProvider().getVersion().getCombined();
 	}
 
 	protected File getJarDirectory(File parentDirectory, String type) {
