@@ -32,12 +32,11 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.common.collect.ImmutableMap;
@@ -45,7 +44,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.JavaPlugin;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
@@ -107,9 +105,8 @@ public class ForgeUserdevProvider extends DependencyProvider {
 			JsonObject value = entry.getValue().getAsJsonObject();
 
 			launchSettings.evaluateLater(() -> {
-				launchSettings.arg(filterAlreadySeen(StreamSupport.stream(value.getAsJsonArray("args").spliterator(), false)
+				launchSettings.arg(StreamSupport.stream(value.getAsJsonArray("args").spliterator(), false)
 						.map(JsonElement::getAsString)
-						.collect(Collectors.toList())).stream()
 						.map(this::processTemplates)
 						.collect(Collectors.toList()));
 
@@ -130,52 +127,38 @@ public class ForgeUserdevProvider extends DependencyProvider {
 		}
 	}
 
-	private List<String> filterAlreadySeen(List<String> args) {
-		String last = null;
-
-		for (int i = 0; i < args.size(); i++) {
-			String current = args.get(i);
-
-			if (Objects.equals(last, "--assetIndex") || Objects.equals(last, "--assetsDir")) {
-				args.remove(i - 1);
-				args.remove(i - 1);
-				i -= 2;
-			}
-
-			last = current;
-		}
-
-		return args;
-	}
-
 	public String processTemplates(String string) {
 		if (string.startsWith("{")) {
 			String key = string.substring(1, string.length() - 1);
 
 			// TODO: Look into ways to not hardcode
 			if (key.equals("runtime_classpath")) {
-				Set<File> mcLibs = getProject().getConfigurations().getByName(Constants.Configurations.FORGE_DEPENDENCIES).resolve();
-				mcLibs.addAll(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_NAMED).resolve());
-				mcLibs.addAll(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_NAMED).resolve());
+				Set<File> mcLibs = DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_DEPENDENCIES), false);
+				mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_DEPENDENCIES), false));
+				mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_CLIENT_EXTRA), false));
+				mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_NAMED), false));
+				mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_NAMED), false));
 				string = mcLibs.stream()
 						.map(File::getAbsolutePath)
-//						.filter(s -> s.contains("cpw") || s.contains("minecraftforge") || s.contains("jopt-simple") || s.contains("log4j") || s.contains("night-config"))
 						.collect(Collectors.joining(File.pathSeparator));
+			} else if (key.equals("asset_index")) {
+				string = getExtension().getMinecraftProvider().getVersionInfo().getAssetIndex().getFabricId(getExtension().getMinecraftProvider().getMinecraftVersion());
+			} else if (key.equals("assets_root")) {
+				string = new File(getExtension().getUserCache(), "assets").getAbsolutePath();
 			} else if (json.has(key)) {
 				JsonElement element = json.get(key);
 
 				if (element.isJsonArray()) {
 					string = StreamSupport.stream(element.getAsJsonArray().spliterator(), false)
 							.map(JsonElement::getAsString)
-							.map(str -> {
+							.flatMap(str -> {
 								if (str.contains(":")) {
-									return DependencyDownloader.download(getProject(), str, false).getFiles().stream()
+									return DependencyDownloader.download(getProject(), str, false, false).getFiles().stream()
 											.map(File::getAbsolutePath)
-											.skip(1)
-											.collect(Collectors.joining(File.pathSeparator));
+											.filter(dep -> !dep.contains("bootstraplauncher")); // TODO: Hack
 								}
 
-								return str;
+								return Stream.of(str);
 							})
 							.collect(Collectors.joining(File.pathSeparator));
 				} else {

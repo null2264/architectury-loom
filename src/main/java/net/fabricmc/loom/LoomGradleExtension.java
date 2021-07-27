@@ -524,6 +524,14 @@ public class LoomGradleExtension {
 		return getPlatform() == ModPlatform.FORGE;
 	}
 
+	public boolean isForgeAndOfficial() {
+		return isForge() && getMcpConfigProvider().isOfficial();
+	}
+
+	public boolean isForgeAndNotOfficial() {
+		return isForge() && !getMcpConfigProvider().isOfficial();
+	}
+
 	public boolean supportsInclude() {
 		return !isForge() || supportsInclude.getAsBoolean();
 	}

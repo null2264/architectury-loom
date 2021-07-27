@@ -60,12 +60,15 @@ public class LaunchProvider extends DependencyProvider {
 				.property("log4j.configurationFile", getAllLog4JConfigFiles())
 
 				.property("client", "java.library.path", getExtension().getNativesDirectory().getAbsolutePath())
-				.property("client", "org.lwjgl.librarypath", getExtension().getNativesDirectory().getAbsolutePath())
+				.property("client", "org.lwjgl.librarypath", getExtension().getNativesDirectory().getAbsolutePath());
 
-				.argument("client", "--assetIndex")
-				.argument("client", getExtension().getMinecraftProvider().getVersionInfo().getAssetIndex().getFabricId(getExtension().getMinecraftProvider().getMinecraftVersion()))
-				.argument("client", "--assetsDir")
-				.argument("client", new File(getExtension().getUserCache(), "assets").getAbsolutePath());
+		if (!getExtension().isForge()) {
+			launchConfig
+					.argument("client", "--assetIndex")
+					.argument("client", getExtension().getMinecraftProvider().getVersionInfo().getAssetIndex().getFabricId(getExtension().getMinecraftProvider().getMinecraftVersion()))
+					.argument("client", "--assetsDir")
+					.argument("client", new File(getExtension().getUserCache(), "assets").getAbsolutePath());
+		}
 
 		if (getExtension().isForge()) {
 			launchConfig
@@ -167,7 +170,7 @@ public class LaunchProvider extends DependencyProvider {
 
 		remapClasspath.add(getExtension().getMinecraftMappedProvider().getIntermediaryJar());
 
-		if (getExtension().isForge()) {
+		if (getExtension().isForgeAndNotOfficial()) {
 			remapClasspath.add(getExtension().getMinecraftMappedProvider().getForgeIntermediaryJar());
 		}
 

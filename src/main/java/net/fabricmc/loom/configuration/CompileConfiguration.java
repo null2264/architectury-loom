@@ -96,6 +96,8 @@ public final class CompileConfiguration {
 			forgeDependencies.setTransitive(false);
 			Configuration forgeNamed = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_NAMED);
 			forgeNamed.setTransitive(false);
+			Configuration forgeClientExtra = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_CLIENT_EXTRA);
+			forgeClientExtra.setTransitive(false);
 			Configuration mcpConfig = project.getConfigurations().maybeCreate(Constants.Configurations.MCP_CONFIG);
 			mcpConfig.setTransitive(false);
 
@@ -105,6 +107,10 @@ public final class CompileConfiguration {
 			extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED, project);
 			extendsFrom(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED, project);
 			extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED, project);
+			extendsFrom(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_CLIENT_EXTRA, project);
+			extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_CLIENT_EXTRA, project);
+			extendsFrom(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_CLIENT_EXTRA, project);
+			extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_CLIENT_EXTRA, project);
 		}
 
 		if (project.getExtensions().getByType(LoomGradleExtension.class).supportsInclude()) {

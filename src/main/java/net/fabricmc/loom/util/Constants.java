@@ -87,6 +87,7 @@ public class Constants {
 		public static final String FORGE_INSTALLER = "forgeInstaller";
 		public static final String FORGE_UNIVERSAL = "forgeUniversal";
 		public static final String FORGE_DEPENDENCIES = "forgeDependencies";
+		public static final String FORGE_CLIENT_EXTRA = "forgeClientExtra";
 		public static final String FORGE_NAMED = "forgeNamed";
 		@Deprecated // Not to be used in gradle 7+
 		public static final String COMPILE = "compile";

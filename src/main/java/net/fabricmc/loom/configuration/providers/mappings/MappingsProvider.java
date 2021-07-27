@@ -303,9 +303,8 @@ public class MappingsProvider extends DependencyProvider {
 
 	protected Path getRawSrgFile() throws IOException {
 		LoomGradleExtension extension = getExtension();
-		McpConfigProvider mcpConfigProvider = extension.getMcpConfigProvider();
 
-		if (mcpConfigProvider.isOfficial()) {
+		if (extension.isForgeAndOfficial()) {
 			return patchedProvider.getMojmapTSrg2EpicWhyDoesThisExist(false);
 		}
 
