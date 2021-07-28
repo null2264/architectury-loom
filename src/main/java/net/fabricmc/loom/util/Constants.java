@@ -87,7 +87,7 @@ public class Constants {
 		public static final String FORGE_INSTALLER = "forgeInstaller";
 		public static final String FORGE_UNIVERSAL = "forgeUniversal";
 		public static final String FORGE_DEPENDENCIES = "forgeDependencies";
-		public static final String FORGE_CLIENT_EXTRA = "forgeClientExtra";
+		public static final String FORGE_EXTRA = "forgeExtra";
 		public static final String FORGE_NAMED = "forgeNamed";
 		@Deprecated // Not to be used in gradle 7+
 		public static final String COMPILE = "compile";
@@ -107,7 +107,7 @@ public class Constants {
 		public static final String TERMINAL_CONSOLE_APPENDER = "net.minecrell:terminalconsoleappender:";
 		public static final String JETBRAINS_ANNOTATIONS = "org.jetbrains:annotations:";
 		public static final String JAVAX_ANNOTATIONS = "com.google.code.findbugs:jsr305:"; // I hate that I have to add these.
-		public static final String FORGE_RUNTIME = "dev.architectury:architectury-loom-forge-runtime:";
+		public static final String FORGE_RUNTIME = "dev.architectury:architectury-loom-runtime:";
 		public static final String ACCESS_TRANSFORMERS = "net.minecraftforge:accesstransformers:";
 		public static final String SPECIAL_SOURCE = "net.md-5:SpecialSource:";
 		public static final String VIGNETTE = "net.minecraftforge.lex:vignette:";

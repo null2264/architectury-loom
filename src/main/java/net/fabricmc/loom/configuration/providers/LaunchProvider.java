@@ -104,8 +104,7 @@ public class LaunchProvider extends DependencyProvider {
 		addDependency(Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
 
 		if (getExtension().isForge()) {
-			addDependency(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
-			addDependency(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, JavaPlugin.RUNTIME_ONLY_CONFIGURATION_NAME);
+			addDependency(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, Constants.Configurations.FORGE_EXTRA);
 			addDependency(Constants.Dependencies.JAVAX_ANNOTATIONS + Constants.Dependencies.Versions.JAVAX_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
 		}
 

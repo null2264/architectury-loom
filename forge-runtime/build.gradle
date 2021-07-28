@@ -67,7 +67,7 @@ checkstyle {
 publishing {
 	publications {
 		maven(MavenPublication) {
-			artifactId = 'architectury-loom-forge-runtime'
+			artifactId = 'architectury-loom-runtime'
 			shadow.component it
 		}
 	}

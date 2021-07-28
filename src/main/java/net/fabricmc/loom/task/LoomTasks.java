@@ -90,7 +90,7 @@ public final class LoomTasks {
 			t.setGroup("ide");
 		});
 
-		tasks.register("genIdeaRuns", AbstractLoomTask.class, t -> {
+		tasks.register("genIntelliJRuns", AbstractLoomTask.class, t -> {
 			t.setDescription("Generates IntelliJ IDEA launch configurations.");
 			t.dependsOn("downloadAssets");
 			t.setGroup("ide");

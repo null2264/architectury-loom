@@ -303,7 +303,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		this.filesDirty = dirty;
 		this.dirty = false;
 
-		addDependency(minecraftClientExtra, Constants.Configurations.FORGE_CLIENT_EXTRA);
+		addDependency(minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
 	}
 
 	private void fillClientExtraJar() throws IOException {
