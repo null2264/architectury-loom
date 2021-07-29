@@ -1,19 +1,33 @@
 package net.fabricmc.loom.util;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Set;
 
 import dev.architectury.mappingslayers.api.mutable.MutableTinyMetadata;
 import dev.architectury.mappingslayers.api.mutable.MutableTinyTree;
 import dev.architectury.mappingslayers.api.utils.MappingsUtils;
 import dev.architectury.tinyremapper.IMappingProvider;
+import dev.architectury.tinyremapper.TinyRemapper;
 
 public class MappingsProviderVerbose {
+	public static void saveFile(TinyRemapper providers) throws IOException {
+		try {
+			Field field = TinyRemapper.class.getDeclaredField("mappingProviders");
+			field.setAccessible(true);
+			Set<IMappingProvider> mappingProviders = (Set<IMappingProvider>) field.get(providers);
+			saveFile(mappingProviders);
+		} catch (IllegalAccessException | NoSuchFieldException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static void saveFile(Iterable<IMappingProvider> providers) throws IOException {
 		MutableTinyTree tree = MappingsUtils.create(MutableTinyMetadata.create(2, 0, Arrays.asList("from", "to"), new HashMap<>()));
 
@@ -52,5 +66,6 @@ public class MappingsProviderVerbose {
 
 		Path check = Files.createTempFile("CHECK", null);
 		Files.write(check, MappingsUtils.serializeToString(tree).getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+		System.out.println("Saved debug check mappings to " + check);
 	}
 }

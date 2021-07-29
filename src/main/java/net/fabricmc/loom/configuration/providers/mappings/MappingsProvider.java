@@ -27,6 +27,7 @@ package net.fabricmc.loom.configuration.providers.mappings;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
@@ -238,7 +239,7 @@ public class MappingsProvider extends DependencyProvider {
 		if (getExtension().shouldGenerateSrgTiny()) {
 			if (Files.notExists(tinyMappingsWithSrg) || isRefreshDeps()) {
 				// Merge tiny mappings with srg
-				SrgMerger.mergeSrg(getRawSrgFile(), tinyMappings.toPath(), tinyMappingsWithSrg, true);
+				SrgMerger.mergeSrg(this::getMojmapSrgFileIfPossible, getRawSrgFile(), tinyMappings.toPath(), tinyMappingsWithSrg, true);
 			}
 		}
 
@@ -309,6 +310,15 @@ public class MappingsProvider extends DependencyProvider {
 		}
 
 		return extension.getSrgProvider().getSrg().toPath();
+	}
+
+	protected Path getMojmapSrgFileIfPossible() {
+		try {
+			LoomGradleExtension extension = getExtension();
+			return MinecraftPatchedProvider.getMojmapTsrg2(extension);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	public void manipulateMappings(Path mappingsJar) throws IOException { }

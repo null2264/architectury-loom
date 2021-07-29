@@ -24,16 +24,22 @@
 
 package net.fabricmc.loom.configuration.providers.forge;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.function.Consumer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import org.apache.commons.io.IOUtils;
 import org.gradle.api.Project;
+import org.zeroturnaround.zip.ZipUtil;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.util.Constants;
@@ -42,6 +48,7 @@ import net.fabricmc.loom.util.FileSystemUtil;
 public class McpConfigProvider extends DependencyProvider {
 	private File mcp;
 	private Path configJson;
+	private Path mappings;
 	private Boolean official;
 	private String mappingsPath;
 
@@ -73,9 +80,28 @@ public class McpConfigProvider extends DependencyProvider {
 		mappingsPath = json.get("data").getAsJsonObject().get("mappings").getAsString();
 	}
 
-	private void init(String version) {
+	private void init(String version) throws IOException {
 		mcp = new File(getExtension().getUserCache(), "mcp-" + version + ".zip");
 		configJson = getExtension().getUserCache().toPath().resolve("mcp-config-" + version + ".json");
+		mappings = getExtension().getUserCache().toPath().resolve("mcp-config-mappings-" + version + ".txt");
+
+		if (isRefreshDeps()) {
+			Files.deleteIfExists(mappings);
+		}
+	}
+
+	public Path getMappings() {
+		if (Files.notExists(mappings)) {
+			if (!ZipUtil.handle(getMcp(), getMappingsPath(), (in, zipEntry) -> {
+				try (BufferedWriter writer = Files.newBufferedWriter(mappings, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+					IOUtils.copy(in, writer, StandardCharsets.UTF_8);
+				}
+			})) {
+				throw new IllegalStateException("Failed to find mappings '" + getMappingsPath() + "' in " + getMcp().getAbsolutePath() + "!");
+			}
+		}
+
+		return mappings;
 	}
 
 	public File getMcp() {

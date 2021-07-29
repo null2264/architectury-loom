@@ -5,9 +5,18 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import dev.architectury.mappingslayers.api.mutable.MutableClassDef;
+import dev.architectury.mappingslayers.api.mutable.MutableFieldDef;
+import dev.architectury.mappingslayers.api.mutable.MutableMethodDef;
+import dev.architectury.mappingslayers.api.mutable.MutableParameterDef;
+import dev.architectury.mappingslayers.api.mutable.MutableTinyMetadata;
+import dev.architectury.mappingslayers.api.mutable.MutableTinyTree;
+import dev.architectury.mappingslayers.api.utils.MappingsUtils;
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.lorenz.io.srg.tsrg.TSrgWriter;
 import org.cadixdev.lorenz.model.ClassMapping;
@@ -31,7 +40,8 @@ public class Tsrg2Utils {
 		}, "srg", false, writer);
 	}
 
-	public static void writeTsrg(Consumer<MappingVisitor> visitorConsumer, String dstNamespace, boolean applyParameterMappings, Writer writer) throws IOException {
+	public static void writeTsrg(Consumer<MappingVisitor> visitorConsumer, String dstNamespace, boolean applyParameterMappings, Writer writer)
+			throws IOException {
 		MappingSet set;
 
 		try (MappingsIO2LorenzWriter lorenzWriter = new MappingsIO2LorenzWriter(dstNamespace, applyParameterMappings)) {
@@ -44,20 +54,54 @@ public class Tsrg2Utils {
 		}
 	}
 
+	public static void writeTsrg2(Consumer<MappingVisitor> visitorConsumer, Writer writer)
+			throws IOException {
+		MutableTinyTree tree;
+
+		try (MappingsIO2MappingsUtils w = new MappingsIO2MappingsUtils()) {
+			visitorConsumer.accept(w);
+			tree = w.read();
+		}
+
+		writer.write(MappingsUtils.serializeToTsrg2(tree));
+	}
+
 	// TODO Move this elsewhere
-	public static class MappingsIO2LorenzWriter extends ForwardingMappingVisitor implements MappingWriter {
+	public abstract static class MappingsIO2Others extends ForwardingMappingVisitor implements MappingWriter {
+		public MappingsIO2Others() {
+			super(new MemoryMappingTree());
+		}
+
+		public MappingTree tree() {
+			return (MappingTree) next;
+		}
+
+		@Override
+		public void close() throws IOException {
+			MappingTree tree = tree();
+			List<String> names = new ArrayList<>();
+
+			for (MappingTree.ClassMapping aClass : tree.getClasses()) {
+				names.add(aClass.getSrcName());
+			}
+
+			for (String name : names) {
+				tree.removeClass(name);
+			}
+		}
+	}
+
+	public static class MappingsIO2LorenzWriter extends MappingsIO2Others {
 		private final Object dstNamespaceUnresolved;
 		private int dstNamespace;
 		private boolean applyParameterMappings;
 
 		public MappingsIO2LorenzWriter(int dstNamespace, boolean applyParameterMappings) {
-			super(new MemoryMappingTree());
 			this.dstNamespaceUnresolved = dstNamespace;
 			this.applyParameterMappings = applyParameterMappings;
 		}
 
 		public MappingsIO2LorenzWriter(String dstNamespace, boolean applyParameterMappings) {
-			super(new MemoryMappingTree());
 			this.dstNamespaceUnresolved = dstNamespace;
 			this.applyParameterMappings = applyParameterMappings;
 		}
@@ -73,7 +117,7 @@ public class Tsrg2Utils {
 		}
 
 		public MappingSet read(final MappingSet mappings) throws IOException {
-			MappingTree tree = (MappingTree) next;
+			MappingTree tree = tree();
 
 			for (MappingTree.ClassMapping aClass : tree.getClasses()) {
 				ClassMapping<?, ?> lClass = mappings.getOrCreateClassMapping(aClass.getSrcName())
@@ -106,19 +150,60 @@ public class Tsrg2Utils {
 
 			return mappings;
 		}
+	}
 
-		@Override
-		public void close() throws IOException {
-			MappingTree tree = (MappingTree) next;
-			List<String> names = new ArrayList<>();
+	public static class MappingsIO2MappingsUtils extends MappingsIO2Others {
+		public MutableTinyTree read() {
+			MappingTree tree = tree();
+			int dstNamesSize = tree.getDstNamespaces().size();
+			List<String> namespaces = new ArrayList<>();
+			namespaces.add(tree.getSrcNamespace());
+			namespaces.addAll(tree.getDstNamespaces());
+			Map<String, String> properties = new HashMap<>();
+
+			for (Map.Entry<String, String> entry : tree.getMetadata()) {
+				properties.put(entry.getKey(), entry.getValue());
+			}
+
+			MutableTinyTree out = MappingsUtils.create(MutableTinyMetadata.create(2, 0, namespaces, properties));
 
 			for (MappingTree.ClassMapping aClass : tree.getClasses()) {
-				names.add(aClass.getSrcName());
+				MutableClassDef classDef = out.getOrCreateClass(aClass.getSrcName());
+				classDef.setComment(aClass.getComment());
+
+				for (int i = 0; i < dstNamesSize; i++) {
+					classDef.setName(i + 1, aClass.getDstName(i));
+				}
+
+				for (MappingTree.MethodMapping aMethod : aClass.getMethods()) {
+					MutableMethodDef methodDef = classDef.getOrCreateMethod(aMethod.getSrcName(), aMethod.getSrcDesc());
+					methodDef.setComment(aMethod.getComment());
+
+					for (int i = 0; i < dstNamesSize; i++) {
+						methodDef.setName(i + 1, aMethod.getDstName(i));
+					}
+
+					for (MappingTree.MethodArgMapping aMethodArg : aMethod.getArgs()) {
+						MutableParameterDef parameterDef = methodDef.getOrCreateParameter(aMethodArg.getLvIndex(), aMethodArg.getSrcName());
+						parameterDef.setComment(aMethodArg.getComment());
+
+						for (int i = 0; i < dstNamesSize; i++) {
+							parameterDef.setName(i + 1, aMethodArg.getDstName(i));
+						}
+					}
+				}
+
+				for (MappingTree.FieldMapping aField : aClass.getFields()) {
+					MutableFieldDef fieldDef = classDef.getOrCreateField(aField.getSrcName(), aField.getSrcDesc());
+					fieldDef.setComment(aField.getComment());
+
+					for (int i = 0; i < dstNamesSize; i++) {
+						fieldDef.setName(i + 1, aField.getDstName(i));
+					}
+				}
 			}
 
-			for (String name : names) {
-				tree.removeClass(name);
-			}
+			return out;
 		}
 	}
 }

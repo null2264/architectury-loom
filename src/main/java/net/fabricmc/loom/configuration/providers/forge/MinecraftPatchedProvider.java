@@ -94,6 +94,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.zeroturnaround.zip.ZipUtil;
 
+import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.configuration.providers.MinecraftProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingNamespace;
@@ -103,6 +104,7 @@ import net.fabricmc.loom.configuration.providers.minecraft.MinecraftMappedProvid
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.FileSystemUtil;
+import net.fabricmc.loom.util.MappingsProviderVerbose;
 import net.fabricmc.loom.util.ThreadingUtils;
 import net.fabricmc.loom.util.TinyRemapperMappingsHelper;
 import net.fabricmc.loom.util.function.FsPathConsumer;
@@ -110,6 +112,7 @@ import net.fabricmc.loom.util.srg.InnerClassRemapper;
 import net.fabricmc.loom.util.srg.SpecialSourceExecutor;
 import net.fabricmc.loom.util.srg.Tsrg2Utils;
 import net.fabricmc.mapping.tree.TinyTree;
+import net.fabricmc.mappingio.MappingVisitor;
 
 public class MinecraftPatchedProvider extends DependencyProvider {
 	private static final String LOOM_PATCH_VERSION_KEY = "Loom-Patch-Version";
@@ -297,13 +300,18 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 
 		if (dirty) {
 			remapPatchedJar(getProject().getLogger());
-			fillClientExtraJar();
+
+			if (getExtension().isForgeAndOfficial()) {
+				fillClientExtraJar();
+			}
 		}
 
 		this.filesDirty = dirty;
 		this.dirty = false;
 
-		addDependency(minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
+		if (getExtension().isForgeAndOfficial()) {
+			addDependency(minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
+		}
 	}
 
 	private void fillClientExtraJar() throws IOException {
@@ -325,6 +333,10 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 				.rebuildSourceFilenames(true)
 				.fixPackageAccess(true)
 				.build();
+
+		if (getProject().getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.LIFECYCLE) < 0) {
+			MappingsProviderVerbose.saveFile(remapper);
+		}
 
 		remapper.readClassPath(libraries);
 		remapper.prepareClasses();
@@ -364,7 +376,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 			// processTsrg2(file);
 		}
 
-		return getMcpConfigMappings();
+		return getExtension().getMcpConfigProvider().getMappings();
 	}
 
 	private void processTsrg2(Path[] srg) throws IOException {
@@ -379,49 +391,46 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		}
 	}
 
-	public Path getMcpConfigMappings() throws IOException {
-		if (mcpConfigMappings == null) {
-			Path configMappings = Files.createTempFile("mcp-config-mappings", null);
-			McpConfigProvider mcpProvider = getExtension().getMcpConfigProvider();
+	private static void visitMojmap(MappingVisitor visitor, LoomGradleExtension extension) {
+		try {
+			MojangMappingLayer layer = new MojangMappingsSpec(() -> true).createLayer(extension.createMappingContext(() -> "layered+mojang"));
+			layer.visit(visitor);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
 
-			if (!ZipUtil.handle(mcpProvider.getMcp(), mcpProvider.getMappingsPath(), (in, zipEntry) -> {
-				try (BufferedWriter writer = Files.newBufferedWriter(configMappings, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-					IOUtils.copy(in, writer, StandardCharsets.UTF_8);
-				}
-			})) {
-				throw new IllegalStateException("Failed to find mappings '" + mcpProvider.getMappingsPath() + "' in " + mcpProvider.getMcp().getAbsolutePath() + "!");
-			}
+	public static Path getMojmapTsrg(LoomGradleExtension extension) throws IOException {
+		Path mojmap = Files.createTempFile("mojang-in-tsrg", null);
 
-			return mcpConfigMappings = configMappings;
+		try (BufferedWriter writer = Files.newBufferedWriter(mojmap, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+			Tsrg2Utils.writeTsrg(visitor -> visitMojmap(visitor, extension), MappingNamespace.NAMED.stringValue(), false, writer);
 		}
 
-		return mcpConfigMappings;
+		return mojmap;
+	}
+
+	public static Path getMojmapTsrg2(LoomGradleExtension extension) throws IOException {
+		Path mojmap = Files.createTempFile("mojang-in-tsrg2", null);
+
+		try (BufferedWriter writer = Files.newBufferedWriter(mojmap, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+			Tsrg2Utils.writeTsrg2(visitor -> visitMojmap(visitor, extension), writer);
+		}
+
+		return mojmap;
 	}
 
 	public Path getMojmapTSrg2EpicWhyDoesThisExist(boolean hasParameters) throws IOException {
 		if (mojmapTSrg2EpicWhyDoesThisExist == null) {
-			Path mojmap = Files.createTempFile("mojang-in-srg", null);
-
-			try (BufferedWriter writer = Files.newBufferedWriter(mojmap, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-				Tsrg2Utils.writeTsrg(visitor -> {
-					try {
-						MojangMappingLayer layer = new MojangMappingsSpec(() -> true).createLayer(getExtension().createMappingContext(() -> "layered+mojang"));
-						layer.visit(visitor);
-					} catch (IOException e) {
-						throw new UncheckedIOException(e);
-					}
-				}, MappingNamespace.NAMED.stringValue(), false, writer);
-			}
-
 			Path out = Files.createTempFile("merged-mojang-tsrg2", null);
 			Path outTrimmed = Files.createTempFile("merged-mojang-tsrg2-trimmed", null);
 			net.minecraftforge.installertools.ConsoleTool.main(new String[]{
 					"--task",
 					"MERGE_MAPPING",
 					"--left",
-					getMcpConfigMappings().toAbsolutePath().toString(),
+					getExtension().getMcpConfigProvider().getMappings().toAbsolutePath().toString(),
 					"--right",
-					mojmap.toAbsolutePath().toString(),
+					getMojmapTsrg(getExtension()).toAbsolutePath().toString(),
 					"--classes",
 					"--output",
 					out.toAbsolutePath().toString()
