@@ -28,7 +28,7 @@ import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 
 trait ProjectTestTrait {
-	final static String LEGACY_GRADLE = "4.9"
+	final static String LEGACY_GRADLE = "5.3"
 	final static String DEFAULT_GRADLE = "6.8.3"
 	final static String PRE_RELEASE_GRADLE = "7.0"
 

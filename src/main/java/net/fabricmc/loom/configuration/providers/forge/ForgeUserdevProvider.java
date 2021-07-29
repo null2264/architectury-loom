@@ -46,14 +46,22 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.codehaus.groovy.runtime.ExceptionUtils;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.ModuleDependency;
+import org.gradle.api.artifacts.transform.InputArtifact;
+import org.gradle.api.artifacts.transform.TransformAction;
+import org.gradle.api.artifacts.transform.TransformOutputs;
+import org.gradle.api.artifacts.transform.TransformParameters;
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
+import org.gradle.api.attributes.Attribute;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
+import net.fabricmc.loom.util.FileSystemUtil;
 
 public class ForgeUserdevProvider extends DependencyProvider {
 	private File userdevJar;
@@ -65,6 +73,17 @@ public class ForgeUserdevProvider extends DependencyProvider {
 
 	@Override
 	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
+		Attribute<Boolean> transformed = Attribute.of("architectury-loom-forge-dependencies-transformed", Boolean.class);
+
+		getProject().getDependencies().registerTransform(RemoveNameProvider.class, spec -> {
+			spec.getFrom().attribute(transformed, false);
+			spec.getTo().attribute(transformed, true);
+		});
+
+		for (ArtifactTypeDefinition type : getProject().getDependencies().getArtifactTypes()) {
+			type.getAttributes().attribute(transformed, false);
+		}
+
 		userdevJar = new File(getExtension().getProjectPersistentCache(), "forge-" + dependency.getDependency().getVersion() + "-userdev.jar");
 
 		Path configJson = getExtension()
@@ -90,14 +109,21 @@ public class ForgeUserdevProvider extends DependencyProvider {
 		addDependency(json.get("universal").getAsString(), Constants.Configurations.FORGE_UNIVERSAL);
 
 		for (JsonElement lib : json.get("libraries").getAsJsonArray()) {
+			Dependency dep = null;
+
 			if (lib.getAsString().startsWith("org.spongepowered:mixin:")) {
 				if (getExtension().useFabricMixin) {
-					addDependency("net.fabricmc:sponge-mixin:0.8.2+build.24", Constants.Configurations.FORGE_DEPENDENCIES);
-					continue;
+					dep = addDependency("net.fabricmc:sponge-mixin:0.8.2+build.24", Constants.Configurations.FORGE_DEPENDENCIES);
 				}
 			}
 
-			addDependency(lib.getAsString(), Constants.Configurations.FORGE_DEPENDENCIES);
+			if (dep == null) {
+				dep = addDependency(lib.getAsString(), Constants.Configurations.FORGE_DEPENDENCIES);
+			}
+
+			((ModuleDependency) dep).attributes(attributes -> {
+				attributes.attribute(transformed, true);
+			});
 		}
 
 		// TODO: Read launch configs from the JSON too
@@ -135,6 +161,28 @@ public class ForgeUserdevProvider extends DependencyProvider {
 		}
 	}
 
+	public abstract static class RemoveNameProvider implements TransformAction<TransformParameters.None> {
+		@InputArtifact
+		public abstract File getInput();
+
+		@Override
+		public void transform(TransformOutputs outputs) {
+			try {
+				File input = getInput();
+				//architectury-loom-forge-dependencies-transformed
+				File output = outputs.file(input.getName() + "-alfd-transformed.jar");
+				Files.copy(input.toPath(), output.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+				try (FileSystemUtil.FileSystemDelegate fs = FileSystemUtil.getJarFileSystem(output, false)) {
+					Path path = fs.get().getPath("META-INF/services/cpw.mods.modlauncher.api.INameMappingService");
+					Files.deleteIfExists(path);
+				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
 	public String processTemplates(String string) {
 		if (string.startsWith("{")) {
 			String key = string.substring(1, string.length() - 1);
@@ -157,7 +205,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 									.collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8),
 							StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 				} catch (IOException e) {
-					ExceptionUtils.sneakyThrow(e);
+					throw new RuntimeException(e);
 				}
 
 				string = path.toAbsolutePath().toString();
@@ -170,7 +218,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 									.collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8),
 							StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 				} catch (IOException e) {
-					ExceptionUtils.sneakyThrow(e);
+					throw new RuntimeException(e);
 				}
 
 				string = path.toAbsolutePath().toString();

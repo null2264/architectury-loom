@@ -30,7 +30,7 @@ import spock.lang.Unroll
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-// This test uses gradle 4.9 and 1.14.4 v1 mappings
+// This test uses gradle 5.3 and 1.14.4 v1 mappings
 class LegacyProjectTest extends Specification implements ProjectTestTrait {
 	@Override
 	String name() {
