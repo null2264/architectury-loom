@@ -128,7 +128,7 @@ public class LayeredMappingsDependency extends AbstractModuleDependency implemen
 
 	@Override
 	public String getVersion() {
-		return version;
+		return mappingContext.minecraftVersion() + "-" + version;
 	}
 
 	@Override

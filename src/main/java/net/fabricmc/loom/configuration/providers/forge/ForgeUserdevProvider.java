@@ -55,6 +55,8 @@ import org.gradle.api.artifacts.transform.TransformOutputs;
 import org.gradle.api.artifacts.transform.TransformParameters;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Attribute;
+import org.gradle.api.file.FileSystemLocation;
+import org.gradle.api.provider.Provider;
 
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
@@ -121,9 +123,11 @@ public class ForgeUserdevProvider extends DependencyProvider {
 				dep = addDependency(lib.getAsString(), Constants.Configurations.FORGE_DEPENDENCIES);
 			}
 
-			((ModuleDependency) dep).attributes(attributes -> {
-				attributes.attribute(transformed, true);
-			});
+			if (lib.getAsString().split(":").length < 4) {
+				((ModuleDependency) dep).attributes(attributes -> {
+					attributes.attribute(transformed, true);
+				});
+			}
 		}
 
 		// TODO: Read launch configs from the JSON too
@@ -163,12 +167,12 @@ public class ForgeUserdevProvider extends DependencyProvider {
 
 	public abstract static class RemoveNameProvider implements TransformAction<TransformParameters.None> {
 		@InputArtifact
-		public abstract File getInput();
+		public abstract Provider<FileSystemLocation> getInput();
 
 		@Override
 		public void transform(TransformOutputs outputs) {
 			try {
-				File input = getInput();
+				File input = getInput().get().getAsFile();
 				//architectury-loom-forge-dependencies-transformed
 				File output = outputs.file(input.getName() + "-alfd-transformed.jar");
 				Files.copy(input.toPath(), output.toPath(), StandardCopyOption.REPLACE_EXISTING);

@@ -124,8 +124,8 @@ public class Constants {
 			public static final String TERMINAL_CONSOLE_APPENDER = "1.2.0";
 			public static final String JETBRAINS_ANNOTATIONS = "19.0.0";
 			public static final String JAVAX_ANNOTATIONS = "3.0.2";
-			public static final String FORGE_RUNTIME = "$LOOM_VERSION"; // replaced with current version at build time
-			public static final String ACCESS_TRANSFORMERS = "8.0.4";
+			public static final String FORGE_RUNTIME = "1.0.1";
+			public static final String ACCESS_TRANSFORMERS = "3.0.1";
 			public static final String SPECIAL_SOURCE = "1.10.0";
 			public static final String VIGNETTE = "0.2.0.10";
 

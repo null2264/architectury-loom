@@ -22,44 +22,50 @@
  * SOFTWARE.
  */
 
-package dev.architectury.loom.forgeruntime.mixin;
+package net.fabricmc.loom.test.integration.forge
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import net.fabricmc.loom.test.util.ArchiveAssertionsTrait
+import net.fabricmc.loom.test.util.ProjectTestTrait
+import spock.lang.Specification
+import spock.lang.Stepwise
+import spock.lang.Unroll
 
-import cpw.mods.modlauncher.api.IEnvironment;
-import cpw.mods.modlauncher.api.ITransformationService;
-import cpw.mods.modlauncher.api.ITransformer;
-import cpw.mods.modlauncher.api.IncompatibleEnvironmentException;
+import static java.lang.System.setProperty
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-public class ForgeLoomMixinRemapperInjectorService implements ITransformationService {
+@Stepwise
+class ForgeSimpleTest extends Specification implements ProjectTestTrait, ArchiveAssertionsTrait {
 	@Override
-	public String name() {
-		return "ForgeLoomMixinRemapperInjector";
+	String name() {
+		"forge/simple"
 	}
 
-	@Override
-	public void initialize(IEnvironment environment) {
+	@Unroll
+	def "build for #mcVersion #forgeVersion"() {
+		given:
+			setProperty('loom.test.mc_version', mcVersion)
+			setProperty('loom.test.forge_version', forgeVersion)
+		when:
+			def result = create("build", DEFAULT_GRADLE)
+		then:
+			result.task(":build").outcome == SUCCESS
+		where:
+			mcVersion | forgeVersion
+			'1.14.4'  | '28.2.23'
+			'1.16.5'  | '36.2.2'
 	}
 
-	@Override
-	public void beginScanning(IEnvironment environment) {
-		try {
-			// Call via reflection so it doesn't crash if mixin doesn't exist at all
-			Class.forName("dev.architectury.loom.forgeruntime.mixin.ForgeLoomMixinRemapperInjectorServiceImpl").getDeclaredMethod("attach")
-					.invoke(null);
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public void onLoad(IEnvironment env, Set<String> otherServices) throws IncompatibleEnvironmentException {
-	}
-
-	@Override
-	public List<ITransformer> transformers() {
-		return Collections.emptyList();
+	@Unroll
+	def "modern build for #mcVersion #forgeVersion"() {
+		given:
+			setProperty('loom.test.mc_version', mcVersion)
+			setProperty('loom.test.forge_version', forgeVersion)
+		when:
+			def result = create("build", DEFAULT_GRADLE)
+		then:
+			result.task(":build").outcome == SUCCESS
+		where:
+			mcVersion | forgeVersion
+			'1.17.1'  | '37.0.13'
 	}
 }
