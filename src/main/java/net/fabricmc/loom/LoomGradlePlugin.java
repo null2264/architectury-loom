@@ -57,6 +57,7 @@ public class LoomGradlePlugin implements Plugin<Project> {
 			System.setProperty("loom.printed.logged", String.join(",", loggedVersions));
 			project.getLogger().lifecycle("Architectury Loom: " + LOOM_VERSION);
 			project.getLogger().lifecycle("You are using an unstable version of Architectury Loom! Please report any issues found!");
+			project.getLogger().lifecycle("This version of Architectury Loom currently does not function with <1.17 Forge, this will be addressed in the future!");
 		}
 
 		refreshDeps = project.getGradle().getStartParameter().isRefreshDependencies() || "true".equals(System.getProperty("loom.refresh"));
