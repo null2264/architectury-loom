@@ -76,7 +76,6 @@ import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
 import net.minecraftforge.binarypatcher.ConsoleTool;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
@@ -373,21 +372,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		if (getExtension().isForgeAndOfficial()) {
 			return getMojmapTSrg2EpicWhyDoesThisExist(true);
 		} else {
-			// processTsrg2(file);
-		}
-
-		return getExtension().getMcpConfigProvider().getMappings();
-	}
-
-	private void processTsrg2(Path[] srg) throws IOException {
-		String content;
-
-		try (InputStream stream = new BufferedInputStream(Files.newInputStream(srg[0]))) {
-			content = IOUtils.toString(stream, StandardCharsets.UTF_8);
-		}
-
-		if (content.startsWith("tsrg2")) {
-			Tsrg2Utils.convert(new StringReader(content), Files.newBufferedWriter(srg[0], StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
+			return getExtension().getMcpConfigProvider().getMappings();
 		}
 	}
 
@@ -401,23 +386,28 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 	}
 
 	public static Path getMojmapTsrg(LoomGradleExtension extension) throws IOException {
-		Path mojmap = Files.createTempFile("mojang-in-tsrg", null);
+		Path path = extension.getUserCache().toPath().resolve("mojmap-" + extension.getMinecraftProvider().getMinecraftVersion() + ".tsrg");
 
-		try (BufferedWriter writer = Files.newBufferedWriter(mojmap, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-			Tsrg2Utils.writeTsrg(visitor -> visitMojmap(visitor, extension), MappingNamespace.NAMED.stringValue(), false, writer);
+		if (Files.notExists(path)) {
+			try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+				Tsrg2Utils.writeTsrg(visitor -> visitMojmap(visitor, extension),
+						MappingNamespace.NAMED.stringValue(), false, writer);
+			}
 		}
 
-		return mojmap;
+		return path;
 	}
 
 	public static Path getMojmapTsrg2(LoomGradleExtension extension) throws IOException {
-		Path mojmap = Files.createTempFile("mojang-in-tsrg2", null);
+		Path path = extension.getUserCache().toPath().resolve("mojmap-" + extension.getMinecraftProvider().getMinecraftVersion() + ".tsrg2");
 
-		try (BufferedWriter writer = Files.newBufferedWriter(mojmap, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-			Tsrg2Utils.writeTsrg2(visitor -> visitMojmap(visitor, extension), writer);
+		if (Files.notExists(path)) {
+			try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+				Tsrg2Utils.writeTsrg2(visitor -> visitMojmap(visitor, extension), writer);
+			}
 		}
 
-		return mojmap;
+		return path;
 	}
 
 	public Path getMojmapTSrg2EpicWhyDoesThisExist(boolean hasParameters) throws IOException {
@@ -741,10 +731,12 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 
 		logger.lifecycle(":copying resources");
 
-		// Copy resources
-//		MinecraftProvider minecraftProvider = getExtension().getMinecraftProvider();
-//		copyNonClassFiles(minecraftProvider.minecraftClientJar, minecraftMergedPatchedSrgJar);
-//		copyNonClassFiles(minecraftProvider.minecraftServerJar, minecraftMergedPatchedSrgJar);
+		if (getExtension().isForgeAndNotOfficial()) {
+			// Copy resources
+			MinecraftProvider minecraftProvider = getExtension().getMinecraftProvider();
+			copyNonClassFiles(minecraftProvider.minecraftClientJar, minecraftMergedPatchedSrgJar);
+			copyNonClassFiles(minecraftProvider.minecraftServerJar, minecraftMergedPatchedSrgJar);
+		}
 	}
 
 	private void walkFileSystems(File source, File target, Predicate<Path> filter, Function<FileSystem, Iterable<Path>> toWalk, FsPathConsumer action)

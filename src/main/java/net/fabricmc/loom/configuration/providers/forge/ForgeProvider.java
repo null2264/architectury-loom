@@ -48,8 +48,6 @@ public class ForgeProvider extends DependencyProvider {
 		version = new ForgeVersion(dependency.getResolvedVersion());
 		addDependency(dependency.getDepString() + ":userdev", Constants.Configurations.FORGE_USERDEV);
 		addDependency(dependency.getDepString() + ":installer", Constants.Configurations.FORGE_INSTALLER);
-
-		
 	}
 
 	public ForgeVersion getVersion() {
