@@ -68,6 +68,7 @@ import net.fabricmc.loom.util.FileSystemUtil;
 public class ForgeUserdevProvider extends DependencyProvider {
 	private File userdevJar;
 	private JsonObject json;
+	private Consumer<Runnable> postPopulationScheduler;
 
 	public ForgeUserdevProvider(Project project) {
 		super(project);
@@ -75,6 +76,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 
 	@Override
 	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
+		this.postPopulationScheduler = postPopulationScheduler;
 		Attribute<Boolean> transformed = Attribute.of("architectury-loom-forge-dependencies-transformed", Boolean.class);
 
 		getProject().getDependencies().registerTransform(RemoveNameProvider.class, spec -> {
@@ -203,27 +205,31 @@ public class ForgeUserdevProvider extends DependencyProvider {
 			} else if (key.equals("runtime_classpath_file")) {
 				Path path = getExtension().getProjectPersistentCache().toPath().resolve("forge_runtime_classpath.txt");
 
-				try {
-					Files.write(path, runtimeClasspath().stream()
-									.map(File::getAbsolutePath)
-									.collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8),
-							StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+				postPopulationScheduler.accept(() -> {
+					try {
+						Files.write(path, runtimeClasspath().stream()
+										.map(File::getAbsolutePath)
+										.collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8),
+								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				});
 
 				string = path.toAbsolutePath().toString();
 			} else if (key.equals("minecraft_classpath_file")) {
 				Path path = getExtension().getProjectPersistentCache().toPath().resolve("forge_minecraft_classpath.txt");
 
-				try {
-					Files.write(path, minecraftClasspath().stream()
-									.map(File::getAbsolutePath)
-									.collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8),
-							StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+				postPopulationScheduler.accept(() -> {
+					try {
+						Files.write(path, minecraftClasspath().stream()
+										.map(File::getAbsolutePath)
+										.collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8),
+								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				});
 
 				string = path.toAbsolutePath().toString();
 			} else if (key.equals("asset_index")) {

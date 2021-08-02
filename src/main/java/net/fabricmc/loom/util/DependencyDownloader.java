@@ -25,6 +25,7 @@
 package net.fabricmc.loom.util;
 
 import java.io.File;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.gradle.api.Project;
@@ -68,18 +69,19 @@ public final class DependencyDownloader {
 		return files;
 	}
 
-	private static Configuration copy(Configuration configuration, boolean transitive) {
+	private static Set<File> resolve(Configuration configuration, boolean transitive) {
 		Configuration copy = configuration.copy();
-		copy.setTransitive(false);
+		copy.setTransitive(transitive);
+		Set<File> files = new LinkedHashSet<>(copy.resolve());
 
 		for (Configuration extendsForm : configuration.getExtendsFrom()) {
-			copy.extendsFrom(copy(extendsForm, transitive));
+			files.addAll(resolve(extendsForm, transitive));
 		}
 
-		return copy;
+		return files;
 	}
 
 	public static Set<File> resolveFiles(Configuration configuration, boolean transitive) {
-		return copy(configuration, transitive).getFiles();
+		return resolve(configuration, transitive);
 	}
 }
