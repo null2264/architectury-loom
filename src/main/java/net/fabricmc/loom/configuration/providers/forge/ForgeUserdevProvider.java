@@ -236,6 +236,8 @@ public class ForgeUserdevProvider extends DependencyProvider {
 				string = getExtension().getMinecraftProvider().getVersionInfo().getAssetIndex().getFabricId(getExtension().getMinecraftProvider().getMinecraftVersion());
 			} else if (key.equals("assets_root")) {
 				string = new File(getExtension().getUserCache(), "assets").getAbsolutePath();
+			} else if (key.equals("natives")) {
+				string = getExtension().getNativesDirectory().getAbsolutePath();
 			} else if (json.has(key)) {
 				JsonElement element = json.get(key);
 
@@ -264,7 +266,8 @@ public class ForgeUserdevProvider extends DependencyProvider {
 	}
 
 	private Set<File> runtimeClasspath() {
-		Set<File> mcLibs = DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_DEPENDENCIES), false);
+		// Should we actually include the runtime classpath here? Forge doesn't seem to be using this property anyways
+		Set<File> mcLibs = DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_DEPENDENCIES), true);
 		mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_DEPENDENCIES), false));
 		mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_EXTRA), false));
 		mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_NAMED), false));
@@ -273,7 +276,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 	}
 
 	private Set<File> minecraftClasspath() {
-		Set<File> mcLibs = DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_DEPENDENCIES), false);
+		Set<File> mcLibs = DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_DEPENDENCIES), true);
 		mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_DEPENDENCIES), false));
 		mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.FORGE_EXTRA), false));
 		mcLibs.addAll(DependencyDownloader.resolveFiles(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_NAMED), false));

@@ -93,7 +93,6 @@ public final class CompileConfiguration {
 			Configuration forgeUniversalConfig = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_UNIVERSAL);
 			forgeUniversalConfig.setTransitive(false);
 			Configuration forgeDependencies = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_DEPENDENCIES);
-			forgeDependencies.setTransitive(false);
 			Configuration forgeNamed = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_NAMED);
 			forgeNamed.setTransitive(false);
 			Configuration forgeExtra = project.getConfigurations().maybeCreate(Constants.Configurations.FORGE_EXTRA);
