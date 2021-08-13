@@ -353,14 +353,14 @@ public class MinecraftMappedProvider extends DependencyProvider {
 		getProject().getRepositories().flatDir(repository -> repository.dir(getJarDirectory(getExtension().getUserCache(), "mapped")));
 
 		getProject().getDependencies().add(Constants.Configurations.MINECRAFT_NAMED,
-				getProject().getDependencies().module("net.minecraft:minecraft:" + getJarVersionString("mapped")));
+				getProject().getDependencies().module("net.minecraft:" + mappedJarPrefix() + "minecraft:" + getJarVersionString("mapped")));
 	}
 
 	public void initFiles(MinecraftProvider minecraftProvider, MappingsProvider mappingsProvider) {
 		this.minecraftProvider = minecraftProvider;
 		minecraftIntermediaryJar = new File(getExtension().getUserCache(), "minecraft-" + getJarVersionString("intermediary") + ".jar");
 		minecraftSrgJar = !getExtension().isForge() ? null : new File(getExtension().getUserCache(), "minecraft-" + getJarVersionString("srg") + ".jar");
-		minecraftMappedJar = new File(getJarDirectory(getExtension().getUserCache(), "mapped"), "minecraft-" + getJarVersionString("mapped") + ".jar");
+		minecraftMappedJar = new File(getJarDirectory(getExtension().getUserCache(), "mapped"), mappedJarPrefix() + "minecraft-" + getJarVersionString("mapped") + ".jar");
 		inputJar = getExtension().isForge() ? mappingsProvider.patchedProvider.getMergedJar() : minecraftProvider.getMergedJar();
 
 		if (getExtension().isForgeAndNotOfficial()) {
@@ -374,6 +374,10 @@ public class MinecraftMappedProvider extends DependencyProvider {
 			forgeSrgJar = null;
 			forgeMappedJar = null;
 		}
+	}
+
+	protected String mappedJarPrefix() {
+		return getExtension().isForgeAndOfficial() ? "forge-" : "";
 	}
 
 	private String getForgeVersion() {
