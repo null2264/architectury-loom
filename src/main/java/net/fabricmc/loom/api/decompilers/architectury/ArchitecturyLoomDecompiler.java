@@ -24,14 +24,7 @@
 
 package net.fabricmc.loom.api.decompilers.architectury;
 
-import org.gradle.api.Action;
-import org.gradle.api.Project;
-import org.gradle.api.artifacts.ConfigurationContainer;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
-import org.gradle.process.ExecResult;
-import org.gradle.process.JavaExecSpec;
 
 import net.fabricmc.loom.task.GenerateSourcesTask;
 
@@ -39,23 +32,4 @@ public interface ArchitecturyLoomDecompiler {
 	String name();
 
 	void decompile(Logger logger, GenerateSourcesTask.DecompileParams params);
-
-	static ExecResult javaexec(Project project, Action<? super JavaExecSpec> action) {
-		return project.javaexec(spec -> {
-			spec.classpath(getClasspath(project));
-			action.execute(spec);
-		});
-	}
-
-	private static Object getClasspath(Project project) {
-		return getRuntimeClasspath(project.getRootProject().getPlugins().hasPlugin("fabric-loom") ? project.getRootProject() : project);
-	}
-
-	private static FileCollection getRuntimeClasspath(Project project) {
-		ConfigurationContainer configurations = project.getBuildscript().getConfigurations();
-		DependencyHandler handler = project.getDependencies();
-		return configurations.getByName("classpath")
-				.plus(project.getRootProject().getBuildscript().getConfigurations().getByName("classpath"))
-				.plus(configurations.detachedConfiguration(handler.localGroovy()));
-	}
 }
