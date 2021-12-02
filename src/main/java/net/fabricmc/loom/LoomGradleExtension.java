@@ -119,6 +119,8 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 	// ===================
 	//  Architectury Loom
 	// ===================
+	Project getProject();
+
 	default PatchProvider getPatchProvider() {
 		return getDependencyManager().getProvider(PatchProvider.class);
 	}

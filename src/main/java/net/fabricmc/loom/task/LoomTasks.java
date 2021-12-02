@@ -34,9 +34,11 @@ import org.gradle.api.tasks.TaskContainer;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.decompilers.LoomDecompiler;
+import net.fabricmc.loom.api.decompilers.architectury.ArchitecturyLoomDecompiler;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.ide.SetupIntelijRunConfigs;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
+import net.fabricmc.loom.task.architectury.ArchitecturyGenerateSourcesTask;
 import net.fabricmc.loom.util.Constants;
 
 public final class LoomTasks {
@@ -178,6 +180,20 @@ public final class LoomTasks {
 				String taskName = "genSourcesWith" + decompiler.name();
 				// Decompiler will be passed to the constructor of GenerateSourcesTask
 				tasks.register(taskName, GenerateSourcesTask.class, decompiler).configure(task -> {
+					task.setDescription("Decompile minecraft using %s.".formatted(decompiler.name()));
+					task.setGroup(Constants.TaskGroup.FABRIC);
+					task.getInputJar().set(inputJar);
+
+					if (mappingsProvider.hasUnpickDefinitions()) {
+						task.dependsOn(tasks.getByName("unpickJar"));
+					}
+				});
+			}
+
+			for (ArchitecturyLoomDecompiler decompiler : extension.getArchGameDecompilers().get()) {
+				String taskName = "genSourcesWith" + decompiler.name();
+				// Decompiler will be passed to the constructor of ArchitecturyGenerateSourcesTask
+				tasks.register(taskName, ArchitecturyGenerateSourcesTask.class, decompiler).configure(task -> {
 					task.setDescription("Decompile minecraft using %s.".formatted(decompiler.name()));
 					task.setGroup(Constants.TaskGroup.FABRIC);
 					task.getInputJar().set(inputJar);

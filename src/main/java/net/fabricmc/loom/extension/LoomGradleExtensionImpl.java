@@ -87,7 +87,7 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	}
 
 	@Override
-	protected Project getProject() {
+	public Project getProject() {
 		return project;
 	}
 
