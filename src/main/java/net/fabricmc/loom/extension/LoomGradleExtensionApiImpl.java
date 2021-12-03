@@ -87,7 +87,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	// ===================
 	//  Architectury Loom
 	// ===================
-	protected final ListProperty<ArchitecturyLoomDecompiler> archDecompilers;
+	private final ListProperty<ArchitecturyLoomDecompiler> archDecompilers;
 	private Provider<ModPlatform> platform;
 	private boolean silentMojangMappingsLicense = false;
 	public Boolean generateSrgTiny = null;

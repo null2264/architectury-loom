@@ -38,7 +38,6 @@ import net.fabricmc.loom.api.decompilers.architectury.ArchitecturyLoomDecompiler
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.ide.SetupIntelijRunConfigs;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
-import net.fabricmc.loom.task.architectury.ArchitecturyGenerateSourcesTask;
 import net.fabricmc.loom.util.Constants;
 
 public final class LoomTasks {

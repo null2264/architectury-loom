@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.task.architectury;
+package net.fabricmc.loom.task;
 
 import java.io.IOException;
 
@@ -35,8 +35,6 @@ import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import net.fabricmc.loom.api.decompilers.architectury.ArchitecturyLoomDecompiler;
-import net.fabricmc.loom.task.AbstractLoomTask;
-import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.OperatingSystem;
 
@@ -72,7 +70,7 @@ public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
 		params.getSourcesDestinationJar().set(GenerateSourcesTask.getMappedJarFileWithSuffix(getProject(), "-sources.jar"));
 		params.getLinemap().set(GenerateSourcesTask.getMappedJarFileWithSuffix(getProject(), "-sources.lmap"));
 		params.getLinemapJar().set(GenerateSourcesTask.getMappedJarFileWithSuffix(getProject(), "-linemapped.jar"));
-		params.getMappings().set(GenerateSourcesTask.getMappings(getExtension()).toFile());
+		params.getMappings().set(GenerateSourcesTask.getMappings(getProject(), getExtension()).toFile());
 
 		params.getClassPath().setFrom(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_DEPENDENCIES));
 
