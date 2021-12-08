@@ -31,6 +31,7 @@ import java.io.UncheckedIOException;
 import com.google.common.base.Preconditions;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.TaskProvider;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.decompilers.LoomDecompiler;
@@ -60,12 +61,12 @@ public final class LoomTasks {
 		tasks.register("downloadAssets", DownloadAssetsTask.class, t -> t.setDescription("Downloads required assets for Fabric."));
 		tasks.register("remapSourcesJar", RemapSourcesJarTask.class, t -> t.setDescription("Remaps the project sources jar to intermediary names."));
 
-		tasks.getByName("check").dependsOn(
-				tasks.register("validateAccessWidener", ValidateAccessWidenerTask.class, t -> {
-					t.setDescription("Validate all the rules in the access widener against the Minecraft jar");
-					t.setGroup("verification");
-				})
-		);
+		TaskProvider<ValidateAccessWidenerTask> validateAccessWidener = tasks.register("validateAccessWidener", ValidateAccessWidenerTask.class, t -> {
+			t.setDescription("Validate all the rules in the access widener against the Minecraft jar");
+			t.setGroup("verification");
+		});
+
+		tasks.named("check").configure(task -> task.dependsOn(validateAccessWidener));
 
 		registerIDETasks(tasks);
 		registerRunTasks(tasks, project);
@@ -184,8 +185,10 @@ public final class LoomTasks {
 					task.getInputJar().set(inputJar);
 
 					if (mappingsProvider.hasUnpickDefinitions()) {
-						task.dependsOn(tasks.getByName("unpickJar"));
+						task.dependsOn(tasks.named("unpickJar"));
 					}
+
+					task.dependsOn(tasks.named("validateAccessWidener"));
 				});
 			}
 
@@ -207,7 +210,7 @@ public final class LoomTasks {
 				task.setDescription("Decompile minecraft using the default decompiler.");
 				task.setGroup(Constants.TaskGroup.FABRIC);
 
-				task.dependsOn(project.getTasks().getByName("genSourcesWithCfr"));
+				task.dependsOn(project.getTasks().named("genSourcesWithCfr"));
 			});
 		});
 	}

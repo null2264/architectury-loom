@@ -8,6 +8,7 @@ on:
       - 'dev/0.8'
       - 'dev/0.9'
       - 'dev/0.10.0'
+      - 'dev/0.11.0'
 
 jobs:
   build:
@@ -16,10 +17,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-      - name: Set up JDK 16
+      - name: Set up JDK 17
         uses: actions/setup-java@v1
         with:
-          java-version: 16
+          java-version: 17
       - name: Upload to Maven
         run: ./gradlew publish --stacktrace
         env:
