@@ -44,6 +44,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -57,7 +58,6 @@ import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.Pair;
 import net.fabricmc.loom.util.TinyRemapperHelper;
 import net.fabricmc.loom.util.ZipUtils;
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 public class InterfaceInjectionProcessor implements JarProcessor {
 	// Filename used to store hash of injected interfaces in processed jar file

@@ -99,6 +99,7 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 	}
 
 	public void configureMixin() {
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		ConfigurationContainer configs = project.getConfigurations();
 
 		if (!IdeaUtils.isIdeaSync()) {

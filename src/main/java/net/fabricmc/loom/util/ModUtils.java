@@ -26,11 +26,26 @@ package net.fabricmc.loom.util;
 
 import java.io.File;
 
+import org.gradle.api.logging.Logger;
+
 public final class ModUtils {
 	private ModUtils() {
 	}
 
 	public static boolean isMod(File input) {
 		return ZipUtils.contains(input.toPath(), "fabric.mod.json");
+	}
+
+	public static boolean shouldRemapMod(Logger logger, File input, Object id, boolean forge, String config) {
+		if (ZipUtils.contains(input.toPath(), "architectury.common.marker")) return true;
+		if (forge && ZipUtils.contains(input.toPath(), "META-INF/mods.toml")) return true;
+		if (!forge && isMod(input)) return true;
+
+		if (forge) {
+			logger.lifecycle(":could not find forge mod in " + config + " but forcing: {}", id);
+			return true;
+		}
+
+		return false;
 	}
 }

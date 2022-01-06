@@ -153,7 +153,7 @@ public interface LoomGradleExtensionAPI {
 	// ===================
 	//  Architectury Loom
 	// ===================
-	ListProperty<ArchitecturyLoomDecompiler> getArchGameDecompilers();
+	DomainObjectCollection<ArchitecturyLoomDecompiler> getArchGameDecompilers();
 
 	default void addArchDecompiler(ArchitecturyLoomDecompiler decompiler) {
 		getArchGameDecompilers().add(decompiler);

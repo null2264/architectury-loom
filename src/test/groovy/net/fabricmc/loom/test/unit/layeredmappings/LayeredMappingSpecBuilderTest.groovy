@@ -31,7 +31,6 @@ import net.fabricmc.loom.configuration.providers.mappings.intermediary.Intermedi
 import net.fabricmc.loom.configuration.providers.mappings.mojmap.MojangMappingsSpec
 import net.fabricmc.loom.configuration.providers.mappings.parchment.ParchmentMappingsSpec
 import net.fabricmc.loom.util.ClosureAction
-import spock.lang.Specification
 
 class LayeredMappingSpecBuilderTest extends LayeredMappingsSpecification {
     def "simple mojmap" () {

@@ -31,6 +31,7 @@ import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.AbstractCopyTask;
 import org.gradle.api.tasks.SourceSet;
@@ -54,7 +55,6 @@ import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.extension.MixinExtension;
 import net.fabricmc.loom.task.GenerateSourcesTask;
-import net.fabricmc.loom.task.GenVsCodeProjectTask;
 import net.fabricmc.loom.task.UnpickJarTask;
 import net.fabricmc.loom.util.Constants;
 
@@ -124,6 +124,7 @@ public final class CompileConfiguration {
 		if (extension.supportsInclude()) {
 			extension.createLazyConfiguration(Constants.Configurations.INCLUDE, configuration -> configuration.setTransitive(false)); // Dont get transitive deps
 		}
+
 		extension.createLazyConfiguration(Constants.Configurations.MAPPING_CONSTANTS);
 		extension.createLazyConfiguration(Constants.Configurations.NAMED_ELEMENTS, configuration -> {
 			configuration.setCanBeConsumed(true);

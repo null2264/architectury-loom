@@ -117,6 +117,7 @@ public class ModProcessor {
 
 	private void stripNestedJars(File file) {
 		if (!ZipUtils.contains(file.toPath(), "fabric.mod.json")) return;
+
 		// Strip out all contained jar info as we dont want loader to try and load the jars contained in dev.
 		try {
 			ZipUtils.transformJson(JsonObject.class, file.toPath(), Map.of("fabric.mod.json", json -> {
@@ -174,6 +175,7 @@ public class ModProcessor {
 		if (extension.isForgeAndNotOfficial()) {
 			remapper.readClassPathAsync(mappedProvider.getForgeSrgJar().toPath());
 		}
+
 		remapper.readClassPathAsync(mcDeps);
 
 		final Map<ModDependencyInfo, InputTag> tagMap = new HashMap<>();

@@ -64,8 +64,7 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 	// The extracted server jar from the boostrap, only exists in >=21w39a
 	public File minecraftExtractedServerJar;
 	@Nullable
-	private BundleMetadata serverBundleMetadata;
-	private Boolean isNewerThan21w39a;
+	public BundleMetadata serverBundleMetadata;
 	private File minecraftMergedJar;
 	private File versionManifestJson;
 	private File experimentalVersionsJson;

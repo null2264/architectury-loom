@@ -59,10 +59,10 @@ import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileSystemLocation;
 import org.gradle.api.provider.Provider;
 
+import net.fabricmc.loom.api.ForgeLocalMod;
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
-import net.fabricmc.loom.api.ForgeLocalMod;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.FileSystemUtil;
@@ -254,7 +254,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 			} else if (key.equals("assets_root")) {
 				string = new File(getDirectories().getUserCache(), "assets").getAbsolutePath();
 			} else if (key.equals("natives")) {
-				string = getMinecraftProvider().nativesDir().getAbsolutePath();
+				string = getExtension().getFiles().getNativesDirectory(getProject()).getAbsolutePath();
 			} else if (key.equals("source_roots")) {
 				List<String> modClasses = new ArrayList<>();
 

@@ -91,7 +91,7 @@ public record AccessWidenerFile(
 						content
 				);
 			}
-			
+
 			return null;
 		}
 

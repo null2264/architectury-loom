@@ -24,16 +24,24 @@
 
 package net.fabricmc.loom.task;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
@@ -41,6 +49,13 @@ import javax.inject.Inject;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
+import dev.architectury.tinyremapper.InputTag;
+import dev.architectury.tinyremapper.OutputConsumerPath;
+import dev.architectury.tinyremapper.TinyRemapper;
+import dev.architectury.tinyremapper.TinyUtils;
+import org.cadixdev.at.AccessTransformSet;
+import org.cadixdev.at.io.AccessTransformFormats;
+import org.cadixdev.lorenz.MappingSet;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -48,6 +63,7 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.SourceSet;
@@ -69,11 +85,11 @@ import net.fabricmc.loom.extension.MixinExtension;
 import net.fabricmc.loom.task.service.JarManifestService;
 import net.fabricmc.loom.task.service.MappingsService;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.FileSystemUtil;
+import net.fabricmc.loom.util.LfWriter;
 import net.fabricmc.loom.util.ZipUtils;
-import net.fabricmc.tinyremapper.InputTag;
-import net.fabricmc.tinyremapper.OutputConsumerPath;
-import net.fabricmc.tinyremapper.TinyRemapper;
-import net.fabricmc.tinyremapper.TinyUtils;
+import net.fabricmc.loom.util.aw2at.Aw2At;
+import net.fabricmc.lorenztiny.TinyMappingsReader;
 
 public abstract class RemapJarTask extends AbstractRemapJarTask {
 	private static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
@@ -83,6 +99,17 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 	@Input
 	public abstract Property<Boolean> getAddNestedDependencies();
+
+	/**
+	 * Gets the jar paths to the access wideners that will be converted to ATs for Forge runtime.
+	 * If you specify multiple files, they will be merged into one.
+	 *
+	 * <p>The specified files will be converted and removed from the final jar.
+	 *
+	 * @return the property containing access widener paths in the final jar
+	 */
+	@Input
+	public abstract SetProperty<String> getAtAccessWideners();
 
 	@Inject
 	public RemapJarTask() {
@@ -100,7 +127,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		final LoomGradleExtension extension = LoomGradleExtension.get(getProject());
 
 		submitWork(RemapAction.class, params -> {
-			if (getAddNestedDependencies().get()) {
+			if (extension.supportsInclude() && getAddNestedDependencies().get()) {
 				params.getNestedJars().from(getNestedJars());
 			}
 
@@ -114,6 +141,14 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			if (legacyMixin) {
 				params.getMixinMappings().from(extension.getAllMixinMappings());
 				setupLegacyMixinRefmapRemapping(params);
+			} else if (extension.isForge()) {
+				throw new RuntimeException("Forge must have useLegacyMixinAp enabled");
+			}
+
+			params.getForge().set(extension.isForge());
+
+			if (extension.isForge()) {
+				params.getAtAccessWideners().set(getAtAccessWideners());
 			}
 		});
 	}
@@ -175,7 +210,12 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		ConfigurableFileCollection getNestedJars();
 		ConfigurableFileCollection getRemapClasspath();
 		ConfigurableFileCollection getMixinMappings();
+
 		ListProperty<Provider<MappingsService>> getMappings();
+
+		Property<Boolean> getForge();
+
+		SetProperty<String> getAtAccessWideners();
 
 		Property<Boolean> getUseMixinExtension();
 
@@ -201,7 +241,11 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				remapAccessWidener();
 				addRefmaps();
 				addNestedJars();
-				modifyJarManifest();
+
+				if (!getParameters().getForge().get()) {
+					modifyJarManifest();
+				}
+
 				rewriteJar();
 
 				tinyRemapper.finish();
@@ -241,6 +285,62 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 			// Finally, replace the output with the remaped aw
 			ZipUtils.replace(outputFile, accessWidenerFile.path(), remapped);
+		}
+
+		private void convertAwToAt() throws IOException {
+			if (!this.getParameters().getAtAccessWideners().isPresent()) {
+				return;
+			}
+
+			Set<String> atAccessWideners = this.getParameters().getAtAccessWideners().get();
+
+			if (atAccessWideners.isEmpty()) {
+				return;
+			}
+
+			AccessTransformSet at = AccessTransformSet.create();
+			File jar = inputFile.toFile();
+
+			try (FileSystemUtil.Delegate fileSystem = FileSystemUtil.getJarFileSystem(jar, false)) {
+				FileSystem fs = fileSystem.get();
+				Path atPath = fs.getPath(Constants.Forge.ACCESS_TRANSFORMER_PATH);
+
+				if (Files.exists(atPath)) {
+					throw new FileAlreadyExistsException("Jar " + jar + " already contains an access transformer - cannot convert AWs!");
+				}
+
+				for (String aw : atAccessWideners) {
+					Path awPath = fs.getPath(aw);
+
+					if (Files.notExists(awPath)) {
+						throw new NoSuchFileException("Could not find AW '" + aw + "' to convert into AT!");
+					}
+
+					try (BufferedReader reader = Files.newBufferedReader(awPath, StandardCharsets.UTF_8)) {
+						at.merge(Aw2At.toAccessTransformSet(reader));
+					}
+
+					Files.delete(awPath);
+				}
+
+				List<Provider<MappingsService>> providers = getParameters().getMappings().get();
+
+				// This is a bit of a hack, but we are going to get the first one, it should be the default one
+				if (providers.isEmpty()) {
+					throw new IllegalStateException("No mappings provider found for AW to AT conversion!");
+				}
+
+				MappingsService service = providers.get(0).get();
+
+				try (TinyMappingsReader reader = new TinyMappingsReader(service.getMemoryMappingTree(), service.getFromNamespace(), service.getToNamespace())) {
+					MappingSet mappingSet = reader.read();
+					at = at.remap(mappingSet);
+				}
+
+				try (Writer writer = new LfWriter(Files.newBufferedWriter(atPath))) {
+					AccessTransformFormats.FML.write(writer, at);
+				}
+			}
 		}
 
 		private static byte[] remapAccessWidener(byte[] input, Remapper asmRemapper, String targetNamespace) {
@@ -313,7 +413,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			}
 
 			if (getParameters().getUseMixinExtension().get()) {
-				builder.extension(new net.fabricmc.tinyremapper.extension.mixin.MixinExtension());
+				builder.extension(new dev.architectury.tinyremapper.extension.mixin.MixinExtension());
 			}
 
 			TinyRemapper remapper = builder.build();

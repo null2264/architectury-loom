@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+import dev.architectury.tinyremapper.IMappingProvider;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
@@ -40,7 +41,6 @@ import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.util.TinyRemapperHelper;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
-import net.fabricmc.tinyremapper.IMappingProvider;
 
 public abstract class MappingsService implements BuildService<MappingsService.Params>, AutoCloseable {
 	interface Params extends BuildServiceParameters {
@@ -66,7 +66,7 @@ public abstract class MappingsService implements BuildService<MappingsService.Pa
 	public static Provider<MappingsService> createDefault(Project project, String from, String to) {
 		final MappingsProviderImpl mappingsProvider = LoomGradleExtension.get(project).getMappingsProvider();
 		final String name = mappingsProvider.getBuildServiceName("mappingsProvider", from, to);
-		return MappingsService.create(project, name, mappingsProvider.tinyMappings.toFile(), from, to, false);
+		return MappingsService.create(project, name, (from.equals("srg") || to.equals("srg")) && LoomGradleExtension.get(project).shouldGenerateSrgTiny() ? mappingsProvider.tinyMappingsWithSrg.toFile() : mappingsProvider.tinyMappings.toFile(), from, to, false);
 	}
 
 	private IMappingProvider mappingProvider = null;

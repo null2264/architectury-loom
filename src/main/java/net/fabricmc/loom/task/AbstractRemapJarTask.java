@@ -43,6 +43,7 @@ import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.util.SourceRemapper;
 import net.fabricmc.loom.util.ZipReprocessorUtil;
 
 public abstract class AbstractRemapJarTask extends Jar {
@@ -64,7 +65,7 @@ public abstract class AbstractRemapJarTask extends Jar {
 	@Inject
 	public AbstractRemapJarTask() {
 		getSourceNamespace().convention(MappingsNamespace.NAMED.toString()).finalizeValueOnRead();
-		getTargetNamespace().convention(MappingsNamespace.INTERMEDIARY.toString()).finalizeValueOnRead();
+		getTargetNamespace().convention(SourceRemapper.intermediary(getProject())).finalizeValueOnRead();
 	}
 
 	public final <P extends AbstractRemapParams> void submitWork(Class<? extends AbstractRemapAction<P>> workAction, Action<P> action) {

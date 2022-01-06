@@ -89,7 +89,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	// ===================
 	//  Architectury Loom
 	// ===================
-	private final ListProperty<ArchitecturyLoomDecompiler> archDecompilers;
+	private final DomainObjectCollection<ArchitecturyLoomDecompiler> archDecompilers;
 	private Provider<ModPlatform> platform;
 	private boolean silentMojangMappingsLicense = false;
 	public Boolean generateSrgTiny = null;
@@ -142,8 +142,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 		})::get);
 		this.launchConfigs = project.container(LaunchProviderSettings.class,
 				baseName -> new LaunchProviderSettings(project, baseName));
-		this.archDecompilers = project.getObjects().listProperty(ArchitecturyLoomDecompiler.class)
-				.empty();
+		this.archDecompilers = project.getObjects().domainObjectSet(ArchitecturyLoomDecompiler.class);
 	}
 
 	@Override
@@ -300,7 +299,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	}
 
 	@Override
-	public ListProperty<ArchitecturyLoomDecompiler> getArchGameDecompilers() {
+	public DomainObjectCollection<ArchitecturyLoomDecompiler> getArchGameDecompilers() {
 		return archDecompilers;
 	}
 

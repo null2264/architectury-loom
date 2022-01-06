@@ -89,19 +89,6 @@ public final class LoomTasks {
 			t.dependsOn("downloadAssets");
 			t.setGroup(Constants.TaskGroup.IDE);
 		});
-
-		tasks.register("genIntelliJRuns", AbstractLoomTask.class, t -> {
-			t.setDescription("Generates IntelliJ IDEA launch configurations.");
-			t.dependsOn("downloadAssets");
-			t.setGroup("ide");
-			t.doLast(task -> {
-				try {
-					SetupIntelijRunConfigs.generate(task.getProject(), true);
-				} catch (IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			});
-		});
 	}
 
 	private static void registerRunTasks(TaskContainer tasks, Project project) {
@@ -148,19 +135,14 @@ public final class LoomTasks {
 			});
 		});
 
-			for (ArchitecturyLoomDecompiler decompiler : extension.getArchGameDecompilers().get()) {
-				String taskName = "genSourcesWith" + decompiler.name();
-				// Decompiler will be passed to the constructor of ArchitecturyGenerateSourcesTask
-				tasks.register(taskName, ArchitecturyGenerateSourcesTask.class, decompiler).configure(task -> {
-					task.setDescription("Decompile minecraft using %s.".formatted(decompiler.name()));
-					task.setGroup(Constants.TaskGroup.FABRIC);
-					task.getInputJar().set(inputJar);
-
-					if (mappingsProvider.hasUnpickDefinitions()) {
-						task.dependsOn(tasks.getByName("unpickJar"));
-					}
-				});
-			}
+		LoomGradleExtension.get(project).getArchGameDecompilers().configureEach(decompiler -> {
+			String taskName = "genSourcesWith" + decompiler.name();
+			// Decompiler will be passed to the constructor of ArchitecturyGenerateSourcesTask
+			tasks.register(taskName, ArchitecturyGenerateSourcesTask.class, decompiler).configure(task -> {
+				task.setDescription("Decompile minecraft using %s.".formatted(decompiler.name()));
+				task.setGroup(Constants.TaskGroup.FABRIC);
+			});
+		});
 
 		tasks.register("genSources", task -> {
 			task.setDescription("Decompile minecraft using the default decompiler.");

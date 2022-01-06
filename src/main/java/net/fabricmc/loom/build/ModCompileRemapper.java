@@ -94,7 +94,7 @@ public class ModCompileRemapper {
 					String name = extension.isForgeAndOfficial() ? "B" + checksum.get() : artifact.getModuleVersion().getId().getName();
 					String version = extension.isForgeAndOfficial() ? "B" + checksum.get() : replaceIfNullOrEmpty(artifact.getModuleVersion().getId().getVersion(), () -> Checksum.truncatedSha256(artifact.getFile()));
 
-					if (!ModUtils.shouldRemapMod(artifact.getFile(), artifact.getId(), extension.isForge(), sourceConfig.getName())) {
+					if (!ModUtils.shouldRemapMod(project.getLogger(), artifact.getFile(), artifact.getId(), extension.isForge(), sourceConfig.getName())) {
 						addToRegularCompile(project, regularConfig, artifact);
 						continue;
 					}
@@ -121,7 +121,7 @@ public class ModCompileRemapper {
 
 					// Create a mod dependency for each file in the file collection
 					for (File artifact : files) {
-						if (!ModUtils.shouldRemapMod(artifact, artifact.getName(), extension.isForge(), sourceConfig.getName())) {
+						if (!ModUtils.shouldRemapMod(project.getLogger(), artifact, artifact.getName(), extension.isForge(), sourceConfig.getName())) {
 							dependencies.add(regularConfig.getName(), project.files(artifact));
 							continue;
 						}

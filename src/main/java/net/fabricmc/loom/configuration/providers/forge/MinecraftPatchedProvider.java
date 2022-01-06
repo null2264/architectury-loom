@@ -57,6 +57,7 @@ import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -338,7 +339,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 
 	private void createSrgJars(Logger logger) throws Exception {
 		MinecraftProviderImpl minecraftProvider = getExtension().getMinecraftProvider();
-		produceSrgJar(getExtension().isForgeAndOfficial(), minecraftProvider.minecraftClientJar.toPath(), minecraftProvider.getMinecraftServerJar().toPath());
+		produceSrgJar(getExtension().isForgeAndOfficial(), minecraftProvider.minecraftClientJar.toPath(), MoreObjects.firstNonNull(minecraftProvider.minecraftExtractedServerJar, minecraftProvider.minecraftServerJar).toPath());
 	}
 
 	private void produceSrgJar(boolean official, Path clientJar, Path serverJar) throws IOException {
@@ -480,7 +481,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 	private void accessTransformForge(Logger logger) throws Exception {
 		MinecraftProviderImpl minecraftProvider = getExtension().getMinecraftProvider();
 		List<File> toDelete = new ArrayList<>();
-		String atDependency = Constants.Dependencies.ACCESS_TRANSFORMERS + (minecraftProvider.isNewerThan21w39a() ? Constants.Dependencies.Versions.ACCESS_TRANSFORMERS_NEW : Constants.Dependencies.Versions.ACCESS_TRANSFORMERS);
+		String atDependency = Constants.Dependencies.ACCESS_TRANSFORMERS + (minecraftProvider.serverBundleMetadata != null ? Constants.Dependencies.Versions.ACCESS_TRANSFORMERS_NEW : Constants.Dependencies.Versions.ACCESS_TRANSFORMERS);
 		FileCollection classpath = DependencyDownloader.download(getProject(), atDependency);
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -653,7 +654,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 			// Copy resources
 			MinecraftProviderImpl minecraftProvider = getExtension().getMinecraftProvider();
 			copyNonClassFiles(minecraftProvider.minecraftClientJar, minecraftMergedPatchedSrgJar);
-			copyNonClassFiles(minecraftProvider.getMinecraftServerJar(), minecraftMergedPatchedSrgJar);
+			copyNonClassFiles(MoreObjects.firstNonNull(minecraftProvider.minecraftExtractedServerJar, minecraftProvider.minecraftServerJar), minecraftMergedPatchedSrgJar);
 		}
 	}
 
