@@ -27,21 +27,17 @@ package net.fabricmc.loom.configuration.providers;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.StandardCopyOption;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.io.Files;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.DependencyProvider;
@@ -49,10 +45,9 @@ import net.fabricmc.loom.configuration.providers.minecraft.ManifestVersion;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftLibraryProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftVersionMeta;
 import net.fabricmc.loom.util.Constants;
-import net.fabricmc.loom.util.MirrorUtil;
 import net.fabricmc.loom.util.DownloadUtil;
 import net.fabricmc.loom.util.HashedDownloadUtil;
-import net.fabricmc.loom.util.ZipUtils;
+import net.fabricmc.loom.util.MirrorUtil;
 import net.fabricmc.stitch.merge.JarMerger;
 
 public class MinecraftProviderImpl extends DependencyProvider implements MinecraftProvider {
@@ -68,6 +63,8 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 	public File minecraftServerJar;
 	// The extracted server jar from the boostrap, only exists in >=21w39a
 	public File minecraftExtractedServerJar;
+	@Nullable
+	private BundleMetadata serverBundleMetadata;
 	private Boolean isNewerThan21w39a;
 	private File minecraftMergedJar;
 	private File versionManifestJson;
@@ -108,6 +105,8 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 		} else {
 			downloadJars(getProject().getLogger());
 		}
+
+		serverBundleMetadata = BundleMetadata.fromJar(minecraftServerJar.toPath());
 
 		libraryProvider = new MinecraftLibraryProvider();
 		libraryProvider.provide(this, getProject());
@@ -274,84 +273,25 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 		logger.info(":merging jars");
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		try (JarMerger jarMerger = new JarMerger(minecraftClientJar, getServerJarToMerge(logger), minecraftMergedJar)) {
+		File jarToMerge = minecraftServerJar;
+
+		if (serverBundleMetadata != null) {
+			logger.info(":Extracting server jar from bootstrap");
+
+			if (serverBundleMetadata.versions().size() != 1) {
+				throw new UnsupportedOperationException("Expected only 1 version in META-INF/versions.list, but got %d".formatted(serverBundleMetadata.versions().size()));
+			}
+
+			serverBundleMetadata.versions().get(0).unpackEntry(minecraftServerJar.toPath(), minecraftExtractedServerJar.toPath());
+			jarToMerge = minecraftExtractedServerJar;
+		}
+
+		try (JarMerger jarMerger = new JarMerger(minecraftClientJar, jarToMerge, minecraftMergedJar)) {
 			jarMerger.enableSyntheticParamsOffset();
 			jarMerger.merge();
 		}
 
 		logger.info(":merged jars in " + stopwatch);
-	}
-
-	private File getServerJarToMerge(Logger logger) throws IOException {
-		try (ZipFile zipFile = new ZipFile(minecraftServerJar)) {
-			ZipEntry versionsListEntry = zipFile.getEntry("META-INF/versions.list");
-
-			if (versionsListEntry == null) {
-				// Legacy pre 21w38a jar
-				return minecraftServerJar;
-			}
-
-			logger.info(":Extracting server jar from bootstrap");
-
-			String versionsList;
-
-			try (InputStream is = zipFile.getInputStream(versionsListEntry)) {
-				versionsList = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-			}
-
-			String jarPath = null;
-			String[] versions = versionsList.split("\n");
-
-			if (versions.length != 1) {
-				throw new UnsupportedOperationException("Expected only 1 version in META-INF/versions.list, but got %d".formatted(versions.length));
-			}
-
-			for (String version : versions) {
-				if (version.isBlank()) continue;
-
-				String[] split = version.split("\t");
-
-				if (split.length != 3) continue;
-
-				final String hash = split[0];
-				final String id = split[1];
-				final String path = split[2];
-
-				// Take the first (only) version we find.
-				jarPath = path;
-				break;
-			}
-
-			Objects.requireNonNull(jarPath, "Could not find minecraft server jar for " + minecraftVersion());
-			ZipEntry serverJarEntry = zipFile.getEntry("META-INF/versions/" + jarPath);
-			Objects.requireNonNull(serverJarEntry, "Could not find server jar in boostrap@ " + jarPath);
-
-			try (InputStream is = zipFile.getInputStream(serverJarEntry)) {
-				java.nio.file.Files.copy(is, minecraftExtractedServerJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			}
-
-			return minecraftExtractedServerJar;
-		}
-	}
-
-	public File getMinecraftServerJar() {
-		if (isNewerThan21w39a()) {
-			try {
-				return getServerJarToMerge(getProject().getLogger());
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		return minecraftServerJar;
-	}
-
-	public boolean isNewerThan21w39a() {
-		if (isNewerThan21w39a != null) {
-			return isNewerThan21w39a;
-		}
-
-		return isNewerThan21w39a = ZipUtils.contains(minecraftServerJar.toPath(), "META-INF/versions.list");
 	}
 
 	public File getMergedJar() {
@@ -361,20 +301,6 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 	@Override
 	public File workingDir() {
 		return workingDir;
-	}
-
-	@Override
-	public boolean hasCustomNatives() {
-		return getProject().getProperties().get("fabric.loom.natives.dir") != null;
-	}
-
-	@Override
-	public File nativesDir() {
-		if (hasCustomNatives()) {
-			return new File((String) getProject().property("fabric.loom.natives.dir"));
-		}
-
-		return dir("natives");
 	}
 
 	@Override
@@ -414,5 +340,10 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 	@Override
 	public String getTargetConfig() {
 		return Constants.Configurations.MINECRAFT;
+	}
+
+	@Nullable
+	public BundleMetadata getServerBundleMetadata() {
+		return serverBundleMetadata;
 	}
 }

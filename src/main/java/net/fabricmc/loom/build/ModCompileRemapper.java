@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.zip.ZipFile;
 
 import com.google.common.base.Suppliers;
 import com.google.common.io.Files;
@@ -59,6 +58,7 @@ import net.fabricmc.loom.configuration.processors.dependency.ModDependencyInfo;
 import net.fabricmc.loom.configuration.processors.dependency.RemapData;
 import net.fabricmc.loom.util.Checksum;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.ModUtils;
 import net.fabricmc.loom.util.OperatingSystem;
 import net.fabricmc.loom.util.SourceRemapper;
 
@@ -94,7 +94,7 @@ public class ModCompileRemapper {
 					String name = extension.isForgeAndOfficial() ? "B" + checksum.get() : artifact.getModuleVersion().getId().getName();
 					String version = extension.isForgeAndOfficial() ? "B" + checksum.get() : replaceIfNullOrEmpty(artifact.getModuleVersion().getId().getVersion(), () -> Checksum.truncatedSha256(artifact.getFile()));
 
-					if (!shouldRemapMod(logger, artifact.getFile(), artifact.getId(), extension.isForge(), sourceConfig.getName())) {
+					if (!ModUtils.shouldRemapMod(artifact.getFile(), artifact.getId(), extension.isForge(), sourceConfig.getName())) {
 						addToRegularCompile(project, regularConfig, artifact);
 						continue;
 					}
@@ -121,7 +121,7 @@ public class ModCompileRemapper {
 
 					// Create a mod dependency for each file in the file collection
 					for (File artifact : files) {
-						if (!shouldRemapMod(logger, artifact, artifact.getName(), extension.isForge(), sourceConfig.getName())) {
+						if (!ModUtils.shouldRemapMod(artifact, artifact.getName(), extension.isForge(), sourceConfig.getName())) {
 							dependencies.add(regularConfig.getName(), project.files(artifact));
 							continue;
 						}
@@ -162,37 +162,6 @@ public class ModCompileRemapper {
 					project.getConfigurations().getByName(Constants.Configurations.NAMED_ELEMENTS).extendsFrom(remappedConfig);
 				}
 			});
-		}
-	}
-
-	/**
-	 * Checks if an artifact is a fabric mod, according to the presence of a fabric.mod.json.
-	 */
-	private static boolean shouldRemapMod(Logger logger, File artifact, Object id, boolean forge, String config) {
-		try (ZipFile zipFile = new ZipFile(artifact)) {
-			if (zipFile.getEntry("architectury.common.marker") != null) {
-				logger.info("Found architectury common mod in " + config + ": {}", id);
-				return true;
-			}
-
-			if (forge) {
-				if (zipFile.getEntry("META-INF/mods.toml") != null) {
-					logger.info("Found Forge mod in " + config + ": {}", id);
-					return true;
-				}
-
-				logger.lifecycle(":could not find forge mod in " + config + " but forcing: {}", id);
-				return true;
-			} else {
-				if (zipFile.getEntry("fabric.mod.json") != null) {
-					logger.info("Found Fabric mod in " + config + ": {}", id);
-					return true;
-				}
-			}
-
-			return false;
-		} catch (IOException e) {
-			return false;
 		}
 	}
 

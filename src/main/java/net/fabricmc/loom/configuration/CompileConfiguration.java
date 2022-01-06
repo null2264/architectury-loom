@@ -24,22 +24,24 @@
 
 package net.fabricmc.loom.configuration;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 
+import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.AbstractCopyTask;
 import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
-import org.gradle.jvm.tasks.Jar;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.build.mixin.JavaApInvoker;
 import net.fabricmc.loom.build.mixin.KaptApInvoker;
 import net.fabricmc.loom.build.mixin.ScalaApInvoker;
-import net.fabricmc.loom.configuration.ide.SetupIntelijRunConfigs;
 import net.fabricmc.loom.configuration.providers.LaunchProvider;
 import net.fabricmc.loom.configuration.providers.MinecraftProviderImpl;
 import net.fabricmc.loom.configuration.providers.forge.FieldMigratedMappingsProvider;
@@ -51,7 +53,9 @@ import net.fabricmc.loom.configuration.providers.forge.PatchProvider;
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.extension.MixinExtension;
+import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.task.GenVsCodeProjectTask;
+import net.fabricmc.loom.task.UnpickJarTask;
 import net.fabricmc.loom.util.Constants;
 
 public final class CompileConfiguration {
@@ -73,12 +77,17 @@ public final class CompileConfiguration {
 			}
 		});
 
-		extension.createLazyConfiguration(Constants.Configurations.MOD_COMPILE_CLASSPATH).configure(configuration -> configuration.setTransitive(true));
-		extension.createLazyConfiguration(Constants.Configurations.MOD_COMPILE_CLASSPATH_MAPPED).configure(configuration -> configuration.setTransitive(false));
-		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_NAMED).configure(configuration -> configuration.setTransitive(false)); // The launchers do not recurse dependencies
-		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_DEPENDENCIES).configure(configuration -> configuration.setTransitive(false));
-		extension.createLazyConfiguration(Constants.Configurations.LOADER_DEPENDENCIES).configure(configuration -> configuration.setTransitive(false));
-		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT).configure(configuration -> configuration.setTransitive(false));
+		extension.createLazyConfiguration(Constants.Configurations.MOD_COMPILE_CLASSPATH, configuration -> configuration.setTransitive(true));
+		extension.createLazyConfiguration(Constants.Configurations.MOD_COMPILE_CLASSPATH_MAPPED, configuration -> configuration.setTransitive(false));
+		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_NAMED, configuration -> configuration.setTransitive(false)); // The launchers do not recurse dependencies
+		NamedDomainObjectProvider<Configuration> serverDeps = extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_SERVER_DEPENDENCIES, configuration -> configuration.setTransitive(false));
+		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_DEPENDENCIES, configuration -> {
+			configuration.extendsFrom(serverDeps.get());
+			configuration.setTransitive(false);
+		});
+		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_NATIVES, configuration -> configuration.setTransitive(false));
+		extension.createLazyConfiguration(Constants.Configurations.LOADER_DEPENDENCIES, configuration -> configuration.setTransitive(false));
+		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT, configuration -> configuration.setTransitive(false));
 
 		if (extension.isForge()) {
 			extension.createLazyConfiguration(Constants.Configurations.FORGE).configure(configuration -> configuration.setTransitive(false));
@@ -113,11 +122,10 @@ public final class CompileConfiguration {
 		}
 
 		if (extension.supportsInclude()) {
-			extension.createLazyConfiguration(Constants.Configurations.INCLUDE).configure(configuration -> configuration.setTransitive(false)); // Dont get transitive deps
+			extension.createLazyConfiguration(Constants.Configurations.INCLUDE, configuration -> configuration.setTransitive(false)); // Dont get transitive deps
 		}
-
 		extension.createLazyConfiguration(Constants.Configurations.MAPPING_CONSTANTS);
-		extension.createLazyConfiguration(Constants.Configurations.NAMED_ELEMENTS).configure(configuration -> {
+		extension.createLazyConfiguration(Constants.Configurations.NAMED_ELEMENTS, configuration -> {
 			configuration.setCanBeConsumed(true);
 			configuration.setCanBeResolved(false);
 			configuration.extendsFrom(project.getConfigurations().getByName(JavaPlugin.API_CONFIGURATION_NAME));
@@ -173,16 +181,15 @@ public final class CompileConfiguration {
 	}
 
 	public static void configureCompile(Project p) {
-		JavaPluginConvention javaModule = (JavaPluginConvention) p.getConvention().getPlugins().get("java");
+		final JavaPluginExtension javaPluginExtension = p.getExtensions().getByType(JavaPluginExtension.class);
+		LoomGradleExtension extension = LoomGradleExtension.get(p);
 
-		SourceSet main = javaModule.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
-
-		Javadoc javadoc = (Javadoc) p.getTasks().getByName(JavaPlugin.JAVADOC_TASK_NAME);
-		javadoc.setClasspath(main.getOutput().plus(main.getCompileClasspath()));
+		p.getTasks().named(JavaPlugin.JAVADOC_TASK_NAME, Javadoc.class).configure(javadoc -> {
+			final SourceSet main = javaPluginExtension.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+			javadoc.setClasspath(main.getOutput().plus(main.getCompileClasspath()));
+		});
 
 		p.afterEvaluate(project -> {
-			LoomGradleExtension extension = LoomGradleExtension.get(project);
-
 			LoomDependencyManager dependencyManager = new LoomDependencyManager();
 			extension.setDependencyManager(dependencyManager);
 
@@ -208,31 +215,23 @@ public final class CompileConfiguration {
 
 			dependencyManager.handleDependencies(project);
 
-			project.getTasks().getByName("idea").finalizedBy(project.getTasks().getByName("genIdeaWorkspace"));
-			project.getTasks().getByName("eclipse").finalizedBy(project.getTasks().getByName("genEclipseRuns"));
-			project.getTasks().getByName("cleanEclipse").finalizedBy(project.getTasks().getByName("cleanEclipseRuns"));
-
-			SetupIntelijRunConfigs.setup(project);
-			GenVsCodeProjectTask.generate(project);
 			extension.getRemapArchives().finalizeValue();
-
-			// Enables the default mod remapper
-			if (extension.getRemapArchives().get()) {
-				RemapConfiguration.setupDefaultRemap(project);
-			} else {
-				Jar jarTask = (Jar) project.getTasks().getByName("jar");
-				extension.getUnmappedModCollection().from(jarTask);
-			}
 
 			MixinExtension mixin = LoomGradleExtension.get(project).getMixin();
 
 			if (mixin.getUseLegacyMixinAp().get()) {
 				setupMixinAp(project, mixin);
 			}
+
+			configureDecompileTasks(project);
 		});
 
+		finalizedBy(p, "idea", "genIdeaWorkspace");
+		finalizedBy(p, "eclipse", "genEclipseRuns");
+		finalizedBy(p, "cleanEclipse", "cleanEclipseRuns");
+
 		// Add the "dev" jar to the "namedElements" configuration
-		p.artifacts(artifactHandler -> artifactHandler.add(Constants.Configurations.NAMED_ELEMENTS, p.getTasks().getByName("jar")));
+		p.artifacts(artifactHandler -> artifactHandler.add(Constants.Configurations.NAMED_ELEMENTS, p.getTasks().named("jar")));
 
 		// Ensure that the encoding is set to UTF-8, no matter what the system default is
 		// this fixes some edge cases with special characters not displaying correctly
@@ -269,7 +268,47 @@ public final class CompileConfiguration {
 		}
 	}
 
+	private static void configureDecompileTasks(Project project) {
+		final TaskContainer tasks = project.getTasks();
+		final LoomGradleExtension extension = LoomGradleExtension.get(project);
+
+		MappingsProviderImpl mappingsProvider = extension.getMappingsProvider();
+
+		File mappedJar = mappingsProvider.mappedProvider.getMappedJar();
+
+		if (mappingsProvider.hasUnpickDefinitions()) {
+			File outputJar = mappingsProvider.mappedProvider.getUnpickedJar();
+
+			tasks.register("unpickJar", UnpickJarTask.class, unpickJarTask -> {
+				unpickJarTask.getUnpickDefinitions().set(mappingsProvider.getUnpickDefinitionsFile());
+				unpickJarTask.getInputJar().set(mappingsProvider.mappedProvider.getMappedJar());
+				unpickJarTask.getOutputJar().set(outputJar);
+			});
+
+			mappedJar = outputJar;
+		}
+
+		final File inputJar = mappedJar;
+
+		extension.getGameDecompilers().configureEach(decompiler -> {
+			String taskName = "genSourcesWith" + decompiler.name();
+
+			// Set the input jar for the task after evaluation has occurred.
+			tasks.named(taskName, GenerateSourcesTask.class).configure(task -> {
+				task.getInputJar().set(inputJar);
+
+				if (mappingsProvider.hasUnpickDefinitions()) {
+					task.dependsOn(tasks.named("unpickJar"));
+				}
+			});
+		});
+	}
+
 	private static void extendsFrom(String a, String b, Project project) {
 		project.getConfigurations().getByName(a, configuration -> configuration.extendsFrom(project.getConfigurations().getByName(b)));
+	}
+
+	private static void finalizedBy(Project project, String a, String b) {
+		project.getTasks().named(a).configure(task -> task.finalizedBy(project.getTasks().named(b)));
 	}
 }

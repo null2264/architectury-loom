@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2016-2020 FabricMC
+ * Copyright (c) 2021 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,17 +22,15 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.task;
+package net.fabricmc.loom.util;
 
-import org.gradle.api.tasks.Internal;
+import groovy.lang.Closure;
+import org.gradle.api.Action;
 
-import net.fabricmc.loom.util.SourceRemapper;
-
-public class RemapAllSourcesTask extends AbstractLoomTask {
-	public SourceRemapper sourceRemapper;
-
-	@Internal
-	public SourceRemapper getSourceRemapper() {
-		return sourceRemapper;
+public record ClosureAction<T>(Closure closure) implements Action<T> {
+	@Override
+	public void execute(T t) {
+		closure.setDelegate(t);
+		closure.call(t);
 	}
 }

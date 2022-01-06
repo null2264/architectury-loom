@@ -37,6 +37,7 @@ import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.mercury.Mercury;
 import org.cadixdev.mercury.remapper.MercuryRemapper;
 import org.gradle.api.Project;
+import org.slf4j.Logger;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.RemappedConfigurationEntry;
@@ -152,7 +153,7 @@ public class SourceRemapper {
 			project.getLogger().warn("Could not remap " + source.getName() + " fully!", e);
 		}
 
-		copyNonJavaFiles(srcPath, dstPath, project, source);
+		copyNonJavaFiles(srcPath, dstPath, project.getLogger(), source.toPath());
 
 		if (dstFs != null) {
 			dstFs.close();
@@ -231,7 +232,7 @@ public class SourceRemapper {
 		return mercury;
 	}
 
-	private static void copyNonJavaFiles(Path from, Path to, Project project, File source) throws IOException {
+	public static void copyNonJavaFiles(Path from, Path to, Logger logger, Path source) throws IOException {
 		Files.walk(from).forEach(path -> {
 			Path targetPath = to.resolve(from.relativize(path).toString());
 
@@ -239,7 +240,7 @@ public class SourceRemapper {
 				try {
 					Files.copy(path, targetPath);
 				} catch (IOException e) {
-					project.getLogger().warn("Could not copy non-java sources '" + source.getName() + "' fully!", e);
+					logger.warn("Could not copy non-java sources '" + source + "' fully!", e);
 				}
 			}
 		});

@@ -38,8 +38,8 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.UnknownTaskException;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.plugins.BasePluginConvention;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.BasePluginExtension;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Input;
@@ -67,12 +67,11 @@ public class MixinExtensionImpl extends MixinExtensionApiImpl implements MixinEx
 	}
 
 	private String getDefaultMixinRefmapName() {
-		String defaultRefmapName = project.getConvention().getPlugin(BasePluginConvention.class).getArchivesBaseName() + "-refmap.json";
+		String defaultRefmapName = project.getExtensions().getByType(BasePluginExtension.class).getArchivesName().get() + "-refmap.json";
 
 		if (project.getRootProject() != project) {
 			defaultRefmapName = project.getConvention().getPlugin(BasePluginConvention.class).getArchivesBaseName() + "-" + project.getPath().replaceFirst(":", "").replace(':', '_') + "-refmap.json";
 		}
-
 		project.getLogger().info("Could not find refmap definition, will be using default name: " + defaultRefmapName);
 		return defaultRefmapName;
 	}
@@ -81,7 +80,7 @@ public class MixinExtensionImpl extends MixinExtensionApiImpl implements MixinEx
 	protected PatternSet add0(SourceSet sourceSet, Provider<String> refmapName) {
 		if (!super.getUseLegacyMixinAp().get()) throw new IllegalStateException("You need to set useLegacyMixinAp = true to configure Mixin annotation processor.");
 
-		PatternSet pattern = new PatternSet().setIncludes(Collections.singletonList("*.json"));
+		PatternSet pattern = new PatternSet().setIncludes(Collections.singletonList("**/*.json"));
 		MixinExtension.setMixinInformationContainer(sourceSet, new MixinExtension.MixinInformationContainer(sourceSet, refmapName, pattern));
 
 		isDefault = false;
@@ -92,7 +91,7 @@ public class MixinExtensionImpl extends MixinExtensionApiImpl implements MixinEx
 	@Override
 	@NotNull
 	public Stream<SourceSet> getMixinSourceSetsStream() {
-		return project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().stream()
+		return project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().stream()
 				.filter(sourceSet -> MixinExtension.getMixinInformationContainer(sourceSet) != null);
 	}
 
@@ -127,7 +126,7 @@ public class MixinExtensionImpl extends MixinExtensionApiImpl implements MixinEx
 	@Override
 	public void init() {
 		if (isDefault) {
-			project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().forEach(this::add);
+			project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().forEach(this::add);
 		}
 
 		isDefault = false;

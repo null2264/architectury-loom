@@ -49,6 +49,7 @@ import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
@@ -89,6 +90,9 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	@Input
 	public abstract MapProperty<String, String> getOptions();
 
+	@InputFiles
+	public abstract ConfigurableFileCollection getClasspath();
+
 	@Inject
 	public abstract WorkerExecutor getWorkerExecutor();
 
@@ -101,6 +105,12 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 		Objects.requireNonNull(getDecompilerConstructor(this.decompiler.getClass().getCanonicalName()),
 				"%s must have a no args constructor".formatted(this.decompiler.getClass().getCanonicalName()));
+
+		FileCollection decompilerClasspath = decompiler.getBootstrapClasspath(getProject());
+
+		if (decompilerClasspath != null) {
+			getClasspath().from(decompilerClasspath);
+		}
 
 		getOutputs().upToDateWhen((o) -> false);
 		getMaxMemory().convention(4096L).finalizeValueOnRead();
@@ -179,6 +189,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			spec.forkOptions(forkOptions -> {
 				forkOptions.setMaxHeapSize("%dm".formatted(getMaxMemory().get()));
 				forkOptions.systemProperty(WorkerDaemonClientsManagerHelper.MARKER_PROP, jvmMarkerValue);
+				forkOptions.bootstrapClasspath(getClasspath());
 			});
 		});
 	}

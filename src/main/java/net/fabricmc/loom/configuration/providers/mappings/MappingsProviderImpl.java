@@ -61,6 +61,7 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.DependencyProvider;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.accesswidener.TransitiveAccessWidenerJarProcessor;
+import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
 import net.fabricmc.loom.configuration.processors.MinecraftProcessedProvider;
 import net.fabricmc.loom.configuration.providers.MinecraftProviderImpl;
@@ -212,6 +213,14 @@ public class MappingsProviderImpl extends DependencyProvider implements Mappings
 			}
 		}
 
+		if (extension.getEnableInterfaceInjection().get()) {
+			InterfaceInjectionProcessor jarProcessor = new InterfaceInjectionProcessor(getProject());
+
+			if (!jarProcessor.isEmpty()) {
+				extension.getGameJarProcessors().add(jarProcessor);
+			}
+		}
+
 		extension.getAccessWidenerPath().finalizeValue();
 		extension.getGameJarProcessors().finalizeValue();
 		JarProcessorManager processorManager = new JarProcessorManager(extension.getGameJarProcessors().get());
@@ -275,7 +284,7 @@ public class MappingsProviderImpl extends DependencyProvider implements Mappings
 			String yarnMinecraftVersion = yarnVersion.substring(0, yarnVersion.lastIndexOf(separator));
 
 			if (!yarnMinecraftVersion.equalsIgnoreCase(minecraftVersion)) {
-				throw new RuntimeException(String.format("Minecraft Version (%s) does not match yarn's minecraft version (%s)", minecraftVersion, yarnMinecraftVersion));
+				getProject().getLogger().warn("Minecraft Version ({}) does not match yarn's minecraft version ({})", minecraftVersion, yarnMinecraftVersion);
 			}
 
 			// We can save reading the zip file + header by checking the file name
@@ -623,6 +632,10 @@ public class MappingsProviderImpl extends DependencyProvider implements Mappings
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to get intermediary", e);
 		}
+	}
+
+	public String getBuildServiceName(String name, String from, String to) {
+		return "%s:%s:%s>%S".formatted(name, mappingsIdentifier(), from, to);
 	}
 
 	public record UnpickMetadata(String unpickGroup, String unpickVersion) {

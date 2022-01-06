@@ -35,7 +35,7 @@ import java.util.function.Function;
 
 import org.gradle.api.Named;
 import org.gradle.api.Project;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -247,10 +247,7 @@ public final class RunConfigSettings implements Named {
 	}
 
 	public void source(String source) {
-		setSource(proj -> {
-			JavaPluginConvention conv = proj.getConvention().getPlugin(JavaPluginConvention.class);
-			return conv.getSourceSets().getByName(source);
-		});
+		setSource(proj -> project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName(source));
 	}
 
 	public void ideConfigGenerated(boolean ideConfigGenerated) {
@@ -261,7 +258,7 @@ public final class RunConfigSettings implements Named {
 	 * Add the {@code -XstartOnFirstThread} JVM argument when on OSX.
 	 */
 	public void startFirstThread() {
-		if (OperatingSystem.getOS().equalsIgnoreCase("osx")) {
+		if (OperatingSystem.CURRENT_OS.equals(OperatingSystem.MAC_OS)) {
 			vmArg("-XstartOnFirstThread");
 		}
 	}

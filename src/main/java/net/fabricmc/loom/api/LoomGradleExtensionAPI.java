@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.gradle.api.Action;
+import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -63,7 +64,7 @@ public interface LoomGradleExtensionAPI {
 		getShareRemapCaches().set(true);
 	}
 
-	ListProperty<LoomDecompiler> getGameDecompilers();
+	DomainObjectCollection<LoomDecompiler> getGameDecompilers();
 
 	default void addDecompiler(LoomDecompiler decompiler) {
 		getGameDecompilers().add(decompiler);
@@ -139,6 +140,15 @@ public interface LoomGradleExtensionAPI {
 	 * @return the intermediary url template
 	 */
 	Property<String> getIntermediaryUrl();
+
+	/**
+	 * When true loom will inject interfaces declared in mod manifests into the minecraft jar file.
+	 * This is used to expose interfaces that are implemented on Minecraft classes by mixins at runtime
+	 * in the dev environment.
+	 *
+	 * @return the property controlling interface injection.
+	 */
+	Property<Boolean> getEnableInterfaceInjection();
 
 	// ===================
 	//  Architectury Loom

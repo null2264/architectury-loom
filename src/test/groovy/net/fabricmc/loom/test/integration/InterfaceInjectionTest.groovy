@@ -22,19 +22,30 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.build.nesting;
+package net.fabricmc.loom.test.integration
 
-import java.io.File;
-import java.util.Collection;
+import net.fabricmc.loom.test.util.GradleProjectTestTrait
+import net.fabricmc.loom.util.ZipUtils
+import spock.lang.Specification
+import spock.lang.Unroll
 
-import org.gradle.api.Project;
-import org.jetbrains.annotations.ApiStatus;
+import static net.fabricmc.loom.test.LoomTestConstants.STANDARD_TEST_VERSIONS
+import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-@ApiStatus.Internal
-public interface NestedJarProvider {
-	// provide all the files to be included, they should already be resolved but can be transformed here
-	Collection<File> provide();
+class InterfaceInjectionTest extends Specification implements GradleProjectTestTrait {
+	@Unroll
+	def "interface injection (gradle #version)"() {
+		setup:
+			def gradle = gradleProject(project: "interfaceInjection", version: version)
+			ZipUtils.pack(new File(gradle.projectDir, "dummyDependency").toPath(), new File(gradle.projectDir, "dummy.jar").toPath())
 
-	// Setup the files ready to be provided
-	default void prepare(Project project) { }
+		when:
+			def result = gradle.run(task: "build")
+
+		then:
+			result.task(":build").outcome == SUCCESS
+
+		where:
+			version << STANDARD_TEST_VERSIONS
+	}
 }
