@@ -24,8 +24,8 @@
 
 package net.fabricmc.loom.kotlin.remapping
 
-import net.fabricmc.tinyremapper.TinyRemapper
-import net.fabricmc.tinyremapper.api.TrClass
+import dev.architectury.tinyremapper.TinyRemapper
+import dev.architectury.tinyremapper.api.TrClass
 import org.objectweb.asm.ClassVisitor
 
 object KotlinMetadataTinyRemapperExtension : TinyRemapper.ApplyVisitorProvider, TinyRemapper.Extension {

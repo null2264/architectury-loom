@@ -27,6 +27,7 @@ package net.fabricmc.loom.task;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
@@ -50,10 +51,13 @@ import javax.inject.Inject;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.gson.JsonObject;
-import dev.architectury.tinyremapper.InputTag;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
-import dev.architectury.tinyremapper.TinyUtils;
+
+import net.fabricmc.loom.task.service.MappingsService;
+
+import net.fabricmc.loom.util.FunnyTodoException;
+
 import org.cadixdev.at.AccessTransformSet;
 import org.cadixdev.at.io.AccessTransformFormats;
 import org.cadixdev.lorenz.MappingSet;
@@ -91,8 +95,6 @@ import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.aw2at.Aw2At;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
 import net.fabricmc.loom.util.service.UnsafeWorkQueueHelper;
-import net.fabricmc.tinyremapper.OutputConsumerPath;
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 public abstract class RemapJarTask extends AbstractRemapJarTask {
 	private static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
@@ -307,7 +309,8 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		}
 
 		private void convertAwToAt() throws IOException {
-			if (!this.getParameters().getAtAccessWideners().isPresent()) {
+			FunnyTodoException.yes("AW2AT");
+			/*if (!this.getParameters().getAtAccessWideners().isPresent()) {
 				return;
 			}
 
@@ -359,7 +362,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				try (Writer writer = new LfWriter(Files.newBufferedWriter(atPath))) {
 					AccessTransformFormats.FML.write(writer, at);
 				}
-			}
+			}*/
 		}
 
 		private byte[] remapAccessWidener(byte[] input) {

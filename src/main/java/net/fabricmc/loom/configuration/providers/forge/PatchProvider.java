@@ -37,7 +37,7 @@ import java.util.function.Consumer;
 import com.google.common.collect.ImmutableMap;
 import org.gradle.api.Project;
 
-import net.fabricmc.loom.configuration.DependencyProvider;
+import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.util.Constants;
 
 public class PatchProvider extends DependencyProvider {

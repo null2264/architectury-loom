@@ -33,6 +33,8 @@ import java.nio.file.Files;
 
 import javax.inject.Inject;
 
+import dev.architectury.tinyremapper.TinyRemapper;
+import dev.architectury.tinyremapper.api.TrEnvironment;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.RegularFileProperty;
@@ -46,8 +48,6 @@ import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.fabricmc.accesswidener.AccessWidenerVisitor;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.tinyremapper.TinyRemapper;
-import net.fabricmc.tinyremapper.api.TrEnvironment;
 
 public abstract class ValidateAccessWidenerTask extends DefaultTask {
 	@SkipWhenEmpty

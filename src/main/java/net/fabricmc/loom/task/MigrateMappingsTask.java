@@ -34,6 +34,9 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+
+import net.fabricmc.loom.util.FunnyTodoException;
+
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.mercury.Mercury;
 import org.cadixdev.mercury.remapper.MercuryRemapper;
@@ -100,7 +103,7 @@ public class MigrateMappingsTask extends AbstractLoomTask {
 		try {
 			MemoryMappingTree currentMappings = mappingsProvider.getMappings();
 			MemoryMappingTree targetMappings = getMappings(mappings);
-			migrateMappings(project, extension, extension, inputDir, outputDir, currentMappings, targetMappings);
+			migrateMappings(project, extension, inputDir, outputDir, currentMappings, targetMappings);
 			project.getLogger().lifecycle(":remapped project written to " + outputDir.toAbsolutePath());
 		} catch (IOException e) {
 			throw new IllegalArgumentException("Error while loading mappings", e);
@@ -181,7 +184,8 @@ public class MigrateMappingsTask extends AbstractLoomTask {
 			mercury.getClassPath().add(intermediaryJar);
 		}
 
-		if (extension.isForge()) {
+		FunnyTodoException.yes("Forge jars");
+		/*if (extension.isForge()) {
 			mercury.getClassPath().add(minecraftMappedProvider.getSrgJar().toPath());
 
 			if (extension.isForgeAndNotOfficial()) {
@@ -189,7 +193,7 @@ public class MigrateMappingsTask extends AbstractLoomTask {
 				mercury.getClassPath().add(minecraftMappedProvider.getForgeIntermediaryJar().toPath());
 				mercury.getClassPath().add(minecraftMappedProvider.getForgeSrgJar().toPath());
 			}
-		}
+		}*/
 
 		mercury.getProcessors().add(MercuryRemapper.create(mappingSet));
 

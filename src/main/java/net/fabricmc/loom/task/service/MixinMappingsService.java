@@ -27,13 +27,13 @@ package net.fabricmc.loom.task.service;
 import java.io.File;
 import java.util.HashSet;
 
+import dev.architectury.tinyremapper.IMappingProvider;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.SourceSet;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.util.service.SharedService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
-import net.fabricmc.tinyremapper.IMappingProvider;
 
 public final class MixinMappingsService implements SharedService {
 	private final SharedServiceManager sharedServiceManager;

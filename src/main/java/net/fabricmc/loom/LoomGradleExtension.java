@@ -43,8 +43,7 @@ import net.fabricmc.loom.configuration.InstallerData;
 import net.fabricmc.loom.configuration.LoomDependencyManager;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerFile;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
-import net.fabricmc.loom.configuration.providers.MinecraftProviderImpl;
-import net.fabricmc.loom.configuration.providers.forge.FieldMigratedMappingsProvider;
+import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
 import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUniversalProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
@@ -57,6 +56,7 @@ import net.fabricmc.loom.configuration.providers.minecraft.mapped.IntermediaryMi
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraftProvider;
 import net.fabricmc.loom.extension.LoomFiles;
 import net.fabricmc.loom.extension.MixinExtension;
+import net.fabricmc.loom.util.FunnyTodoException;
 
 public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 	static LoomGradleExtension get(Project project) {
@@ -113,6 +113,7 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 		case NAMED -> getNamedMinecraftProvider().getMinecraftJars();
 		case INTERMEDIARY -> getIntermediaryMinecraftProvider().getMinecraftJars();
 		case OFFICIAL -> getMinecraftProvider().getMinecraftJars();
+		case SRG -> throw new FunnyTodoException("SRG minecraft jars");
 		};
 	}
 
@@ -135,11 +136,11 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 	//  Architectury Loom
 	// ===================
 	default PatchProvider getPatchProvider() {
-		return getDependencyManager().getProvider(PatchProvider.class);
+		return getDependencyProviders().getProvider(PatchProvider.class);
 	}
 
 	default McpConfigProvider getMcpConfigProvider() {
-		return getDependencyManager().getProvider(McpConfigProvider.class);
+		return getDependencyProviders().getProvider(McpConfigProvider.class);
 	}
 
 	default boolean isDataGenEnabled() {
@@ -156,19 +157,22 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 
 	boolean supportsInclude();
 
+	DependencyProviders getDependencyProviders();
+	void setDependencyProviders(DependencyProviders dependencyProviders);
+
 	default SrgProvider getSrgProvider() {
-		return getDependencyManager().getProvider(SrgProvider.class);
+		return getDependencyProviders().getProvider(SrgProvider.class);
 	}
 
 	default ForgeUniversalProvider getForgeUniversalProvider() {
-		return getDependencyManager().getProvider(ForgeUniversalProvider.class);
+		return getDependencyProviders().getProvider(ForgeUniversalProvider.class);
 	}
 
 	default ForgeUserdevProvider getForgeUserdevProvider() {
-		return getDependencyManager().getProvider(ForgeUserdevProvider.class);
+		return getDependencyProviders().getProvider(ForgeUserdevProvider.class);
 	}
 
 	default ForgeProvider getForgeProvider() {
-		return getDependencyManager().getProvider(ForgeProvider.class);
+		return getDependencyProviders().getProvider(ForgeProvider.class);
 	}
 }

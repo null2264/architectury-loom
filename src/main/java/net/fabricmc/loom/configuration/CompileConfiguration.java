@@ -45,11 +45,12 @@ import net.fabricmc.loom.configuration.accesswidener.AccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.accesswidener.TransitiveAccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
-import net.fabricmc.loom.configuration.providers.forge.FieldMigratedMappingsProvider;
+import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
 import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUniversalProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.McpConfigProvider;
+import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider2;
 import net.fabricmc.loom.configuration.providers.forge.PatchProvider;
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
@@ -204,24 +205,27 @@ public final class CompileConfiguration {
 				throw new RuntimeException("Failed to setup minecraft", e);
 			}
 
+			DependencyProviders dependencyProviders = new DependencyProviders();
 			LoomDependencyManager dependencyManager = new LoomDependencyManager();
+			extension.setDependencyProviders(dependencyProviders);
 			extension.setDependencyManager(dependencyManager);
 
 			if (extension.isForge()) {
-				dependencyManager.addProvider(new ForgeProvider(project));
-				dependencyManager.addProvider(new ForgeUserdevProvider(project));
+				dependencyProviders.addProvider(new ForgeProvider(project));
+				dependencyProviders.addProvider(new ForgeUserdevProvider(project));
 			}
 
 			if (extension.shouldGenerateSrgTiny()) {
-				dependencyManager.addProvider(new SrgProvider(project));
+				dependencyProviders.addProvider(new SrgProvider(project));
 			}
 
 			if (extension.isForge()) {
-				dependencyManager.addProvider(new McpConfigProvider(project));
-				dependencyManager.addProvider(new PatchProvider(project));
-				dependencyManager.addProvider(new ForgeUniversalProvider(project));
+				dependencyProviders.addProvider(new McpConfigProvider(project));
+				dependencyProviders.addProvider(new PatchProvider(project));
+				dependencyProviders.addProvider(new ForgeUniversalProvider(project));
 			}
 
+			dependencyProviders.handleDependencies(project);
 			dependencyManager.handleDependencies(project);
 
 			extension.getRemapArchives().finalizeValue();
@@ -261,6 +265,11 @@ public final class CompileConfiguration {
 
 		// Provide the vanilla mc jars -- TODO share across projects.
 		final MinecraftProvider minecraftProvider = jarConfiguration.getMinecraftProviderFunction().apply(project);
+
+		if (extension.isForge() && !(minecraftProvider instanceof MinecraftPatchedProvider2)) {
+			throw new UnsupportedOperationException("Using Forge with split or server-only jars is not currently supported!");
+		}
+
 		extension.setMinecraftProvider(minecraftProvider);
 		minecraftProvider.provide();
 

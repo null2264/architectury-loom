@@ -75,6 +75,7 @@ public class LoomDependencyManager {
 					}
 				}
 			}
+		}
 
 		SourceRemapper sourceRemapper = new SourceRemapper(project, true);
 		String platformSuffix = extension.isForge() ? "_forge" : "";

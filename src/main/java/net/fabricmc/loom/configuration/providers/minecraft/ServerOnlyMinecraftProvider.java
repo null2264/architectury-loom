@@ -28,12 +28,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import dev.architectury.tinyremapper.NonClassCopyMode;
+import dev.architectury.tinyremapper.OutputConsumerPath;
+import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.configuration.providers.BundleMetadata;
-import net.fabricmc.tinyremapper.NonClassCopyMode;
-import net.fabricmc.tinyremapper.OutputConsumerPath;
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 public final class ServerOnlyMinecraftProvider extends MinecraftProvider {
 	private Path minecraftServerOnlyJar;

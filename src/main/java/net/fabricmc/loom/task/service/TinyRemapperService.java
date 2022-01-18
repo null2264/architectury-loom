@@ -34,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import dev.architectury.tinyremapper.IMappingProvider;
+import dev.architectury.tinyremapper.InputTag;
+import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
@@ -41,9 +44,6 @@ import net.fabricmc.loom.kotlin.remapping.KotlinMetadataTinyRemapperExtension;
 import net.fabricmc.loom.task.AbstractRemapJarTask;
 import net.fabricmc.loom.util.service.SharedService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
-import net.fabricmc.tinyremapper.IMappingProvider;
-import net.fabricmc.tinyremapper.InputTag;
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 public class TinyRemapperService implements SharedService {
 	public static synchronized TinyRemapperService getOrCreate(AbstractRemapJarTask remapJarTask) {
@@ -88,7 +88,7 @@ public class TinyRemapperService implements SharedService {
 		}
 
 		if (useMixinExtension) {
-			builder.extension(new net.fabricmc.tinyremapper.extension.mixin.MixinExtension());
+			builder.extension(new dev.architectury.tinyremapper.extension.mixin.MixinExtension());
 		}
 
 		if (useKotlinExtension) {

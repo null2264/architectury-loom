@@ -33,6 +33,9 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import com.google.common.base.Suppliers;
+
+import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
+
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.mercury.Mercury;
 import org.gradle.api.Action;
@@ -81,6 +84,7 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	// +-------------------+
 	private static final String INCLUDE_PROPERTY = "loom.forge.include";
 	private final LazyBool supportsInclude;
+	private DependencyProviders dependencyProviders;
 
 	public LoomGradleExtensionImpl(Project project, LoomFiles files) {
 		super(project, files);
@@ -256,5 +260,15 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	@Override
 	public boolean supportsInclude() {
 		return !isForge() || supportsInclude.getAsBoolean();
+	}
+
+	@Override
+	public DependencyProviders getDependencyProviders() {
+		return dependencyProviders;
+	}
+
+	@Override
+	public void setDependencyProviders(DependencyProviders dependencyProviders) {
+		this.dependencyProviders = dependencyProviders;
 	}
 }

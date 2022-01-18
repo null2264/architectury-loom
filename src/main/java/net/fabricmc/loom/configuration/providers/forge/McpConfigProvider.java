@@ -45,7 +45,7 @@ import com.google.gson.JsonObject;
 import org.gradle.api.Project;
 import org.gradle.api.file.FileCollection;
 
-import net.fabricmc.loom.configuration.DependencyProvider;
+import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.ZipUtils;

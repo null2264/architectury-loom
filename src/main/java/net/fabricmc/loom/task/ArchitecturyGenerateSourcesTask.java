@@ -39,8 +39,7 @@ import org.gradle.api.tasks.TaskAction;
 
 import net.fabricmc.loom.api.decompilers.DecompilationMetadata;
 import net.fabricmc.loom.api.decompilers.architectury.ArchitecturyLoomDecompiler;
-import net.fabricmc.loom.util.Constants;
-import net.fabricmc.loom.util.OperatingSystem;
+import net.fabricmc.loom.util.FunnyTodoException;
 
 public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
 	private final ArchitecturyLoomDecompiler decompiler;
@@ -60,7 +59,8 @@ public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
 
 	@TaskAction
 	public void run() throws IOException {
-		if (!OperatingSystem.is64Bit()) {
+		FunnyTodoException.yes("Architectury decompiler API");
+		/*if (!OperatingSystem.is64Bit()) {
 			throw new UnsupportedOperationException("GenSources task requires a 64bit JVM to run due to the memory requirements.");
 		}
 
@@ -90,6 +90,6 @@ public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
 			} catch (Exception e) {
 				throw new RuntimeException("Could not remap line numbers", e);
 			}
-		}
+		}*/
 	}
 }

@@ -28,6 +28,7 @@ import java.nio.file.Path;
 
 import javax.inject.Inject;
 
+import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.InputFile;
@@ -39,7 +40,6 @@ import org.gradle.workers.WorkerExecutor;
 
 import net.fabricmc.loom.task.service.TinyRemapperService;
 import net.fabricmc.loom.util.service.UnsafeWorkQueueHelper;
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 /**
  * The prepare remap task runs before all other jar remap tasks, should be used to setup tiny remapper.

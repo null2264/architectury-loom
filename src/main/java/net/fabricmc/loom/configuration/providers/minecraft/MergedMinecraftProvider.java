@@ -36,8 +36,8 @@ import org.gradle.api.Project;
 import net.fabricmc.loom.util.HashedDownloadUtil;
 import net.fabricmc.stitch.merge.JarMerger;
 
-public final class MergedMinecraftProvider extends MinecraftProvider {
-	private Path minecraftMergedJar;
+public class MergedMinecraftProvider extends MinecraftProvider {
+	protected Path minecraftMergedJar;
 
 	public MergedMinecraftProvider(Project project) {
 		super(project);
@@ -72,7 +72,7 @@ public final class MergedMinecraftProvider extends MinecraftProvider {
 		}
 	}
 
-	private void mergeJars() throws IOException {
+	protected void mergeJars() throws IOException {
 		getLogger().info(":merging jars");
 
 		File jarToMerge = getMinecraftServerJar();

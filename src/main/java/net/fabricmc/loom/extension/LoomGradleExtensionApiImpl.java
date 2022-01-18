@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 
 import com.google.common.base.Suppliers;
 import org.gradle.api.Action;
+import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
