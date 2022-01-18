@@ -24,7 +24,7 @@
 
 package net.fabricmc.loom.extension;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,14 +41,18 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.SourceSet;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.api.ForgeExtensionAPI;
 import net.fabricmc.loom.configuration.InstallerData;
 import net.fabricmc.loom.configuration.LoomDependencyManager;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerFile;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
+import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.mapped.IntermediaryMinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraftProvider;
 import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.function.LazyBool;
 
@@ -59,7 +63,6 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	private final ConfigurableFileCollection unmappedMods;
 	private final Supplier<ForgeExtensionAPI> forgeExtension;
 
-	private final ConfigurableFileCollection mixinMappings;
 	private final MappingSet[] srcMappingCache = new MappingSet[2];
 	private final Mercury[] srcMercuryCache = new Mercury[2];
 	private final Map<String, NamedDomainObjectProvider<Configuration>> lazyConfigurations = new HashMap<>();
@@ -67,6 +70,10 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 
 	private LoomDependencyManager dependencyManager;
 	private JarProcessorManager jarProcessorManager;
+	private MinecraftProvider minecraftProvider;
+	private MappingsProviderImpl mappingsProvider;
+	private NamedMinecraftProvider<?> namedMinecraftProvider;
+	private IntermediaryMinecraftProvider<?> intermediaryMinecraftProvider;
 	private InstallerData installerData;
 
 	// +-------------------+
@@ -80,7 +87,6 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 		this.project = project;
 		// Initiate with newInstance to allow gradle to decorate our extension
 		this.mixinApExtension = project.getObjects().newInstance(MixinExtensionImpl.class, project);
-		this.mixinMappings = project.getObjects().fileCollection();
 		this.loomFiles = files;
 		this.unmappedMods = project.files();
 		this.forgeExtension = Suppliers.memoize(() -> isForge() ? project.getObjects().newInstance(ForgeExtensionImpl.class, project, this) : null);
@@ -95,18 +101,6 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	@Override
 	public LoomFiles getFiles() {
 		return loomFiles;
-	}
-
-	@Override
-	public synchronized File getMixinMappings(SourceSet sourceSet) {
-		File mixinMapping = new File(getFiles().getProjectBuildCache(), "mixin-map-" + getMappingsProvider().mappingsIdentifier() + "." + sourceSet.getName() + ".tiny");
-		mixinMappings.from(getProject().files(mixinMapping));
-		return mixinMapping;
-	}
-
-	@Override
-	public FileCollection getAllMixinMappings() {
-		return mixinMappings.filter(File::exists);
 	}
 
 	@Override
@@ -127,6 +121,55 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	@Override
 	public JarProcessorManager getJarProcessorManager() {
 		return Objects.requireNonNull(jarProcessorManager, "Cannot get JarProcessorManager before it has been setup");
+	}
+
+	@Override
+	public MinecraftProvider getMinecraftProvider() {
+		return Objects.requireNonNull(minecraftProvider, "Cannot get MinecraftProvider before it has been setup");
+	}
+
+	@Override
+	public void setMinecraftProvider(MinecraftProvider minecraftProvider) {
+		this.minecraftProvider = minecraftProvider;
+	}
+
+	@Override
+	public MappingsProviderImpl getMappingsProvider() {
+		return Objects.requireNonNull(mappingsProvider, "Cannot get MappingsProvider before it has been setup");
+	}
+
+	@Override
+	public void setMappingsProvider(MappingsProviderImpl mappingsProvider) {
+		this.mappingsProvider = mappingsProvider;
+	}
+
+	@Override
+	public NamedMinecraftProvider<?> getNamedMinecraftProvider() {
+		return Objects.requireNonNull(namedMinecraftProvider, "Cannot get NamedMinecraftProvider before it has been setup");
+	}
+
+	@Override
+	public IntermediaryMinecraftProvider<?> getIntermediaryMinecraftProvider() {
+		return Objects.requireNonNull(intermediaryMinecraftProvider, "Cannot get IntermediaryMinecraftProvider before it has been setup");
+	}
+
+	@Override
+	public void setNamedMinecraftProvider(NamedMinecraftProvider<?> namedMinecraftProvider) {
+		this.namedMinecraftProvider = namedMinecraftProvider;
+	}
+
+	@Override
+	public void setIntermediaryMinecraftProvider(IntermediaryMinecraftProvider<?> intermediaryMinecraftProvider) {
+		this.intermediaryMinecraftProvider = intermediaryMinecraftProvider;
+	}
+
+	@Override
+	public FileCollection getMinecraftJarsCollection(MappingsNamespace mappingsNamespace) {
+		return getProject().files(
+			getProject().provider(() ->
+				getProject().files(getMinecraftJars(mappingsNamespace).stream().map(Path::toFile).toList())
+			)
+		);
 	}
 
 	@Override

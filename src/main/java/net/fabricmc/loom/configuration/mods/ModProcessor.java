@@ -58,7 +58,7 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.RemappedConfigurationEntry;
 import net.fabricmc.loom.configuration.processors.dependency.ModDependencyInfo;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
-import net.fabricmc.loom.configuration.providers.minecraft.MinecraftMappedProvider;
+import net.fabricmc.loom.kotlin.remapping.KotlinMetadataTinyRemapperExtension;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.LoggerFilter;
@@ -149,12 +149,11 @@ public class ModProcessor {
 
 	private void remapJars(List<ModDependencyInfo> remapList) throws IOException {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
-		final MinecraftMappedProvider mappedProvider = extension.getMinecraftMappedProvider();
 		final MappingsProviderImpl mappingsProvider = extension.getMappingsProvider();
+		final boolean useKotlinExtension = project.getPluginManager().hasPlugin("org.jetbrains.kotlin.jvm");
 		String fromM = extension.isForge() ? MappingsNamespace.SRG.toString() : MappingsNamespace.INTERMEDIARY.toString();
 		String toM = MappingsNamespace.NAMED.toString();
 
-		Path intermediaryJar = extension.isForge() ? mappedProvider.getSrgJar().toPath() : mappedProvider.getIntermediaryJar().toPath();
 		Path[] mcDeps = project.getConfigurations().getByName(Constants.Configurations.LOADER_DEPENDENCIES).getFiles()
 				.stream().map(File::toPath).toArray(Path[]::new);
 
@@ -163,12 +162,21 @@ public class ModProcessor {
 
 		MemoryMappingTree mappings = (fromM.equals("srg") || toM.equals("srg")) && extension.isForge() ? mappingsProvider.getMappingsWithSrg() : mappingsProvider.getMappings();
 		LoggerFilter.replaceSystemOut();
-		final TinyRemapper remapper = TinyRemapper.newRemapper()
+		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
 				.logger(project.getLogger()::lifecycle)
 				.logUnknownInvokeDynamic(false)
 				.withMappings(TinyRemapperHelper.create(mappings, fromM, toM, false))
-				.renameInvalidLocals(false)
-				.build();
+				.renameInvalidLocals(false);
+
+		if (useKotlinExtension) {
+			builder.extension(KotlinMetadataTinyRemapperExtension.INSTANCE);
+		}
+
+		final TinyRemapper remapper = builder.build();
+
+		for (Path minecraftJar : extension.getMinecraftJars(MappingsNamespace.INTERMEDIARY)) {
+			remapper.readClassPathAsync(minecraftJar);
+		}
 
 		remapper.readClassPathAsync(intermediaryJar);
 

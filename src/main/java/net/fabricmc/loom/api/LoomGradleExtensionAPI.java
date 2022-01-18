@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.gradle.api.Action;
-import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -39,13 +38,14 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.jetbrains.annotations.ApiStatus;
 
-import net.fabricmc.loom.api.decompilers.LoomDecompiler;
+import net.fabricmc.loom.api.decompilers.DecompilerOptions;
 import net.fabricmc.loom.api.decompilers.architectury.ArchitecturyLoomDecompiler;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.ide.RunConfig;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
 import net.fabricmc.loom.util.DeprecationHelper;
 import net.fabricmc.loom.util.ModPlatform;
 
@@ -64,11 +64,9 @@ public interface LoomGradleExtensionAPI {
 		getShareRemapCaches().set(true);
 	}
 
-	DomainObjectCollection<LoomDecompiler> getGameDecompilers();
+	NamedDomainObjectContainer<DecompilerOptions> getDecompilerOptions();
 
-	default void addDecompiler(LoomDecompiler decompiler) {
-		getGameDecompilers().add(decompiler);
-	}
+	void decompilers(Action<NamedDomainObjectContainer<DecompilerOptions>> action);
 
 	ListProperty<JarProcessor> getGameJarProcessors();
 
@@ -149,6 +147,19 @@ public interface LoomGradleExtensionAPI {
 	 * @return the property controlling interface injection.
 	 */
 	Property<Boolean> getEnableInterfaceInjection();
+
+	@ApiStatus.Experimental
+	Property<MinecraftJarConfiguration> getMinecraftJarConfiguration();
+
+	@ApiStatus.Experimental
+	default void serverOnlyMinecraftJar() {
+		getMinecraftJarConfiguration().set(MinecraftJarConfiguration.SERVER_ONLY);
+	}
+
+	@ApiStatus.Experimental
+	default void splitMinecraftJar() {
+		getMinecraftJarConfiguration().set(MinecraftJarConfiguration.SPLIT);
+	}
 
 	// ===================
 	//  Architectury Loom

@@ -26,11 +26,17 @@ package net.fabricmc.loom.task;
 
 import com.google.common.base.Preconditions;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
+import net.fabricmc.loom.task.launch.GenerateDLIConfigTask;
+import net.fabricmc.loom.task.launch.GenerateLog4jConfigTask;
+import net.fabricmc.loom.task.launch.GenerateRemapClasspathTask;
 import net.fabricmc.loom.util.Constants;
 
 public final class LoomTasks {
@@ -47,10 +53,38 @@ public final class LoomTasks {
 
 		RemapTaskConfiguration.setupRemap(project);
 
-		TaskProvider<ExtractNativesTask> extractNatives = tasks.register("extractNatives", ExtractNativesTask.class);
+		tasks.register("extractNatives", ExtractNativesTask.class, t -> {
+			t.setDescription("Extracts the minecraft platform specific natives.");
+		});
 		tasks.register("downloadAssets", DownloadAssetsTask.class, t -> {
-			t.dependsOn(extractNatives);
 			t.setDescription("Downloads required assets for Fabric.");
+		});
+		tasks.register("generateDLIConfig", GenerateDLIConfigTask.class, t -> {
+			t.setDescription("Generate the DevLaunchInjector config file");
+		});
+		tasks.register("generateLog4jConfig", GenerateLog4jConfigTask.class, t -> {
+			t.setDescription("Generate the log4j config file");
+		});
+		tasks.register("generateRemapClasspath", GenerateRemapClasspathTask.class, t -> {
+			t.setDescription("Generate the remap classpath file");
+		});
+
+		tasks.register("configureLaunch", task -> {
+			task.dependsOn(tasks.named("generateDLIConfig"));
+			task.dependsOn(tasks.named("generateLog4jConfig"));
+			task.dependsOn(tasks.named("generateRemapClasspath"));
+
+			task.setDescription("Setup the required files to launch Minecraft");
+			task.setGroup(Constants.TaskGroup.FABRIC);
+		});
+
+		tasks.register("configureClientLaunch", task -> {
+			task.dependsOn(tasks.named("extractNatives"));
+			task.dependsOn(tasks.named("downloadAssets"));
+			task.dependsOn(tasks.named("configureLaunch"));
+
+			task.setDescription("Setup the required files to launch the Minecraft client");
+			task.setGroup(Constants.TaskGroup.FABRIC);
 		});
 
 		TaskProvider<ValidateAccessWidenerTask> validateAccessWidener = tasks.register("validateAccessWidener", ValidateAccessWidenerTask.class, t -> {
@@ -62,20 +96,18 @@ public final class LoomTasks {
 
 		registerIDETasks(tasks);
 		registerRunTasks(tasks, project);
-		registerLaunchSettings(project);
-		registerDecompileTasks(tasks, project);
 	}
 
 	private static void registerIDETasks(TaskContainer tasks) {
 		tasks.register("genIdeaWorkspace", GenIdeaProjectTask.class, t -> {
 			t.setDescription("Generates an IntelliJ IDEA workspace from this project.");
-			t.dependsOn("idea", "downloadAssets");
+			t.dependsOn("idea", getIDELaunchConfigureTaskName(t.getProject()));
 			t.setGroup(Constants.TaskGroup.IDE);
 		});
 
 		tasks.register("genEclipseRuns", GenEclipseRunsTask.class, t -> {
 			t.setDescription("Generates Eclipse run configurations for this project.");
-			t.dependsOn("downloadAssets");
+			t.dependsOn(getIDELaunchConfigureTaskName(t.getProject()));
 			t.setGroup(Constants.TaskGroup.IDE);
 		});
 
@@ -86,7 +118,7 @@ public final class LoomTasks {
 
 		tasks.register("vscode", GenVsCodeProjectTask.class, t -> {
 			t.setDescription("Generates VSCode launch configurations.");
-			t.dependsOn("downloadAssets");
+			t.dependsOn(getIDELaunchConfigureTaskName(t.getProject()));
 			t.setGroup(Constants.TaskGroup.IDE);
 		});
 	}
@@ -103,52 +135,25 @@ public final class LoomTasks {
 			tasks.register(taskName, RunGameTask.class, config).configure(t -> {
 				t.setDescription("Starts the '" + config.getConfigName() + "' run configuration");
 
-				if (config.getEnvironment().equals("client")) {
-					t.dependsOn("downloadAssets");
-				}
+				t.dependsOn(config.getEnvironment().equals("client") ? "configureClientLaunch" : "configureLaunch");
 			});
 		});
-
 		extension.getRunConfigs().create("client", RunConfigSettings::client);
 		extension.getRunConfigs().create("server", RunConfigSettings::server);
+
+		// Remove the client run config when server only. Done by name to not remove any possible custom run configs
+		project.afterEvaluate(p -> {
+			if (extension.getMinecraftJarConfiguration().get() == MinecraftJarConfiguration.SERVER_ONLY) {
+				extension.getRunConfigs().removeIf(settings -> settings.getName().equals("client"));
+			}
+		});
 	}
 
-	private static void registerLaunchSettings(Project project) {
-		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		Preconditions.checkArgument(extension.getLaunchConfigs().size() == 0, "Launch configurations must not be registered before loom");
-		extension.getLaunchConfigs().create("client");
-		extension.getLaunchConfigs().create("server");
-
-		if (extension.isForge()) {
-			extension.getLaunchConfigs().create("data");
-		}
-	}
-
-	private static void registerDecompileTasks(TaskContainer tasks, Project project) {
-		LoomGradleExtension.get(project).getGameDecompilers().configureEach(decompiler -> {
-			String taskName = "genSourcesWith" + decompiler.name();
-			// Decompiler will be passed to the constructor of GenerateSourcesTask
-			tasks.register(taskName, GenerateSourcesTask.class, decompiler).configure(task -> {
-				task.setDescription("Decompile minecraft using %s.".formatted(decompiler.name()));
-				task.setGroup(Constants.TaskGroup.FABRIC);
-				task.dependsOn(tasks.named("validateAccessWidener"));
-			});
-		});
-
-		LoomGradleExtension.get(project).getArchGameDecompilers().configureEach(decompiler -> {
-			String taskName = "genSourcesWith" + decompiler.name();
-			// Decompiler will be passed to the constructor of ArchitecturyGenerateSourcesTask
-			tasks.register(taskName, ArchitecturyGenerateSourcesTask.class, decompiler).configure(task -> {
-				task.setDescription("Decompile minecraft using %s.".formatted(decompiler.name()));
-				task.setGroup(Constants.TaskGroup.FABRIC);
-			});
-		});
-
-		tasks.register("genSources", task -> {
-			task.setDescription("Decompile minecraft using the default decompiler.");
-			task.setGroup(Constants.TaskGroup.FABRIC);
-
-			task.dependsOn(project.getTasks().named("genSourcesWithCfr"));
+	public static Provider<Task> getIDELaunchConfigureTaskName(Project project) {
+		return project.provider(() -> {
+			final MinecraftJarConfiguration jarConfiguration = LoomGradleExtension.get(project).getMinecraftJarConfiguration().get();
+			final String name = jarConfiguration == MinecraftJarConfiguration.SERVER_ONLY ? "configureLaunch" : "configureClientLaunch";
+			return project.getTasks().getByName(name);
 		});
 	}
 }

@@ -174,18 +174,15 @@ public class TransitiveAccessWidenerJarProcessor implements JarProcessor {
 			TinyRemapper tinyRemapper = TinyRemapperHelper.getTinyRemapper(project, "intermediary", "named");
 
 			tinyRemapper.readClassPath(TinyRemapperHelper.getMinecraftDependencies(project));
-			tinyRemapper.readClassPath(extension.getMinecraftMappedProvider().getIntermediaryJar().toPath());
+
+			for (Path minecraftJar : extension.getMinecraftJars(MappingsNamespace.INTERMEDIARY)) {
+				tinyRemapper.readClassPath(minecraftJar);
+			}
 
 			return tinyRemapper;
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to create tiny remapper for intermediary->named", e);
 		}
-	}
-
-	@Override
-	public boolean isInvalid(File file) {
-		// The hash is handled by getId()
-		return false;
 	}
 
 	private static class TransitiveDetectorVisitor implements AccessWidenerVisitor {

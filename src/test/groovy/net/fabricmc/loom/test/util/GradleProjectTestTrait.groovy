@@ -65,6 +65,10 @@ trait GradleProjectTestTrait {
             String repo  = options.repo
             String commit = options.commit
 
+            if (options.allowExistingRepo && projectDir.listFiles()?.length > 0) {
+                return
+            }
+
             exec(projectDir, "git", "clone", repo, ".")
             exec(projectDir, "git", "checkout", commit)
 
@@ -85,6 +89,7 @@ trait GradleProjectTestTrait {
     }
 
     private void exec(File projectDir, String... args) {
+        projectDir.mkdirs()
         def process = args.execute([], projectDir)
         process.consumeProcessOutput(System.out, System.err)
 
@@ -194,6 +199,10 @@ trait GradleProjectTestTrait {
             return new File(getProjectDir(), "build.gradle")
         }
 
+        File getGradleProperties() {
+            return new File(getProjectDir(), "gradle.properties")
+        }
+
         String getOutputZipEntry(String filename, String entryName) {
             def file = getOutputFile(filename)
             def bytes = ZipUtils.unpackNullable(file.toPath(), entryName)
@@ -211,7 +220,7 @@ trait GradleProjectTestTrait {
         }
 
         File getGeneratedSources(String mappings) {
-            return new File(getGradleHomeDir(), "caches/fabric-loom/${mappings}/minecraft-mapped-sources.jar")
+            return new File(getGradleHomeDir(), "caches/fabric-loom/${mappings}/minecraft-merged-named-sources.jar")
         }
     }
 }

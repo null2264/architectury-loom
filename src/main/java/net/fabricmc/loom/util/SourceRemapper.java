@@ -202,8 +202,13 @@ public class SourceRemapper {
 				}
 			}
 
-			m.getClassPath().add(extension.getMinecraftMappedProvider().getMappedJar().toPath());
-			m.getClassPath().add(extension.getMinecraftMappedProvider().getIntermediaryJar().toPath());
+			for (Path intermediaryJar : extension.getMinecraftJars(MappingsNamespace.INTERMEDIARY)) {
+				m.getClassPath().add(intermediaryJar);
+			}
+
+			for (Path intermediaryJar : extension.getMinecraftJars(MappingsNamespace.NAMED)) {
+				m.getClassPath().add(intermediaryJar);
+			}
 
 			if (extension.isForge()) {
 				m.getClassPath().add(extension.getMinecraftMappedProvider().getSrgJar().toPath());

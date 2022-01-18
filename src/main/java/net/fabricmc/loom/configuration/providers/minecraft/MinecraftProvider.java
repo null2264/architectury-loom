@@ -22,35 +22,34 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.configuration.providers;
+package net.fabricmc.loom.configuration.providers.minecraft;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.io.Files;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 
+import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
-import net.fabricmc.loom.configuration.DependencyProvider;
-import net.fabricmc.loom.configuration.providers.minecraft.ManifestVersion;
-import net.fabricmc.loom.configuration.providers.minecraft.MinecraftLibraryProvider;
-import net.fabricmc.loom.configuration.providers.minecraft.MinecraftVersionMeta;
+import net.fabricmc.loom.configuration.DependencyInfo;
+import net.fabricmc.loom.configuration.providers.BundleMetadata;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DownloadUtil;
 import net.fabricmc.loom.util.HashedDownloadUtil;
 import net.fabricmc.loom.util.MirrorUtil;
-import net.fabricmc.stitch.merge.JarMerger;
 
-public class MinecraftProviderImpl extends DependencyProvider implements MinecraftProvider {
+public abstract class MinecraftProvider {
 	private String minecraftVersion;
 
 	private MinecraftVersionMeta versionInfo;
@@ -58,29 +57,25 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 
 	private File workingDir;
 	private File minecraftJson;
-	public File minecraftClientJar;
+	private File minecraftClientJar;
 	// Note this will be the boostrap jar starting with 21w39a
-	public File minecraftServerJar;
+	private File minecraftServerJar;
 	// The extracted server jar from the boostrap, only exists in >=21w39a
-	public File minecraftExtractedServerJar;
+	private File minecraftExtractedServerJar;
 	@Nullable
-	public BundleMetadata serverBundleMetadata;
-	private File minecraftMergedJar;
+	private BundleMetadata serverBundleMetadata;
 	private File versionManifestJson;
 	private File experimentalVersionsJson;
-	private String jarPrefix = "";
 
-	public MinecraftProviderImpl(Project project) {
-		super(project);
+	private final Project project;
+
+	public MinecraftProvider(Project project) {
+		this.project = project;
 	}
 
-	@Override
-	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
+	public void provide() throws Exception {
+		final DependencyInfo dependency = DependencyInfo.create(getProject(), Constants.Configurations.MINECRAFT);
 		minecraftVersion = dependency.getDependency().getVersion();
-
-		if (getExtension().shouldGenerateSrgTiny() && !getExtension().isForge()) {
-			addDependency("de.oceanlabs.mcp:mcp_config:" + minecraftVersion, Constants.Configurations.SRG);
-		}
 
 		boolean offline = getProject().getGradle().getStartParameter().isOffline();
 
@@ -95,9 +90,6 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 		if (offline) {
 			if (minecraftClientJar.exists() && minecraftServerJar.exists()) {
 				getProject().getLogger().debug("Found client and server jars, presuming up-to-date");
-			} else if (minecraftMergedJar.exists()) {
-				//Strictly we don't need the split jars if the merged one exists, let's try go on
-				getProject().getLogger().warn("Missing game jar but merged jar present, things might end badly");
 			} else {
 				throw new GradleException("Missing jar(s); Client: " + minecraftClientJar.exists() + ", Server: " + minecraftServerJar.exists());
 			}
@@ -109,39 +101,17 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 
 		libraryProvider = new MinecraftLibraryProvider();
 		libraryProvider.provide(this, getProject());
-
-		if (!minecraftMergedJar.exists() || isRefreshDeps()) {
-			try {
-				mergeJars(getProject().getLogger());
-			} catch (Throwable e) {
-				HashedDownloadUtil.delete(minecraftClientJar);
-				HashedDownloadUtil.delete(minecraftServerJar);
-				minecraftMergedJar.delete();
-
-				getProject().getLogger().error("Could not merge JARs! Deleting source JARs - please re-run the command and move on.", e);
-				throw e;
-			}
-		}
 	}
 
-	private void initFiles() {
-		workingDir = new File(getDirectories().getUserCache(), minecraftVersion);
+	protected void initFiles() {
+		workingDir = new File(getExtension().getFiles().getUserCache(), minecraftVersion);
 		workingDir.mkdirs();
 		minecraftJson = file("minecraft-info.json");
 		minecraftClientJar = file("minecraft-client.jar");
 		minecraftServerJar = file("minecraft-server.jar");
 		minecraftExtractedServerJar = file("minecraft-extracted_server.jar");
-		minecraftMergedJar = file("minecraft-merged.jar");
-		versionManifestJson = new File(getDirectories().getUserCache(), "version_manifest.json");
-		experimentalVersionsJson = new File(getDirectories().getUserCache(), "experimental_version_manifest.json");
-	}
-
-	public void deleteFiles() {
-		DownloadUtil.delete(minecraftClientJar);
-		DownloadUtil.delete(minecraftServerJar);
-		DownloadUtil.delete(minecraftMergedJar);
-		DownloadUtil.delete(versionManifestJson);
-		DownloadUtil.delete(experimentalVersionsJson);
+		versionManifestJson = new File(getExtension().getFiles().getUserCache(), "version_manifest.json");
+		experimentalVersionsJson = new File(getExtension().getFiles().getUserCache(), "experimental_version_manifest.json");
 	}
 
 	private void downloadMcJson(boolean offline) throws IOException {
@@ -268,58 +238,55 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 		HashedDownloadUtil.downloadIfInvalid(new URL(server.url()), minecraftServerJar, server.sha1(), logger, false);
 	}
 
-	private void mergeJars(Logger logger) throws IOException {
-		logger.info(":merging jars");
-		Stopwatch stopwatch = Stopwatch.createStarted();
+	protected final void extractBundledServerJar() throws IOException {
+		Objects.requireNonNull(getServerBundleMetadata(), "Cannot bundled mc jar from none bundled server jar");
 
-		File jarToMerge = minecraftServerJar;
+		getLogger().info(":Extracting server jar from bootstrap");
 
-		if (serverBundleMetadata != null) {
-			logger.info(":Extracting server jar from bootstrap");
-
-			if (serverBundleMetadata.versions().size() != 1) {
-				throw new UnsupportedOperationException("Expected only 1 version in META-INF/versions.list, but got %d".formatted(serverBundleMetadata.versions().size()));
-			}
-
-			serverBundleMetadata.versions().get(0).unpackEntry(minecraftServerJar.toPath(), minecraftExtractedServerJar.toPath());
-			jarToMerge = minecraftExtractedServerJar;
+		if (getServerBundleMetadata().versions().size() != 1) {
+			throw new UnsupportedOperationException("Expected only 1 version in META-INF/versions.list, but got %d".formatted(getServerBundleMetadata().versions().size()));
 		}
 
-		try (JarMerger jarMerger = new JarMerger(minecraftClientJar, jarToMerge, minecraftMergedJar)) {
-			jarMerger.enableSyntheticParamsOffset();
-			jarMerger.merge();
-		}
-
-		logger.info(":merged jars in " + stopwatch);
+		getServerBundleMetadata().versions().get(0).unpackEntry(minecraftServerJar.toPath(), getMinecraftExtractedServerJar().toPath());
 	}
 
-	public File getMergedJar() {
-		return minecraftMergedJar;
-	}
-
-	@Override
 	public File workingDir() {
 		return workingDir;
 	}
 
-	@Override
 	public File dir(String path) {
 		File dir = file(path);
 		dir.mkdirs();
 		return dir;
 	}
 
-	@Override
 	public File file(String path) {
 		return new File(workingDir(), path);
 	}
 
-	@Override
+	public Path path(String path) {
+		return file(path).toPath();
+	}
+
+	public File getMinecraftClientJar() {
+		return minecraftClientJar;
+	}
+
+	// May be null on older versions
+	@Nullable
+	public File getMinecraftExtractedServerJar() {
+		return minecraftExtractedServerJar;
+	}
+
+	// This may be the server bundler jar on newer versions prob not what you want.
+	public File getMinecraftServerJar() {
+		return minecraftServerJar;
+	}
+
 	public String minecraftVersion() {
 		return minecraftVersion;
 	}
 
-	@Override
 	public MinecraftVersionMeta getVersionInfo() {
 		return versionInfo;
 	}
@@ -328,15 +295,6 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 		return libraryProvider;
 	}
 
-	public String getJarPrefix() {
-		return jarPrefix;
-	}
-
-	public void setJarPrefix(String jarSuffix) {
-		this.jarPrefix = jarSuffix;
-	}
-
-	@Override
 	public String getTargetConfig() {
 		return Constants.Configurations.MINECRAFT;
 	}
@@ -344,5 +302,23 @@ public class MinecraftProviderImpl extends DependencyProvider implements Minecra
 	@Nullable
 	public BundleMetadata getServerBundleMetadata() {
 		return serverBundleMetadata;
+	}
+
+	protected Logger getLogger() {
+		return getProject().getLogger();
+	}
+
+	public abstract List<Path> getMinecraftJars();
+
+	protected Project getProject() {
+		return project;
+	}
+
+	protected LoomGradleExtension getExtension() {
+		return LoomGradleExtension.get(getProject());
+	}
+
+	protected boolean isRefreshDeps() {
+		return LoomGradlePlugin.refreshDeps;
 	}
 }

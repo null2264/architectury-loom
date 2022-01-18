@@ -24,7 +24,7 @@
 
 package net.fabricmc.loom;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -36,9 +36,9 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.SourceSet;
 
 import net.fabricmc.loom.api.LoomGradleExtensionAPI;
+import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.InstallerData;
 import net.fabricmc.loom.configuration.LoomDependencyManager;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerFile;
@@ -52,7 +52,9 @@ import net.fabricmc.loom.configuration.providers.forge.McpConfigProvider;
 import net.fabricmc.loom.configuration.providers.forge.PatchProvider;
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
-import net.fabricmc.loom.configuration.providers.minecraft.MinecraftMappedProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.mapped.IntermediaryMinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraftProvider;
 import net.fabricmc.loom.extension.LoomFiles;
 import net.fabricmc.loom.extension.MixinExtension;
 
@@ -90,21 +92,31 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 
 	JarProcessorManager getJarProcessorManager();
 
-	default MinecraftProviderImpl getMinecraftProvider() {
-		return getDependencyManager().getProvider(MinecraftProviderImpl.class);
+	MinecraftProvider getMinecraftProvider();
+
+	void setMinecraftProvider(MinecraftProvider minecraftProvider);
+
+	MappingsProviderImpl getMappingsProvider();
+
+	void setMappingsProvider(MappingsProviderImpl mappingsProvider);
+
+	NamedMinecraftProvider<?> getNamedMinecraftProvider();
+
+	IntermediaryMinecraftProvider<?> getIntermediaryMinecraftProvider();
+
+	void setNamedMinecraftProvider(NamedMinecraftProvider<?> namedMinecraftProvider);
+
+	void setIntermediaryMinecraftProvider(IntermediaryMinecraftProvider<?> intermediaryMinecraftProvider);
+
+	default List<Path> getMinecraftJars(MappingsNamespace mappingsNamespace) {
+		return switch (mappingsNamespace) {
+		case NAMED -> getNamedMinecraftProvider().getMinecraftJars();
+		case INTERMEDIARY -> getIntermediaryMinecraftProvider().getMinecraftJars();
+		case OFFICIAL -> getMinecraftProvider().getMinecraftJars();
+		};
 	}
 
-	default MappingsProviderImpl getMappingsProvider() {
-		return getDependencyManager().getProvider(isForge() ? FieldMigratedMappingsProvider.class : MappingsProviderImpl.class);
-	}
-
-	default MinecraftMappedProvider getMinecraftMappedProvider() {
-		return getMappingsProvider().mappedProvider;
-	}
-
-	File getMixinMappings(SourceSet sourceSet);
-
-	FileCollection getAllMixinMappings();
+	FileCollection getMinecraftJarsCollection(MappingsNamespace mappingsNamespace);
 
 	boolean isRootProject();
 

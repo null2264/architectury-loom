@@ -43,6 +43,7 @@ import org.gradle.api.tasks.SourceSet;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.ide.idea.IdeaUtils;
 import net.fabricmc.loom.extension.MixinExtension;
+import net.fabricmc.loom.task.service.MixinMappingsService;
 import net.fabricmc.loom.util.Constants;
 
 /**
@@ -86,7 +87,7 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 			Path mappings = loom.isForge() ? loom.getMappingsProvider().mixinTinyMappingsWithSrg : loom.getMappingsProvider().tinyMappings;
 			Map<String, String> args = new HashMap<>() {{
 					put(Constants.MixinArguments.IN_MAP_FILE_NAMED_INTERMEDIARY, mappings.toFile().getCanonicalPath());
-					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, loom.getMixinMappings(sourceSet).getCanonicalPath());
+					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, MixinMappingsService.getMixinMappingFile(project, sourceSet).getCanonicalPath());
 					put(Constants.MixinArguments.OUT_REFMAP_FILE, getRefmapDestination(task, refmapName));
 					put(Constants.MixinArguments.DEFAULT_OBFUSCATION_ENV, "named:intermediary");
 				}};

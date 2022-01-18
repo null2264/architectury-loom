@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import com.google.common.io.Files;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -76,5 +77,9 @@ public class Checksum {
 	public static byte[] sha256(String string) {
 		HashCode hash = Hashing.sha256().hashString(string, StandardCharsets.UTF_8);
 		return hash.asBytes();
+	}
+
+	public static String toHex(byte[] bytes) {
+		return BaseEncoding.base16().lowerCase().encode(bytes);
 	}
 }

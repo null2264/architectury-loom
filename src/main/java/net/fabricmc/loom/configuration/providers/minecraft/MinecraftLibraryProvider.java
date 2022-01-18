@@ -30,16 +30,17 @@ import java.util.regex.Pattern;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ExternalModuleDependency;
 
+import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.providers.BundleMetadata;
-import net.fabricmc.loom.configuration.providers.MinecraftProviderImpl;
 import net.fabricmc.loom.util.Constants;
 
 public class MinecraftLibraryProvider {
 	private static final Pattern NATIVES_PATTERN = Pattern.compile("^(?<group>.*)/(.*?)/(?<version>.*)/((?<name>.*?)-([0-9].*?)-)(?<classifier>.*).jar$");
 
-	public void provide(MinecraftProviderImpl minecraftProvider, Project project) {
-		MinecraftVersionMeta versionInfo = minecraftProvider.getVersionInfo();
-		BundleMetadata serverBundleMetadata = minecraftProvider.getServerBundleMetadata();
+	public void provide(MinecraftProvider minecraftProvider, Project project) {
+		final MinecraftJarConfiguration jarConfiguration = LoomGradleExtension.get(project).getMinecraftJarConfiguration().get();
+		final MinecraftVersionMeta versionInfo = minecraftProvider.getVersionInfo();
+		final BundleMetadata serverBundleMetadata = minecraftProvider.getServerBundleMetadata();
 
 		final boolean overrideLWJGL = LWJGLVersionOverride.overrideByDefault() || LWJGLVersionOverride.forceOverride(project) || Boolean.getBoolean("loom.test.lwjgloverride");
 
@@ -55,7 +56,7 @@ public class MinecraftLibraryProvider {
 			if (library.isValidForOS() && !library.hasNatives() && library.artifact() != null) {
 				if (serverBundleMetadata != null && isLibraryInBundle(serverBundleMetadata, library)) {
 					project.getDependencies().add(Constants.Configurations.MINECRAFT_SERVER_DEPENDENCIES, library.name());
-				} else {
+				} else if (jarConfiguration.getSupportedEnvironments().contains("client")) {
 					// Client only library, or legacy version
 					project.getDependencies().add(Constants.Configurations.MINECRAFT_DEPENDENCIES, library.name());
 				}
