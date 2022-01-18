@@ -50,7 +50,7 @@ import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUniversalProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.McpConfigProvider;
-import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider2;
+import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider;
 import net.fabricmc.loom.configuration.providers.forge.PatchProvider;
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
@@ -266,7 +266,7 @@ public final class CompileConfiguration {
 		// Provide the vanilla mc jars -- TODO share across projects.
 		final MinecraftProvider minecraftProvider = jarConfiguration.getMinecraftProviderFunction().apply(project);
 
-		if (extension.isForge() && !(minecraftProvider instanceof MinecraftPatchedProvider2)) {
+		if (extension.isForge() && !(minecraftProvider instanceof MinecraftPatchedProvider)) {
 			throw new UnsupportedOperationException("Using Forge with split or server-only jars is not currently supported!");
 		}
 

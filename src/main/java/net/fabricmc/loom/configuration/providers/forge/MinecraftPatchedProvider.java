@@ -1,27 +1,3 @@
-/*
- * This file is part of fabric-loom, licensed under the MIT License (MIT).
- *
- * Copyright (c) 2020-2021 FabricMC
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-
 package net.fabricmc.loom.configuration.providers.forge;
 
 import java.io.ByteArrayInputStream;
@@ -49,7 +25,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.Attributes;
@@ -78,6 +53,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.configuration.ShowStacktrace;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -86,11 +62,12 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
-import net.fabricmc.loom.configuration.DependencyProvider;
-import net.fabricmc.loom.configuration.providers.MinecraftProviderImpl;
+import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.configuration.providers.minecraft.MergedMinecraftProvider;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.FileSystemUtil;
+import net.fabricmc.loom.util.FunnyTodoException;
 import net.fabricmc.loom.util.MappingsProviderVerbose;
 import net.fabricmc.loom.util.ThreadingUtils;
 import net.fabricmc.loom.util.TinyRemapperHelper;
@@ -100,7 +77,7 @@ import net.fabricmc.loom.util.srg.InnerClassRemapper;
 import net.fabricmc.loom.util.srg.SpecialSourceExecutor;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
-public class MinecraftPatchedProvider extends DependencyProvider {
+public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	private static final String LOOM_PATCH_VERSION_KEY = "Loom-Patch-Version";
 	private static final String CURRENT_LOOM_PATCH_VERSION = "5";
 	private static final String NAME_MAPPING_SERVICE_PATH = "/inject/META-INF/services/cpw.mods.modlauncher.api.INameMappingService";
@@ -117,84 +94,50 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 	private File minecraftMergedPatchedSrgAtJar;
 	// Step 5: Remap Patched AT & Forge to Official (global or project)
 	private File minecraftMergedPatchedJar;
+	@Nullable
 	private File forgeMergedJar;
 	private File minecraftClientExtra;
 
+	private boolean dirty;
 	private File projectAtHash;
 	private Set<File> projectAts = new HashSet<>();
 	private boolean atDirty = false;
 	private boolean filesDirty = false;
-	private Path mcpConfigMappings;
-	private Path[] mergedMojangTsrg2Files;
+
+	public static MergedMinecraftProvider getMergedMinecraftProvider(Project project) {
+		return LoomGradleExtension.get(project).isForge() ? new MinecraftPatchedProvider(project) : new MergedMinecraftProvider(project);
+	}
 
 	public MinecraftPatchedProvider(Project project) {
 		super(project);
 	}
 
-	public void initFiles() throws IOException {
-		filesDirty = false;
-		projectAtHash = new File(getDirectories().getProjectPersistentCache(), "at.sha256");
-		ConfigurableFileCollection accessTransformers = getExtension().getForge().getAccessTransformers();
-		accessTransformers.finalizeValue();
-		projectAts = accessTransformers.getFiles();
+	@Override
+	protected void initFiles() {
+		super.initFiles();
 
-		if (projectAts.isEmpty()) {
-			SourceSet main = getProject().getConvention().findPlugin(JavaPluginConvention.class).getSourceSets().getByName("main");
-
-			for (File srcDir : main.getResources().getSrcDirs()) {
-				File projectAt = new File(srcDir, Constants.Forge.ACCESS_TRANSFORMER_PATH);
-
-				if (projectAt.exists()) {
-					this.projectAts.add(projectAt);
-					break;
-				}
-			}
-		}
-
-		if (isRefreshDeps() || !projectAtHash.exists()) {
-			writeAtHash();
-			atDirty = !projectAts.isEmpty();
-		} else {
-			byte[] expected = com.google.common.io.Files.asByteSource(projectAtHash).read();
-			byte[] current = getProjectAtsHash();
-			boolean mismatched = !Arrays.equals(current, expected);
-
-			if (mismatched) {
-				writeAtHash();
-			}
-
-			atDirty = mismatched;
-		}
-
-		MinecraftProviderImpl minecraftProvider = getExtension().getMinecraftProvider();
 		PatchProvider patchProvider = getExtension().getPatchProvider();
-		String minecraftVersion = minecraftProvider.minecraftVersion();
+		String minecraftVersion = minecraftVersion();
 		String patchId = "forge-" + getExtension().getForgeProvider().getVersion().getCombined() + "-";
 
-		if (getExtension().isForgeAndOfficial()) {
-			minecraftProvider.setJarPrefix(patchId);
-		}
+		FunnyTodoException.yes("jar prefix");
+		//if (getExtension().isForgeAndOfficial()) {
+		//	minecraftProvider.setJarPrefix(patchId);
+		//}
 
 		File globalCache = getExtension().getForgeProvider().getGlobalCache();
 		File projectDir = usesProjectCache() ? getExtension().getForgeProvider().getProjectCache() : globalCache;
 		projectDir.mkdirs();
 
-		minecraftClientSrgJar = new File(globalCache, "minecraft-client-srg.jar");
-		minecraftServerSrgJar = new File(globalCache, "minecraft-server-srg.jar");
-		minecraftClientPatchedSrgJar = new File(globalCache, "client-srg-patched.jar");
-		minecraftServerPatchedSrgJar = new File(globalCache, "server-srg-patched.jar");
-		minecraftMergedPatchedSrgJar = new File(globalCache, "merged-srg-patched.jar");
-		forgeMergedJar = getExtension().isForgeAndOfficial() ? null : new File(globalCache, "forge-official.jar");
-		minecraftMergedPatchedSrgAtJar = new File(projectDir, "merged-srg-at-patched.jar");
-		minecraftMergedPatchedJar = new File(projectDir, "merged-patched.jar");
-		minecraftClientExtra = new File(globalCache, "forge-client-extra.jar");
-
-		if (isRefreshDeps() || Stream.of(getGlobalCaches()).anyMatch(((Predicate<File>) File::exists).negate())
-						|| !isPatchedJarUpToDate(minecraftMergedPatchedJar)) {
-			cleanAllCache();
-		} else if (atDirty || Stream.of(getProjectCache()).anyMatch(((Predicate<File>) File::exists).negate())) {
-			cleanProjectCache();
-		}
+		minecraftClientSrgJar = file("minecraft-client-srg.jar");
+		minecraftServerSrgJar = file("minecraft-server-srg.jar");
+		minecraftClientPatchedSrgJar = file("client-srg-patched.jar");
+		minecraftServerPatchedSrgJar = file("server-srg-patched.jar");
+		minecraftMergedPatchedSrgJar = file("merged-srg-patched.jar");
+		forgeMergedJar = getExtension().isForgeAndOfficial() ? null : file("forge-official.jar");
+		minecraftMergedPatchedSrgAtJar = file("merged-srg-at-patched.jar");
+		minecraftMergedPatchedJar = file("merged-patched.jar");
+		minecraftClientExtra = file("forge-client-extra.jar");
 	}
 
 	private byte[] getProjectAtsHash() throws IOException {
@@ -247,15 +190,52 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		};
 	}
 
-	private boolean dirty;
+	private void checkAtAndCache() throws IOException {
+		filesDirty = false;
+		projectAtHash = new File(getExtension().getFiles().getProjectPersistentCache(), "at.sha256");
+		ConfigurableFileCollection accessTransformers = getExtension().getForge().getAccessTransformers();
+		accessTransformers.finalizeValue();
+		projectAts = accessTransformers.getFiles();
+
+		if (projectAts.isEmpty()) {
+			SourceSet main = getProject().getConvention().findPlugin(JavaPluginConvention.class).getSourceSets().getByName("main");
+
+			for (File srcDir : main.getResources().getSrcDirs()) {
+				File projectAt = new File(srcDir, Constants.Forge.ACCESS_TRANSFORMER_PATH);
+
+				if (projectAt.exists()) {
+					this.projectAts.add(projectAt);
+					break;
+				}
+			}
+		}
+
+		if (isRefreshDeps() || !projectAtHash.exists()) {
+			writeAtHash();
+			atDirty = !projectAts.isEmpty();
+		} else {
+			byte[] expected = com.google.common.io.Files.asByteSource(projectAtHash).read();
+			byte[] current = getProjectAtsHash();
+			boolean mismatched = !Arrays.equals(current, expected);
+
+			if (mismatched) {
+				writeAtHash();
+			}
+
+			atDirty = mismatched;
+		}
+
+		if (isRefreshDeps() || Stream.of(getGlobalCaches()).anyMatch(((Predicate<File>) File::exists).negate())
+				|| !isPatchedJarUpToDate(minecraftMergedPatchedJar)) {
+			cleanAllCache();
+		} else if (atDirty || Stream.of(getProjectCache()).anyMatch(((Predicate<File>) File::exists).negate())) {
+			cleanProjectCache();
+		}
+	}
 
 	@Override
-	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
-		initFiles();
-
-		if (atDirty) {
-			getProject().getLogger().lifecycle(":found dirty access transformers");
-		}
+	public void provide() throws Exception {
+		super.provide();
 
 		this.dirty = false;
 
@@ -269,9 +249,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 			this.dirty = true;
 			patchJars(getProject().getLogger());
 		}
-	}
 
-	public void finishProvide() throws Exception {
 		if (dirty || !minecraftMergedPatchedSrgJar.exists()) {
 			mergeJars(getProject().getLogger());
 		}
@@ -297,15 +275,20 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		this.dirty = false;
 
 		if (getExtension().isForgeAndOfficial()) {
-			addDependency(minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
+			DependencyProvider.addDependency(getProject(), minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
 		}
+	}
+
+	@Override
+	protected void mergeJars() throws IOException {
+		// Don't merge jars in the superclass
 	}
 
 	private void fillClientExtraJar() throws IOException {
 		Files.deleteIfExists(minecraftClientExtra.toPath());
 		FileSystemUtil.getJarFileSystem(minecraftClientExtra, true).close();
 
-		copyNonClassFiles(getExtension().getMinecraftProvider().minecraftClientJar, minecraftClientExtra);
+		copyNonClassFiles(getMinecraftClientJar(), minecraftClientExtra);
 	}
 
 	private TinyRemapper buildRemapper(Path input) throws IOException {
@@ -338,8 +321,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 	}
 
 	private void createSrgJars(Logger logger) throws Exception {
-		MinecraftProviderImpl minecraftProvider = getExtension().getMinecraftProvider();
-		produceSrgJar(getExtension().isForgeAndOfficial(), minecraftProvider.minecraftClientJar.toPath(), MoreObjects.firstNonNull(minecraftProvider.minecraftExtractedServerJar, minecraftProvider.minecraftServerJar).toPath());
+		produceSrgJar(getExtension().isForgeAndOfficial(), super.getMinecraftClientJar().toPath(), MoreObjects.firstNonNull(super.getMinecraftExtractedServerJar(), super.getMinecraftServerJar()).toPath());
 	}
 
 	private void produceSrgJar(boolean official, Path clientJar, Path serverJar) throws IOException {
@@ -349,8 +331,8 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		ThreadingUtils.run(() -> {
 			Files.copy(SpecialSourceExecutor.produceSrgJar(getExtension().getMcpConfigProvider().getRemapAction(), getProject(), "client", mcLibs, clientJar, tmpSrg), minecraftClientSrgJar.toPath());
 		}, () -> {
-				Files.copy(SpecialSourceExecutor.produceSrgJar(getExtension().getMcpConfigProvider().getRemapAction(), getProject(), "server", mcLibs, serverJar, tmpSrg), minecraftServerSrgJar.toPath());
-			});
+			Files.copy(SpecialSourceExecutor.produceSrgJar(getExtension().getMcpConfigProvider().getRemapAction(), getProject(), "server", mcLibs, serverJar, tmpSrg), minecraftServerSrgJar.toPath());
+		});
 	}
 
 	private Path getToSrgMappings() throws IOException {
@@ -479,9 +461,8 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 	}
 
 	private void accessTransformForge(Logger logger) throws Exception {
-		MinecraftProviderImpl minecraftProvider = getExtension().getMinecraftProvider();
 		List<File> toDelete = new ArrayList<>();
-		String atDependency = Constants.Dependencies.ACCESS_TRANSFORMERS + (minecraftProvider.serverBundleMetadata != null ? Constants.Dependencies.Versions.ACCESS_TRANSFORMERS_NEW : Constants.Dependencies.Versions.ACCESS_TRANSFORMERS);
+		String atDependency = Constants.Dependencies.ACCESS_TRANSFORMERS + (getServerBundleMetadata() != null ? Constants.Dependencies.Versions.ACCESS_TRANSFORMERS_NEW : Constants.Dependencies.Versions.ACCESS_TRANSFORMERS);
 		FileCollection classpath = DependencyDownloader.download(getProject(), atDependency);
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -523,7 +504,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 
 			// if running with INFO or DEBUG logging
 			if (getProject().getGradle().getStartParameter().getShowStacktrace() != ShowStacktrace.INTERNAL_EXCEPTIONS
-						|| getProject().getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.LIFECYCLE) < 0) {
+					|| getProject().getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.LIFECYCLE) < 0) {
 				spec.setStandardOutput(System.out);
 				spec.setErrorOutput(System.err);
 			} else {
@@ -551,7 +532,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		final Function<MinecraftPatchedProvider, File> patchedSrgJar;
 
 		Environment(Function<MinecraftPatchedProvider, File> srgJar,
-				Function<MinecraftPatchedProvider, File> patchedSrgJar) {
+					Function<MinecraftPatchedProvider, File> patchedSrgJar) {
 			this.srgJar = srgJar;
 			this.patchedSrgJar = patchedSrgJar;
 		}
@@ -579,8 +560,8 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		TinyRemapper remapper = buildRemapper(mcInput);
 
 		try (OutputConsumerPath outputConsumer = new OutputConsumerPath.Builder(mcOutput).build();
-						Closeable outputConsumerForge = !splitJars ? () -> {
-						} : new OutputConsumerPath.Builder(forgeOutput).build()) {
+				Closeable outputConsumerForge = !splitJars ? () -> {
+				} : new OutputConsumerPath.Builder(forgeOutput).build()) {
 			outputConsumer.addNonClassFiles(mcInput);
 
 			InputTag mcTag = remapper.createInputTag();
@@ -608,7 +589,7 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		patchJars(minecraftClientSrgJar, minecraftClientPatchedSrgJar, patchProvider.clientPatches);
 		patchJars(minecraftServerSrgJar, minecraftServerPatchedSrgJar, patchProvider.serverPatches);
 
-		ThreadingUtils.run(Environment.values(), environment -> {
+		ThreadingUtils.run(MinecraftPatchedProvider.Environment.values(), environment -> {
 			copyMissingClasses(environment.srgJar.apply(this), environment.patchedSrgJar.apply(this));
 			deleteParameterNames(environment.patchedSrgJar.apply(this));
 
@@ -652,16 +633,15 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		// Copy resources
 		if (getExtension().isForgeAndNotOfficial()) {
 			// Copy resources
-			MinecraftProviderImpl minecraftProvider = getExtension().getMinecraftProvider();
-			copyNonClassFiles(minecraftProvider.minecraftClientJar, minecraftMergedPatchedSrgJar);
-			copyNonClassFiles(MoreObjects.firstNonNull(minecraftProvider.minecraftExtractedServerJar, minecraftProvider.minecraftServerJar), minecraftMergedPatchedSrgJar);
+			copyNonClassFiles(super.getMinecraftClientJar(), minecraftMergedPatchedSrgJar);
+			copyNonClassFiles(MoreObjects.firstNonNull(super.getMinecraftExtractedServerJar(), super.getMinecraftServerJar()), minecraftMergedPatchedSrgJar);
 		}
 	}
 
 	private void walkFileSystems(File source, File target, Predicate<Path> filter, Function<FileSystem, Iterable<Path>> toWalk, FsPathConsumer action)
 			throws IOException {
 		try (FileSystemUtil.Delegate sourceFs = FileSystemUtil.getJarFileSystem(source, false);
-					FileSystemUtil.Delegate targetFs = FileSystemUtil.getJarFileSystem(target, false)) {
+				FileSystemUtil.Delegate targetFs = FileSystemUtil.getJarFileSystem(target, false)) {
 			for (Path sourceDir : toWalk.apply(sourceFs.get())) {
 				Path dir = sourceDir.toAbsolutePath();
 				if (!Files.exists(dir)) continue;
@@ -764,8 +744,9 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 		}
 	}
 
-	public File getMergedJar() {
-		return minecraftMergedPatchedJar;
+	@Override
+	public Path getMergedJar() {
+		return minecraftMergedPatchedJar.toPath();
 	}
 
 	public File getForgeMergedJar() {
@@ -773,7 +754,8 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 	}
 
 	public boolean usesProjectCache() {
-		return !projectAts.isEmpty();
+		if (!projectAts.isEmpty()) FunnyTodoException.yes("project ATs");
+		return false;
 	}
 
 	public boolean isAtDirty() {
@@ -781,7 +763,11 @@ public class MinecraftPatchedProvider extends DependencyProvider {
 	}
 
 	@Override
-	public String getTargetConfig() {
-		return Constants.Configurations.MINECRAFT;
+	public List<Path> getMinecraftJars() {
+		if (forgeMergedJar != null) {
+			return List.of(minecraftMergedPatchedJar.toPath(), forgeMergedJar.toPath());
+		} else {
+			return List.of(minecraftMergedPatchedJar.toPath());
+		}
 	}
 }
