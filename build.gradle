@@ -42,8 +42,6 @@ if (!isSnapshot) {
 	version = baseVersion + "-PR." + System.getenv("PR_NUM") + "." + runNumber
 }
 
-version = '0.11.0-juuz.2'
-
 logger.lifecycle(":building plugin v${version}")
 
 repositories {
