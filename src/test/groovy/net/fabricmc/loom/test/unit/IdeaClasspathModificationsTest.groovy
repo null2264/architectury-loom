@@ -70,6 +70,7 @@ class IdeaClasspathModificationsTest extends Specification {
         return dummyConfig
     }
 
+    // codenarc-disable TrailingWhitespace
     @Language("XML")
     private static final String EXPECTED = '''
 <component name="ProjectRunConfigurationManager">
@@ -103,5 +104,6 @@ class IdeaClasspathModificationsTest extends Specification {
   <classpathModifications><entry exclude="true" path="/path/to/file.jar"/><entry exclude="true" path="/path/to/another.jar"/></classpathModifications></configuration>
 </component>
 '''.trim()
+    // codenarc-enable TrailingWhitespace
 
 }
