@@ -33,8 +33,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -43,13 +47,17 @@ import com.google.common.base.Suppliers;
 import com.google.gson.JsonObject;
 import org.apache.tools.ant.util.StringUtils;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.DependencyInfo;
+import net.fabricmc.loom.configuration.providers.forge.FieldMigratedMappingsProvider;
+import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.tiny.MappingsMerger;
 import net.fabricmc.loom.configuration.providers.mappings.tiny.TinyJarInfo;
 import net.fabricmc.loom.configuration.providers.minecraft.MergedMinecraftProvider;
@@ -59,24 +67,33 @@ import net.fabricmc.loom.util.DeletingFileVisitor;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.service.SharedService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
+import net.fabricmc.loom.util.srg.MCPReader;
+import net.fabricmc.loom.util.srg.SrgMerger;
+import net.fabricmc.loom.util.srg.SrgNamedWriter;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import net.fabricmc.stitch.Command;
 import net.fabricmc.stitch.commands.CommandProposeFieldNames;
+import net.fabricmc.stitch.commands.tinyv2.TinyFile;
+import net.fabricmc.stitch.commands.tinyv2.TinyV2Writer;
 
 public class MappingsProviderImpl implements MappingsProvider, SharedService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MappingsProviderImpl.class);
 
 	private Supplier<MemoryMappingTree> mappingTree;
+	private Supplier<MemoryMappingTree> mappingTreeWithSrg;
 	public final String mappingsIdentifier;
 
 	private final Path mappingsWorkingDir;
 	// The mappings that gradle gives us
 	private final Path baseTinyMappings;
 	// The mappings we use in practice
-	public final Path tinyMappings;
+	public Path tinyMappings;
 	public final Path tinyMappingsJar;
+	public Path tinyMappingsWithSrg;
+	public final Path mixinTinyMappingsWithSrg; // FORGE: The mixin mappings have srg names in intermediary.
+	public final Path srgToNamedSrg; // FORGE: srg to named in srg file format
 	private final Path unpickDefinitions;
 
 	private boolean hasUnpickDefinitions;
@@ -85,7 +102,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 
 	private final Supplier<IntermediaryService> intermediaryService;
 
-	private MappingsProviderImpl(String mappingsIdentifier, Path mappingsWorkingDir, Supplier<IntermediaryService> intermediaryService) {
+	protected MappingsProviderImpl(String mappingsIdentifier, Path mappingsWorkingDir, Supplier<IntermediaryService> intermediaryService) {
 		this.mappingsIdentifier = mappingsIdentifier;
 
 		this.mappingsWorkingDir = mappingsWorkingDir;
@@ -93,6 +110,9 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		this.tinyMappings = mappingsWorkingDir.resolve("mappings.tiny");
 		this.tinyMappingsJar = mappingsWorkingDir.resolve("mappings.jar");
 		this.unpickDefinitions = mappingsWorkingDir.resolve("mappings.unpick");
+		this.tinyMappingsWithSrg = mappingsWorkingDir.resolve("mappings-srg.tiny");
+		this.mixinTinyMappingsWithSrg = mappingsWorkingDir.resolve("mappings-mixin-srg.tiny");
+		this.srgToNamedSrg = mappingsWorkingDir.resolve("mappings-srg-named.srg");
 
 		this.intermediaryService = intermediaryService;
 	}
@@ -100,7 +120,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 	public static synchronized MappingsProviderImpl getInstance(Project project, DependencyInfo dependency, MinecraftProvider minecraftProvider) {
 		return SharedServiceManager.get(project).getOrCreateService("MappingsProvider:%s:%s".formatted(dependency.getDepString(), minecraftProvider.minecraftVersion()), () -> {
 			Supplier<IntermediaryService> intermediaryService = Suppliers.memoize(() -> IntermediaryService.getInstance(project, minecraftProvider));
-			return create(dependency, minecraftProvider, intermediaryService);
+			return create(project, dependency, minecraftProvider, intermediaryService);
 		});
 	}
 
@@ -108,7 +128,11 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		return Objects.requireNonNull(mappingTree, "Cannot get mappings before they have been read").get();
 	}
 
-	private static MappingsProviderImpl create(DependencyInfo dependency, MinecraftProvider minecraftProvider, Supplier<IntermediaryService> intermediaryService) {
+	public MemoryMappingTree getMappingsWithSrg() throws IOException {
+		return Objects.requireNonNull(mappingTreeWithSrg, "Cannot get mappings before they have been read").get();
+	}
+
+	private static MappingsProviderImpl create(Project project, DependencyInfo dependency, MinecraftProvider minecraftProvider, Supplier<IntermediaryService> intermediaryService) {
 		final String version = dependency.getResolvedVersion();
 		final Path inputJar = dependency.resolveFile().orElseThrow(() -> new RuntimeException("Could not resolve mappings: " + dependency)).toPath();
 		final String mappingsName = StringUtils.removeSuffix(dependency.getDependency().getGroup() + "." + dependency.getDependency().getName(), "-unmerged");
@@ -120,13 +144,27 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 			}
 		});
 
-		final String mappingsIdentifier = createMappingsIdentifier(mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
+		final LoomGradleExtension extension = LoomGradleExtension.get(project);
+		final String mappingsIdentifier;
+
+		if (extension.isForge()) {
+			mappingsIdentifier = FieldMigratedMappingsProvider.createForgeMappingsIdentifier(extension, mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
+		} else {
+			mappingsIdentifier = createMappingsIdentifier(mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
+		}
+
 		final Path workingDir = minecraftProvider.dir(mappingsIdentifier).toPath();
 
-		var mappingProvider = new MappingsProviderImpl(mappingsIdentifier, workingDir, intermediaryService);
+		MappingsProviderImpl mappingProvider;
+
+		if (extension.isForge()) {
+			mappingProvider = new FieldMigratedMappingsProvider(mappingsIdentifier, workingDir, intermediaryService);
+		} else {
+			mappingProvider = new MappingsProviderImpl(mappingsIdentifier, workingDir, intermediaryService);
+		}
 
 		try {
-			mappingProvider.setup(minecraftProvider, inputJar);
+			mappingProvider.setup(project, minecraftProvider, inputJar);
 		} catch (IOException e) {
 			cleanWorkingDirectory(workingDir);
 			throw new UncheckedIOException("Failed to setup mappings: " + dependency.getDepString(), e);
@@ -135,13 +173,13 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		return mappingProvider;
 	}
 
-	private void setup(MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
+	protected void setup(Project project, MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
 		if (isRefreshDeps()) {
 			cleanWorkingDirectory(mappingsWorkingDir);
 		}
 
 		if (Files.notExists(tinyMappings) || isRefreshDeps()) {
-			storeMappings(minecraftProvider, inputJar);
+			storeMappings(project, minecraftProvider, inputJar);
 		} else {
 			try (FileSystem fileSystem = FileSystems.newFileSystem(inputJar, (ClassLoader) null)) {
 				extractExtras(fileSystem);
@@ -153,10 +191,21 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 			ZipUtils.add(tinyMappingsJar, "mappings/mappings.tiny", Files.readAllBytes(tinyMappings));
 		}
 
-		mappingTree = Suppliers.memoize(this::readMappings);
+		mappingTree = Suppliers.memoize(() -> readMappings(tinyMappings));
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
+		manipulateMappings(project, tinyMappingsJar);
+
+		if (extension.shouldGenerateSrgTiny()) {
+			if (Files.notExists(tinyMappingsWithSrg) || isRefreshDeps()) {
+				// Merge tiny mappings with srg
+				SrgMerger.mergeSrg(project.getLogger(), () -> getMojmapSrgFileIfPossible(project), getRawSrgFile(project), tinyMappings, tinyMappingsWithSrg, true);
+			}
+
+			mappingTreeWithSrg = Suppliers.memoize(() -> readMappings(tinyMappingsWithSrg));
+		}
 	}
 
-	public void applyToProject(Project project, DependencyInfo dependency) {
+	public void applyToProject(Project project, DependencyInfo dependency) throws IOException {
 		if (hasUnpickDefinitions()) {
 			String notation = String.format("%s:%s:%s:constants",
 					dependency.getDependency().getGroup(),
@@ -168,7 +217,48 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 			populateUnpickClasspath(project);
 		}
 
-		project.getDependencies().add(Constants.Configurations.MAPPINGS_FINAL, project.files(tinyMappingsJar.toFile()));
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
+
+		if (extension.isForge()) {
+			if (!extension.shouldGenerateSrgTiny()) {
+				throw new IllegalStateException("We have to generate srg tiny in a forge environment!");
+			}
+
+			if (Files.notExists(mixinTinyMappingsWithSrg) || isRefreshDeps()) {
+				List<String> lines = new ArrayList<>(Files.readAllLines(tinyMappingsWithSrg));
+				lines.set(0, lines.get(0).replace("intermediary", "yraidemretni").replace("srg", "intermediary"));
+				Files.deleteIfExists(mixinTinyMappingsWithSrg);
+				Files.write(mixinTinyMappingsWithSrg, lines);
+			}
+
+			if (Files.notExists(srgToNamedSrg) || isRefreshDeps()) {
+				SrgNamedWriter.writeTo(project.getLogger(), srgToNamedSrg, getMappingsWithSrg(), "srg", "named");
+			}
+		}
+
+		project.getDependencies().add(Constants.Configurations.MAPPINGS_FINAL, project.getDependencies().module("loom.resolved:mappings:" + extension.getMinecraftProvider().minecraftVersion() + "/" + mappingsIdentifier()));
+	}
+
+	protected Path getRawSrgFile(Project project) throws IOException {
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
+
+		if (extension.getSrgProvider().isTsrgV2()) {
+			return extension.getSrgProvider().getMergedMojangTrimmed();
+		}
+
+		return extension.getSrgProvider().getSrg();
+	}
+
+	public Path getMojmapSrgFileIfPossible(Project project) {
+		try {
+			LoomGradleExtension extension = LoomGradleExtension.get(project);
+			return SrgProvider.getMojmapTsrg2(project, extension);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	public void manipulateMappings(Project project, Path mappingsJar) throws IOException {
 	}
 
 	private static String getMappingsClassifier(DependencyInfo dependency, boolean isV2) {
@@ -181,15 +271,30 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		return isV2 ? "-v2" : "";
 	}
 
-	private void storeMappings(MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
+	private void storeMappings(Project project, MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
 		LOGGER.info(":extracting " + inputJar.getFileName());
+
+		if (isMCP(inputJar)) {
+			try {
+				readAndMergeMCP(project, inputJar);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+
+			return;
+		}
 
 		try (FileSystem fileSystem = FileSystems.newFileSystem(inputJar, (ClassLoader) null)) {
 			extractMappings(fileSystem, baseTinyMappings);
 			extractExtras(fileSystem);
 		}
 
-		if (areMappingsV2(baseTinyMappings)) {
+		if (areMappingsMergedV2(baseTinyMappings)) {
+			// Architectury Loom Patch
+			// If a merged tiny v2 mappings file is provided
+			// Skip merging, should save a lot of time
+			Files.copy(baseTinyMappings, tinyMappings, StandardCopyOption.REPLACE_EXISTING);
+		} else if (areMappingsV2(baseTinyMappings)) {
 			// These are unmerged v2 mappings
 			MappingsMerger.mergeAndSaveMappings(baseTinyMappings, tinyMappings, intermediaryService.get());
 		} else {
@@ -204,19 +309,58 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		}
 	}
 
-	private MemoryMappingTree readMappings() {
+	private static MemoryMappingTree readMappings(Path file) {
 		try {
 			MemoryMappingTree mappingTree = new MemoryMappingTree();
-			MappingReader.read(tinyMappings, mappingTree);
+			MappingReader.read(file, mappingTree);
 			return mappingTree;
 		} catch (IOException e) {
 			throw new UncheckedIOException("Failed to read mappings", e);
 		}
 	}
 
+	private void readAndMergeMCP(Project project, Path mcpJar) throws Exception {
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
+		Path intermediaryTinyPath = intermediaryTinyFile().toPath();
+		SrgProvider provider = extension.getSrgProvider();
+
+		if (provider == null) {
+			if (!extension.shouldGenerateSrgTiny()) {
+				Configuration srg = project.getConfigurations().maybeCreate(Constants.Configurations.SRG);
+				srg.setTransitive(false);
+			}
+
+			provider = new SrgProvider(project);
+			project.getDependencies().add(provider.getTargetConfig(), "de.oceanlabs.mcp:mcp_config:" + extension.getMinecraftProvider().minecraftVersion());
+			Configuration configuration = project.getConfigurations().getByName(provider.getTargetConfig());
+			provider.provide(DependencyInfo.create(project, configuration.getDependencies().iterator().next(), configuration));
+		}
+
+		Path srgPath = getRawSrgFile(project);
+		TinyFile file = new MCPReader(intermediaryTinyPath, srgPath).read(mcpJar);
+		TinyV2Writer.write(file, tinyMappings);
+	}
+
+	private boolean isMCP(Path path) throws IOException {
+		try (FileSystem fs = FileSystems.newFileSystem(path, (ClassLoader) null)) {
+			return Files.exists(fs.getPath("fields.csv")) && Files.exists(fs.getPath("methods.csv"));
+		}
+	}
+
 	private static boolean areMappingsV2(Path path) throws IOException {
 		try (BufferedReader reader = Files.newBufferedReader(path)) {
 			return MappingReader.detectFormat(reader) == MappingFormat.TINY_2;
+		} catch (NoSuchFileException e) {
+			// TODO: just check the mappings version when Parser supports V1 in readMetadata()
+			return false;
+		}
+	}
+
+	private static boolean areMappingsMergedV2(Path path) throws IOException {
+		try (BufferedReader reader = Files.newBufferedReader(path)) {
+			return MappingReader.detectFormat(reader) == MappingFormat.TINY_2 && MappingReader.getNamespaces(reader).containsAll(Arrays.asList("named", "intermediary", "official"));
+		} catch (NoSuchFileException e) {
+			return false;
 		}
 	}
 
@@ -333,7 +477,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		return intermediaryService.get().getIntermediaryTiny().toFile();
 	}
 
-	private static String createMappingsIdentifier(String mappingsName, String version, String classifier, String minecraftVersion) {
+	protected static String createMappingsIdentifier(String mappingsName, String version, String classifier, String minecraftVersion) {
 		//          mappingsName      . mcVersion . version        classifier
 		// Example: net.fabricmc.yarn . 1_16_5    . 1.16.5+build.5 -v2
 		return mappingsName + "." + minecraftVersion.replace(' ', '_').replace('.', '_').replace('-', '_') + "." + version + classifier;
@@ -370,5 +514,6 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 	@Override
 	public void close() throws IOException {
 		mappingTree = null;
+		mappingTreeWithSrg = null;
 	}
 }

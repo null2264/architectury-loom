@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashBasedTable;
@@ -56,7 +56,9 @@ import org.objectweb.asm.Opcodes;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.configuration.providers.mappings.IntermediaryService;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.ThreadingUtils;
 import net.fabricmc.loom.util.srg.SrgMerger;
@@ -72,14 +74,14 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 	public Path rawTinyMappings;
 	public Path rawTinyMappingsWithSrg;
 
-	public FieldMigratedMappingsProvider(Project project) {
-		super(project);
+	public FieldMigratedMappingsProvider(String mappingsIdentifier, Path mappingsWorkingDir, Supplier<IntermediaryService> intermediaryService) {
+		super(mappingsIdentifier, mappingsWorkingDir, intermediaryService);
 	}
 
 	@Override
-	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
-		LoomGradleExtension extension = getExtension();
-		PatchProvider patchProvider = getExtension().getPatchProvider();
+	protected void setup(Project project, MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
+		PatchProvider patchProvider = extension.getPatchProvider();
 		migratedFieldsCache = patchProvider.getProjectCacheFolder().resolve("migrated-fields.json");
 		migratedFields.clear();
 
@@ -97,26 +99,24 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 			}
 		}
 
-		super.provide(dependency, postPopulationScheduler);
+		super.setup(project, minecraftProvider, inputJar);
+	}
+
+	public static String createForgeMappingsIdentifier(LoomGradleExtension extension, String mappingsName, String version, String classifier, String minecraftVersion) {
+		return FieldMigratedMappingsProvider.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion) + "-forge-" + extension.getForgeProvider().getVersion().getCombined();
 	}
 
 	@Override
-	protected String createMappingsIdentifier(String mappingsName, String version, String classifier) {
-		return super.createMappingsIdentifier(mappingsName, version, classifier) + "-forge-" + getExtension().getForgeProvider().getVersion().getCombined();
-	}
-
-	@Override
-	public void manipulateMappings(Path mappingsJar) throws IOException {
+	public void manipulateMappings(Project project, Path mappingsJar) throws IOException {
 		Stopwatch stopwatch = Stopwatch.createStarted();
-		LoomGradleExtension extension = getExtension();
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		this.rawTinyMappings = tinyMappings;
 		this.rawTinyMappingsWithSrg = tinyMappingsWithSrg;
-		String mappingsJarName = mappingsJar.getFileName().toString();
 
-		if (getExtension().shouldGenerateSrgTiny()) {
+		if (extension.shouldGenerateSrgTiny()) {
 			if (Files.notExists(rawTinyMappingsWithSrg) || isRefreshDeps()) {
 				// Merge tiny mappings with srg
-				SrgMerger.mergeSrg(getProject().getLogger(), getExtension().getMappingsProvider()::getMojmapSrgFileIfPossible, getRawSrgFile(), rawTinyMappings, rawTinyMappingsWithSrg, true);
+				SrgMerger.mergeSrg(project.getLogger(), () -> getMojmapSrgFileIfPossible(project), getRawSrgFile(project), rawTinyMappings, rawTinyMappingsWithSrg, true);
 			}
 		}
 
@@ -124,17 +124,17 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 		tinyMappingsWithSrg = mappingsWorkingDir().resolve("mappings-srg-updated.tiny");
 
 		try {
-			updateFieldMigration();
+			updateFieldMigration(project);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
 
-		getProject().getLogger().info(":migrated srg fields in " + stopwatch.stop());
+		project.getLogger().info(":migrated srg fields in " + stopwatch.stop());
 	}
 
-	public void updateFieldMigration() throws IOException {
+	public void updateFieldMigration(Project project) throws IOException {
 		if (!Files.exists(migratedFieldsCache)) {
-			generateNewFieldMigration();
+			generateNewFieldMigration(project);
 			Map<String, String> map = new HashMap<>();
 			migratedFields.forEach(entry -> {
 				map.put(entry.getKey().owner + "#" + entry.getKey().field, entry.getValue());
@@ -177,9 +177,9 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 		}
 	}
 
-	private void generateNewFieldMigration() throws IOException {
+	private void generateNewFieldMigration(Project project) throws IOException {
 		Map<FieldMember, String> fieldDescriptorMap = new ConcurrentHashMap<>();
-		LoomGradleExtension extension = getExtension();
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		ThreadingUtils.TaskCompleter completer = ThreadingUtils.taskCompleter();
 
 		class Visitor extends ClassVisitor {
@@ -204,7 +204,7 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 		Visitor visitor = new Visitor(Opcodes.ASM9);
 
 		for (MinecraftPatchedProvider.Environment environment : MinecraftPatchedProvider.Environment.values()) {
-			File patchedSrgJar = environment.patchedSrgJar.apply(extension.getMappingsProvider().patchedProvider);
+			File patchedSrgJar = environment.patchedSrgJar.apply(MinecraftPatchedProvider.get(project));
 			FileSystemUtil.Delegate system = FileSystemUtil.getJarFileSystem(patchedSrgJar, false);
 			completer.onComplete(value -> system.close());
 
@@ -247,7 +247,7 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 						String newDescriptorRemapped = DescriptorRemapper.remapDescriptor(newDescriptor,
 								clazz -> srgToIntermediary.getOrDefault(clazz, clazz));
 						migratedFields.put(new FieldMember(ownerIntermediary, fieldIntermediary), newDescriptorRemapped);
-						getProject().getLogger().info(ownerIntermediary + "#" + fieldIntermediary + ": " + descriptorIntermediary + " -> " + newDescriptorRemapped);
+						project.getLogger().info(ownerIntermediary + "#" + fieldIntermediary + ": " + descriptorIntermediary + " -> " + newDescriptorRemapped);
 					}
 				}
 			}

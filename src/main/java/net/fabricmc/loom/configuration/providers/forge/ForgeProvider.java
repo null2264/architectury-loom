@@ -25,7 +25,6 @@
 package net.fabricmc.loom.configuration.providers.forge;
 
 import java.io.File;
-import java.util.function.Consumer;
 
 import org.gradle.api.Project;
 
@@ -42,7 +41,7 @@ public class ForgeProvider extends DependencyProvider {
 	}
 
 	@Override
-	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
+	public void provide(DependencyInfo dependency) throws Exception {
 		version = new ForgeVersion(dependency.getResolvedVersion());
 		addDependency(dependency.getDepString() + ":userdev", Constants.Configurations.FORGE_USERDEV);
 		addDependency(dependency.getDepString() + ":installer", Constants.Configurations.FORGE_INSTALLER);

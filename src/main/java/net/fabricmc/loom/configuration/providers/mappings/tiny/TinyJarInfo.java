@@ -30,6 +30,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -50,6 +51,8 @@ public record TinyJarInfo(boolean v2, Optional<String> minecraftVersionId) {
 			try (BufferedReader reader = Files.newBufferedReader(fs.getPath("mappings", "mappings.tiny"))) {
 				return MappingReader.detectFormat(reader) == MappingFormat.TINY_2;
 			}
+		} catch (NoSuchFileException e) {
+			return false;
 		}
 	}
 }

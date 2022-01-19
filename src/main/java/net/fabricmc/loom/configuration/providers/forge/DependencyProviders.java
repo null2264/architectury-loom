@@ -82,7 +82,7 @@ public class DependencyProviders {
 					DependencyInfo info = DependencyInfo.create(project, dependency, configuration);
 
 					try {
-						provider.provide(info, afterTasks::add);
+						provider.provide(info);
 					} catch (Exception e) {
 						throw new RuntimeException("Failed to provide " + dependency.getGroup() + ":" + dependency.getName() + ":" + dependency.getVersion() + " : " + e.toString(), e);
 					}

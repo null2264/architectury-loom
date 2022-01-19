@@ -43,6 +43,9 @@ import de.oceanlabs.mcp.mcinjector.adaptors.ParameterAnnotationFixer;
 import dev.architectury.tinyremapper.InputTag;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
+
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
+
 import net.minecraftforge.binarypatcher.ConsoleTool;
 import org.apache.commons.io.output.NullOutputStream;
 import org.gradle.api.Project;
@@ -104,8 +107,18 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	private boolean atDirty = false;
 	private boolean filesDirty = false;
 
-	public static MergedMinecraftProvider getMergedMinecraftProvider(Project project) {
+	public static MergedMinecraftProvider createMergedMinecraftProvider(Project project) {
 		return LoomGradleExtension.get(project).isForge() ? new MinecraftPatchedProvider(project) : new MergedMinecraftProvider(project);
+	}
+
+	public static MinecraftPatchedProvider get(Project project) {
+		MinecraftProvider provider = LoomGradleExtension.get(project).getMinecraftProvider();
+
+		if (provider instanceof MinecraftPatchedProvider patched) {
+			return patched;
+		} else {
+			throw new UnsupportedOperationException("Project " + project.getPath() + " does not use MinecraftPatchedProvider!");
+		}
 	}
 
 	public MinecraftPatchedProvider(Project project) {

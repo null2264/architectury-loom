@@ -42,7 +42,7 @@ import net.fabricmc.loom.configuration.providers.minecraft.mapped.ProcessedNamed
 
 public enum MinecraftJarConfiguration {
 	MERGED(
-		MinecraftPatchedProvider::getMergedMinecraftProvider,
+		MinecraftPatchedProvider::createMergedMinecraftProvider,
 		IntermediaryMinecraftProvider.MergedImpl::new,
 		NamedMinecraftProvider.MergedImpl::new,
 		ProcessedNamedMinecraftProvider.MergedImpl::new,
