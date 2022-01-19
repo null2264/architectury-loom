@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 import dev.architectury.tinyremapper.OutputConsumerPath;
@@ -42,6 +43,7 @@ import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.SignatureFixerApplyVisitor;
 import net.fabricmc.loom.util.TinyRemapperHelper;
+import net.fabricmc.loom.util.srg.InnerClassRemapper;
 
 public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvider> implements MappedMinecraftProvider.ProviderImpl {
 	protected final M minecraftProvider;
@@ -121,11 +123,12 @@ public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvide
 
 		Files.deleteIfExists(remappedJars.outputJar());
 
+		final Set<String> classNames = extension.isForge() ? InnerClassRemapper.readClassNames(remappedJars.inputJar()) : Set.of();
 		final Map<String, String> remappedSignatures = SignatureFixerApplyVisitor.getRemappedSignatures(getTargetNamespace() == MappingsNamespace.INTERMEDIARY, mappingsProvider, project, toM);
 		TinyRemapper remapper = TinyRemapperHelper.getTinyRemapper(project, fromM, toM, true, (builder) -> {
 			builder.extraPostApplyVisitor(new SignatureFixerApplyVisitor(remappedSignatures));
 			configureRemapper(remappedJars, builder);
-		});
+		}, classNames);
 
 		try (OutputConsumerPath outputConsumer = new OutputConsumerPath.Builder(remappedJars.outputJar()).build()) {
 			outputConsumer.addNonClassFiles(remappedJars.inputJar());
