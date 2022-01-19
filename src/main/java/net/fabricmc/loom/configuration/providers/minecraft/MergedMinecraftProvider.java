@@ -37,7 +37,7 @@ import net.fabricmc.loom.util.HashedDownloadUtil;
 import net.fabricmc.stitch.merge.JarMerger;
 
 public class MergedMinecraftProvider extends MinecraftProvider {
-	protected Path minecraftMergedJar;
+	private Path minecraftMergedJar;
 
 	public MergedMinecraftProvider(Project project) {
 		super(project);
