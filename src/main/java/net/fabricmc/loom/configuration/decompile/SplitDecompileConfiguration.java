@@ -109,7 +109,7 @@ public final class SplitDecompileConfiguration extends DecompileConfiguration<Ma
 		});
 
 		extension.getArchGameDecompilers().configureEach(decompiler -> {
-			String taskName = "genSourcesWith" + decompiler.name();
+			String taskName = "gen%sSourcesWith%s".formatted(name, decompiler.name());
 
 			// Decompiler will be passed to the constructor of ArchitecturyGenerateSourcesTask
 			project.getTasks().register(taskName, ArchitecturyGenerateSourcesTask.class, decompiler).configure(task -> {
