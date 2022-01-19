@@ -112,7 +112,8 @@ public final class AccessTransformerJarProcessor implements JarProcessor {
 	@Override
 	public void process(File file) {
 		try {
-			Path tempInput = Files.createTempFile(null, "loom-at.jar");
+			Path tempDir = Files.createTempDirectory("loom-access-transforming");
+			Path tempInput = tempDir.resolve("input.jar");
 			Files.copy(file.toPath(), tempInput);
 
 			executeAt(project, tempInput, file.toPath(), args -> {
@@ -123,6 +124,7 @@ public final class AccessTransformerJarProcessor implements JarProcessor {
 			});
 
 			Files.delete(tempInput);
+			Files.delete(tempDir);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Could not access transform " + file.getAbsolutePath(), e);
 		}

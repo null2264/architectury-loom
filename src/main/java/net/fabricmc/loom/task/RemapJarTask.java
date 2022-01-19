@@ -41,8 +41,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
@@ -53,11 +53,6 @@ import com.google.common.base.Suppliers;
 import com.google.gson.JsonObject;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
-
-import net.fabricmc.loom.task.service.MappingsService;
-
-import net.fabricmc.loom.util.FunnyTodoException;
-
 import org.cadixdev.at.AccessTransformSet;
 import org.cadixdev.at.io.AccessTransformFormats;
 import org.cadixdev.lorenz.MappingSet;
@@ -67,7 +62,6 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
@@ -87,14 +81,15 @@ import net.fabricmc.loom.build.nesting.JarNester;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerFile;
 import net.fabricmc.loom.extension.MixinExtension;
 import net.fabricmc.loom.task.service.JarManifestService;
+import net.fabricmc.loom.task.service.MappingsService;
 import net.fabricmc.loom.task.service.TinyRemapperService;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.LfWriter;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.aw2at.Aw2At;
-import net.fabricmc.lorenztiny.TinyMappingsReader;
 import net.fabricmc.loom.util.service.UnsafeWorkQueueHelper;
+import net.fabricmc.lorenztiny.TinyMappingsReader;
 
 public abstract class RemapJarTask extends AbstractRemapJarTask {
 	private static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
@@ -125,8 +120,10 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		getClasspath().from(getProject().getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
 		getAddNestedDependencies().convention(true).finalizeValueOnRead();
 
-		Configuration includeConfiguration = getProject().getConfigurations().getByName(Constants.Configurations.INCLUDE);
-		getNestedJars().from(new IncludedJarFactory(getProject()).getNestedJars(includeConfiguration));
+		if (LoomGradleExtension.get(getProject()).supportsInclude()) {
+			Configuration includeConfiguration = getProject().getConfigurations().getByName(Constants.Configurations.INCLUDE);
+			getNestedJars().from(new IncludedJarFactory(getProject()).getNestedJars(includeConfiguration));
+		}
 
 		setupPreparationTask();
 	}

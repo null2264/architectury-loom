@@ -56,10 +56,6 @@ public abstract class GenerateRemapClasspathTask extends AbstractLoomTask {
 			remapClasspath.add(minecraftJar.toFile());
 		}
 
-		if (getExtension().isForgeAndNotOfficial()) {
-			remapClasspath.add(getExtension().getMinecraftMappedProvider().getForgeIntermediaryJar());
-		}
-
 		String str = remapClasspath.stream()
 				.map(File::getAbsolutePath)
 				.collect(Collectors.joining(File.pathSeparator));

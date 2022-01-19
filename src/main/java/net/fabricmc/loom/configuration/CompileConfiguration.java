@@ -25,6 +25,7 @@
 package net.fabricmc.loom.configuration;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
@@ -32,7 +33,6 @@ import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.AbstractCopyTask;
 import org.gradle.api.tasks.SourceSet;
@@ -61,8 +61,11 @@ import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfigura
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.IntermediaryMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.mapped.SrgMinecraftProvider;
+import net.fabricmc.loom.configuration.sources.ForgeSourcesRemapper;
 import net.fabricmc.loom.extension.MixinExtension;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.OperatingSystem;
 
 public final class CompileConfiguration {
 	private CompileConfiguration() {
@@ -77,7 +80,7 @@ public final class CompileConfiguration {
 			}
 
 			if (extension.isDataGenEnabled()) {
-				project.getConvention().getPlugin(JavaPluginConvention.class).getSourceSets().getByName("main").resources(files -> {
+				project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName("main").resources(files -> {
 					files.srcDir(project.file("src/generated/resources"));
 				});
 			}
@@ -192,8 +195,8 @@ public final class CompileConfiguration {
 		project.getDependencies().add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS);
 
 		if (extension.isForge()) {
-			project.getDependencies().add(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, Constants.Configurations.FORGE_EXTRA);
-			project.getDependencies().add(Constants.Dependencies.JAVAX_ANNOTATIONS + Constants.Dependencies.Versions.JAVAX_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
+			project.getDependencies().add(Constants.Configurations.FORGE_EXTRA, Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME);
+			project.getDependencies().add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JAVAX_ANNOTATIONS + Constants.Dependencies.Versions.JAVAX_ANNOTATIONS);
 		}
 	}
 
@@ -213,27 +216,8 @@ public final class CompileConfiguration {
 				throw new RuntimeException("Failed to setup minecraft", e);
 			}
 
-			DependencyProviders dependencyProviders = new DependencyProviders();
 			LoomDependencyManager dependencyManager = new LoomDependencyManager();
-			extension.setDependencyProviders(dependencyProviders);
 			extension.setDependencyManager(dependencyManager);
-
-			if (extension.isForge()) {
-				dependencyProviders.addProvider(new ForgeProvider(project));
-				dependencyProviders.addProvider(new ForgeUserdevProvider(project));
-			}
-
-			if (extension.shouldGenerateSrgTiny()) {
-				dependencyProviders.addProvider(new SrgProvider(project));
-			}
-
-			if (extension.isForge()) {
-				dependencyProviders.addProvider(new McpConfigProvider(project));
-				dependencyProviders.addProvider(new PatchProvider(project));
-				dependencyProviders.addProvider(new ForgeUniversalProvider(project));
-			}
-
-			dependencyProviders.handleDependencies(project);
 			dependencyManager.handleDependencies(project);
 
 			extension.getRemapArchives().finalizeValue();
@@ -286,6 +270,10 @@ public final class CompileConfiguration {
 		extension.setMappingsProvider(mappingsProvider);
 		mappingsProvider.applyToProject(project, mappingsDep);
 
+		if (minecraftProvider instanceof MinecraftPatchedProvider patched) {
+			patched.remapJar();
+		}
+
 		// Provide the remapped mc jars
 		final IntermediaryMinecraftProvider<?> intermediaryMinecraftProvider = jarConfiguration.getIntermediaryMinecraftProviderBiFunction().apply(project, minecraftProvider);
 		NamedMinecraftProvider<?> namedMinecraftProvider = jarConfiguration.getNamedMinecraftProviderBiFunction().apply(project, minecraftProvider);
@@ -302,6 +290,20 @@ public final class CompileConfiguration {
 
 		extension.setNamedMinecraftProvider(namedMinecraftProvider);
 		namedMinecraftProvider.provide(true);
+
+		if (extension.isForge()) {
+			final SrgMinecraftProvider<?> srgMinecraftProvider = jarConfiguration.getSrgMinecraftProviderBiFunction().apply(project, minecraftProvider);
+			extension.setSrgMinecraftProvider(srgMinecraftProvider);
+
+			// TODO: Find a better place for this?
+			if (!OperatingSystem.isCIBuild()) {
+				try {
+					ForgeSourcesRemapper.addBaseForgeSources(project);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	private static JarProcessorManager createJarProcessorManager(Project project) {
@@ -378,5 +380,27 @@ public final class CompileConfiguration {
 
 	private static void finalizedBy(Project project, String a, String b) {
 		project.getTasks().named(a).configure(task -> task.finalizedBy(project.getTasks().named(b)));
+	}
+
+	public static void setupDependencyProviders(Project project, LoomGradleExtension extension) {
+		DependencyProviders dependencyProviders = new DependencyProviders();
+		extension.setDependencyProviders(dependencyProviders);
+
+		if (extension.isForge()) {
+			dependencyProviders.addProvider(new ForgeProvider(project));
+			dependencyProviders.addProvider(new ForgeUserdevProvider(project));
+		}
+
+		if (extension.shouldGenerateSrgTiny()) {
+			dependencyProviders.addProvider(new SrgProvider(project));
+		}
+
+		if (extension.isForge()) {
+			dependencyProviders.addProvider(new McpConfigProvider(project));
+			dependencyProviders.addProvider(new PatchProvider(project));
+			dependencyProviders.addProvider(new ForgeUniversalProvider(project));
+		}
+
+		dependencyProviders.handleDependencies(project);
 	}
 }

@@ -295,7 +295,11 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask implements De
 	}
 
 	static File getMappedJarFileWithSuffix(RegularFileProperty runtimeJar, String suffix) {
-		String path = runtimeJar.get().getAsFile().getAbsolutePath();
+		return getMappedJarFileWithSuffix(runtimeJar.get().getAsFile(), suffix);
+	}
+
+	public static File getMappedJarFileWithSuffix(File runtimeJar, String suffix) {
+		String path = runtimeJar.getAbsolutePath();
 
 		if (!path.toLowerCase(Locale.ROOT).endsWith(".jar")) {
 			throw new RuntimeException("Invalid mapped JAR path: " + path);

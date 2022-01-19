@@ -1,3 +1,27 @@
+/*
+ * This file is part of fabric-loom, licensed under the MIT License (MIT).
+ *
+ * Copyright (c) 2020-2022 FabricMC
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package net.fabricmc.loom.configuration.providers.forge;
 
 import java.io.ByteArrayInputStream;
@@ -30,7 +54,6 @@ import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
@@ -86,7 +109,8 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	// Step 5: Remap Patched AT & Forge to Official
 	private File minecraftMergedPatchedJar;
 	@Nullable
-	private File forgeMergedJar;
+	@Deprecated
+	private final File forgeMergedJar = null; // TODO: Remove
 	private File minecraftClientExtra;
 
 	private boolean dirty;
@@ -109,10 +133,7 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		super(project);
 	}
 
-	@Override
-	protected void initFiles() {
-		super.initFiles();
-
+	private void initPatchedFiles() {
 		String patchId = "forge-" + getExtension().getForgeProvider().getVersion().getCombined() + "-";
 
 		if (getExtension().isForgeAndOfficial()) {
@@ -124,10 +145,17 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		minecraftClientPatchedSrgJar = file("client-srg-patched.jar");
 		minecraftServerPatchedSrgJar = file("server-srg-patched.jar");
 		minecraftMergedPatchedSrgJar = file("merged-srg-patched.jar");
-		forgeMergedJar = getExtension().isForgeAndOfficial() ? null : file("forge-official.jar");
 		minecraftMergedPatchedSrgAtJar = file("merged-srg-at-patched.jar");
 		minecraftMergedPatchedJar = file("merged-patched.jar");
 		minecraftClientExtra = file("forge-client-extra.jar");
+	}
+
+	private File getEffectiveServerJar() {
+		if (getServerBundleMetadata() != null) {
+			return getMinecraftExtractedServerJar();
+		} else {
+			return getMinecraftServerJar();
+		}
 	}
 
 	public void cleanAllCache() {
@@ -166,6 +194,7 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	@Override
 	public void provide() throws Exception {
 		super.provide();
+		initPatchedFiles();
 		checkCache();
 
 		this.dirty = false;
@@ -193,7 +222,9 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		if (forgeMergedJar != null && !forgeMergedJar.exists()) {
 			this.dirty = true;
 		}
+	}
 
+	public void remapJar() throws Exception {
 		if (dirty) {
 			remapPatchedJar(getProject().getLogger());
 
@@ -245,7 +276,7 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	}
 
 	private void createSrgJars(Logger logger) throws Exception {
-		produceSrgJar(getExtension().isForgeAndOfficial(), super.getMinecraftClientJar().toPath(), MoreObjects.firstNonNull(super.getMinecraftExtractedServerJar(), super.getMinecraftServerJar()).toPath());
+		produceSrgJar(getExtension().isForgeAndOfficial(), super.getMinecraftClientJar().toPath(), getEffectiveServerJar().toPath());
 	}
 
 	private void produceSrgJar(boolean official, Path clientJar, Path serverJar) throws IOException {
@@ -529,7 +560,7 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		if (getExtension().isForgeAndNotOfficial()) {
 			// Copy resources
 			copyNonClassFiles(super.getMinecraftClientJar(), minecraftMergedPatchedSrgJar);
-			copyNonClassFiles(MoreObjects.firstNonNull(super.getMinecraftExtractedServerJar(), super.getMinecraftServerJar()), minecraftMergedPatchedSrgJar);
+			copyNonClassFiles(getEffectiveServerJar(), minecraftMergedPatchedSrgJar);
 		}
 	}
 

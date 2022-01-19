@@ -32,6 +32,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.function.Consumer;
 
 import com.google.common.collect.ImmutableMap;
 import org.gradle.api.Project;
@@ -49,7 +50,7 @@ public class PatchProvider extends DependencyProvider {
 	}
 
 	@Override
-	public void provide(DependencyInfo dependency) throws Exception {
+	public void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception {
 		init(dependency.getDependency().getVersion());
 
 		if (Files.notExists(clientPatches) || Files.notExists(serverPatches) || isRefreshDeps()) {

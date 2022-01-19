@@ -50,6 +50,7 @@ import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.configuration.ShowStacktrace;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.build.ModCompileRemapper;
 import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.Constants;
@@ -62,8 +63,21 @@ import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
 
 public class ForgeSourcesRemapper {
-	public static void addBaseForgeSources(Project project, boolean isOfficial) throws IOException {
-		Path sourcesJar = GenerateSourcesTask.getMappedJarFileWithSuffix(project, "-sources.jar", !isOfficial).toPath();
+	public static void addBaseForgeSources(Project project) throws IOException {
+		List<Path> minecraftJars = LoomGradleExtension.get(project).getMinecraftJars(MappingsNamespace.NAMED);
+		Path minecraftJar;
+
+		if (minecraftJars.isEmpty()) {
+			// ???
+			throw new IllegalStateException("Could not find Minecraft jar for Forge sources");
+		} else if (minecraftJars.size() > 1) {
+			// Cannot add Forge sources to split jars
+			return;
+		} else {
+			minecraftJar = minecraftJars.get(0);
+		}
+
+		Path sourcesJar = GenerateSourcesTask.getMappedJarFileWithSuffix(minecraftJar.toFile(), "-sources.jar").toPath();
 
 		if (!Files.exists(sourcesJar)) {
 			addForgeSources(project, sourcesJar);
@@ -202,11 +216,7 @@ public class ForgeSourcesRemapper {
 		}
 
 		// Distinct and add the srg jar at the top, so it gets prioritized
-		mercury.getClassPath().add(0, extension.getMinecraftMappedProvider().getSrgJar().toPath());
-
-		if (extension.isForgeAndNotOfficial()) {
-			mercury.getClassPath().add(0, extension.getMinecraftMappedProvider().getForgeSrgJar().toPath());
-		}
+		mercury.getClassPath().addAll(0, extension.getMinecraftJars(MappingsNamespace.SRG));
 
 		List<Path> newClassPath = mercury.getClassPath().stream()
 				.distinct()

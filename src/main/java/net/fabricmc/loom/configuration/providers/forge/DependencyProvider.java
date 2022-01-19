@@ -25,6 +25,7 @@
 package net.fabricmc.loom.configuration.providers.forge;
 
 import java.io.File;
+import java.util.function.Consumer;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
@@ -44,7 +45,7 @@ public abstract class DependencyProvider {
 		this.extension = LoomGradleExtension.get(project);
 	}
 
-	public abstract void provide(DependencyInfo dependency) throws Exception;
+	public abstract void provide(DependencyInfo dependency, Consumer<Runnable> postPopulationScheduler) throws Exception;
 
 	public abstract String getTargetConfig();
 

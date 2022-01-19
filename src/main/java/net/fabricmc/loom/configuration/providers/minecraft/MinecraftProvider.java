@@ -42,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
+import net.fabricmc.loom.configuration.CompileConfiguration;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.providers.BundleMetadata;
 import net.fabricmc.loom.util.Constants;
@@ -79,7 +80,7 @@ public abstract class MinecraftProvider {
 		minecraftVersion = dependency.getDependency().getVersion();
 
 		if (getExtension().shouldGenerateSrgTiny() && !getExtension().isForge()) {
-			getProject().getDependencies().add("de.oceanlabs.mcp:mcp_config:" + minecraftVersion, Constants.Configurations.SRG);
+			getProject().getDependencies().add(Constants.Configurations.SRG, "de.oceanlabs.mcp:mcp_config:" + minecraftVersion);
 		}
 
 		boolean offline = getProject().getGradle().getStartParameter().isOffline();
@@ -106,6 +107,12 @@ public abstract class MinecraftProvider {
 
 		libraryProvider = new MinecraftLibraryProvider();
 		libraryProvider.provide(this, getProject());
+
+		// TODO: Find a better place for this. This needs to run after MinecraftProvider.initFiles
+		//   but before MinecraftPatchedProvider.provide, so it's a bit tough.
+		//   Honestly, the ForgeProvider stuff that uses the results of initFiles could be moved to
+		//   MinecraftPatchedProvider.
+		CompileConfiguration.setupDependencyProviders(getProject(), getExtension());
 	}
 
 	protected void initFiles() {

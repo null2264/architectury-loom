@@ -54,9 +54,9 @@ import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.IntermediaryMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.mapped.SrgMinecraftProvider;
 import net.fabricmc.loom.extension.LoomFiles;
 import net.fabricmc.loom.extension.MixinExtension;
-import net.fabricmc.loom.util.FunnyTodoException;
 
 public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 	static LoomGradleExtension get(Project project) {
@@ -108,12 +108,16 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 
 	void setIntermediaryMinecraftProvider(IntermediaryMinecraftProvider<?> intermediaryMinecraftProvider);
 
+	SrgMinecraftProvider<?> getSrgMinecraftProvider();
+
+	void setSrgMinecraftProvider(SrgMinecraftProvider<?> srgMinecraftProvider);
+
 	default List<Path> getMinecraftJars(MappingsNamespace mappingsNamespace) {
 		return switch (mappingsNamespace) {
 		case NAMED -> getNamedMinecraftProvider().getMinecraftJars();
 		case INTERMEDIARY -> getIntermediaryMinecraftProvider().getMinecraftJars();
 		case OFFICIAL -> getMinecraftProvider().getMinecraftJars();
-		case SRG -> throw new FunnyTodoException("SRG minecraft jars");
+		case SRG -> getSrgMinecraftProvider().getMinecraftJars();
 		};
 	}
 

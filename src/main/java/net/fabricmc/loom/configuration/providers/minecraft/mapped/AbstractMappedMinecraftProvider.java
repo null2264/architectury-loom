@@ -89,11 +89,11 @@ public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvide
 	}
 
 	protected String getName(String name) {
-		return "minecraft-%s-%s".formatted(name, getTargetNamespace().toString());
+		return "%sminecraft-%s-%s".formatted(minecraftProvider.getJarPrefix(), name, getTargetNamespace().toString());
 	}
 
 	protected String getDependencyNotation(String name) {
-		return "net.minecraft:%s%s:%s/%s".formatted(getName(name), extension.getMinecraftProvider().getJarPrefix(), extension.getMinecraftProvider().minecraftVersion(), extension.getMappingsProvider().mappingsIdentifier());
+		return "net.minecraft:%s:%s/%s".formatted(getName(name), extension.getMinecraftProvider().minecraftVersion(), extension.getMappingsProvider().mappingsIdentifier());
 	}
 
 	private boolean areOutputsValid(List<RemappedJars> remappedJars) {

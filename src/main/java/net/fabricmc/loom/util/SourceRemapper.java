@@ -40,6 +40,7 @@ import org.gradle.api.Project;
 import org.slf4j.Logger;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.RemappedConfigurationEntry;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.util.gradle.ProgressLoggerHelper;
@@ -211,12 +212,8 @@ public class SourceRemapper {
 			}
 
 			if (extension.isForge()) {
-				m.getClassPath().add(extension.getMinecraftMappedProvider().getSrgJar().toPath());
-
-				if (extension.isForgeAndNotOfficial()) {
-					m.getClassPath().add(extension.getMinecraftMappedProvider().getForgeMappedJar().toPath());
-					m.getClassPath().add(extension.getMinecraftMappedProvider().getForgeIntermediaryJar().toPath());
-					m.getClassPath().add(extension.getMinecraftMappedProvider().getForgeSrgJar().toPath());
+				for (Path srgJar : extension.getMinecraftJars(MappingsNamespace.SRG)) {
+					m.getClassPath().add(srgJar);
 				}
 			}
 

@@ -75,6 +75,10 @@ public class LoomDependencyManager {
 					}
 				}
 			}
+
+			if (extension.getInstallerData() == null) {
+				project.getLogger().warn("fabric-installer.json not found in classpath!");
+			}
 		}
 
 		SourceRemapper sourceRemapper = new SourceRemapper(project, true);
@@ -84,10 +88,6 @@ public class LoomDependencyManager {
 		ModCompileRemapper.remapDependencies(project, mappingsIdentifier, extension, sourceRemapper);
 
 		sourceRemapper.remapAll();
-
-		if (extension.getInstallerData() == null) {
-			project.getLogger().warn("fabric-installer.json not found in classpath!");
-		}
 
 		for (Runnable runnable : afterTasks) {
 			runnable.run();
