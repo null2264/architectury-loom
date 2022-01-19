@@ -10,7 +10,6 @@ plugins {
 	id 'codenarc'
 	id "org.jetbrains.kotlin.jvm" version "1.5.31" // Must match the version included with gradle.
 	id "com.diffplug.spotless" version "5.14.1"
-	//id 'net.kyori.blossom' version '1.3.0'
 	id 'me.shedaniel.java-version-bridge' version '1.0-SNAPSHOT'
 }
 
@@ -144,10 +143,6 @@ dependencies {
 
 	compileOnly 'org.jetbrains:annotations:23.0.0'
 }
-
-/*blossom {
-	replaceToken '$LOOM_VERSION', version
-}*/
 
 jar {
 	classifier 'jar'
