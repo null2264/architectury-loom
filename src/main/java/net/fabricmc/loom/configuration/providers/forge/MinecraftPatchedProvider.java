@@ -25,7 +25,6 @@
 package net.fabricmc.loom.configuration.providers.forge;
 
 import java.io.ByteArrayInputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,6 +59,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import de.oceanlabs.mcp.mcinjector.adaptors.ParameterAnnotationFixer;
 import dev.architectury.tinyremapper.InputTag;
+import dev.architectury.tinyremapper.NonClassCopyMode;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
 import net.minecraftforge.binarypatcher.ConsoleTool;
@@ -67,7 +67,6 @@ import org.apache.commons.io.output.NullOutputStream;
 import org.gradle.api.Project;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
-import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -108,9 +107,6 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	private File minecraftMergedPatchedSrgAtJar;
 	// Step 5: Remap Patched AT & Forge to Official
 	private File minecraftMergedPatchedJar;
-	@Nullable
-	@Deprecated
-	private final File forgeMergedJar = null; // TODO: Remove
 	private File minecraftClientExtra;
 
 	private boolean dirty;
@@ -176,11 +172,6 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 				minecraftMergedPatchedJar
 		};
 
-		if (forgeMergedJar != null) {
-			Arrays.copyOf(files, files.length + 1);
-			files[files.length - 1] = forgeMergedJar;
-		}
-
 		return files;
 	}
 
@@ -218,26 +209,16 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 			this.dirty = true;
 			accessTransformForge(getProject().getLogger());
 		}
-
-		if (forgeMergedJar != null && !forgeMergedJar.exists()) {
-			this.dirty = true;
-		}
 	}
 
 	public void remapJar() throws Exception {
 		if (dirty) {
 			remapPatchedJar(getProject().getLogger());
-
-			if (getExtension().isForgeAndOfficial()) {
-				fillClientExtraJar();
-			}
+			fillClientExtraJar();
 		}
 
 		this.dirty = false;
-
-		if (getExtension().isForgeAndOfficial()) {
-			DependencyProvider.addDependency(getProject(), minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
-		}
+		DependencyProvider.addDependency(getProject(), minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
 	}
 
 	@Override
@@ -276,10 +257,10 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	}
 
 	private void createSrgJars(Logger logger) throws Exception {
-		produceSrgJar(getExtension().isForgeAndOfficial(), super.getMinecraftClientJar().toPath(), getEffectiveServerJar().toPath());
+		produceSrgJar(super.getMinecraftClientJar().toPath(), getEffectiveServerJar().toPath());
 	}
 
-	private void produceSrgJar(boolean official, Path clientJar, Path serverJar) throws IOException {
+	private void produceSrgJar(Path clientJar, Path serverJar) throws IOException {
 		Path tmpSrg = getToSrgMappings();
 		Set<File> mcLibs = getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_DEPENDENCIES).resolve();
 
@@ -474,21 +455,13 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		Path mcOutput = minecraftMergedPatchedJar.toPath();
 		Path forgeJar = getForgeJar().toPath();
 		Path forgeUserdevJar = getForgeUserdevJar().toPath();
-		Path forgeOutput = null;
 		Files.deleteIfExists(mcOutput);
-		boolean splitJars = forgeMergedJar != null;
-
-		if (splitJars) {
-			forgeOutput = forgeMergedJar.toPath();
-			Files.deleteIfExists(forgeOutput);
-		}
 
 		TinyRemapper remapper = buildRemapper(mcInput);
 
-		try (OutputConsumerPath outputConsumer = new OutputConsumerPath.Builder(mcOutput).build();
-				Closeable outputConsumerForge = !splitJars ? () -> {
-				} : new OutputConsumerPath.Builder(forgeOutput).build()) {
+		try (OutputConsumerPath outputConsumer = new OutputConsumerPath.Builder(mcOutput).build()) {
 			outputConsumer.addNonClassFiles(mcInput);
+			outputConsumer.addNonClassFiles(forgeJar, NonClassCopyMode.FIX_META_INF, remapper);
 
 			InputTag mcTag = remapper.createInputTag();
 			InputTag forgeTag = remapper.createInputTag();
@@ -497,13 +470,12 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 			futures.add(remapper.readInputsAsync(forgeTag, forgeJar, forgeUserdevJar));
 			CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 			remapper.apply(outputConsumer, mcTag);
-			remapper.apply(splitJars ? (OutputConsumerPath) outputConsumerForge : outputConsumer, forgeTag);
+			remapper.apply(outputConsumer, forgeTag);
 		} finally {
 			remapper.finish();
 		}
 
-		copyNonClassFiles(forgeJar.toFile(), splitJars ? forgeMergedJar : minecraftMergedPatchedJar);
-		copyUserdevFiles(forgeUserdevJar.toFile(), splitJars ? forgeMergedJar : minecraftMergedPatchedJar);
+		copyUserdevFiles(forgeUserdevJar.toFile(), minecraftMergedPatchedJar);
 		applyLoomPatchVersion(mcOutput);
 	}
 
@@ -553,15 +525,6 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		// FIXME: Hack here: There are no server-only classes so we can just copy the client JAR.
 		//   This will change if upstream Loom adds the possibility for separate projects/source sets per environment.
 		Files.copy(minecraftClientPatchedSrgJar.toPath(), minecraftMergedPatchedSrgJar.toPath());
-
-		logger.lifecycle(":copying resources");
-
-		// Copy resources
-		if (getExtension().isForgeAndNotOfficial()) {
-			// Copy resources
-			copyNonClassFiles(super.getMinecraftClientJar(), minecraftMergedPatchedSrgJar);
-			copyNonClassFiles(getEffectiveServerJar(), minecraftMergedPatchedSrgJar);
-		}
 	}
 
 	private void walkFileSystems(File source, File target, Predicate<Path> filter, Function<FileSystem, Iterable<Path>> toWalk, FsPathConsumer action)
@@ -593,10 +556,6 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		walkFileSystems(source, target, filter, FileSystem::getRootDirectories, action);
 	}
 
-	private void copyAll(File source, File target) throws IOException {
-		walkFileSystems(source, target, it -> true, this::copyReplacing);
-	}
-
 	private void copyMissingClasses(File source, File target) throws IOException {
 		walkFileSystems(source, target, it -> it.toString().endsWith(".class"), (sourceFs, targetFs, sourcePath, targetPath) -> {
 			if (Files.exists(targetPath)) return;
@@ -611,12 +570,9 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	}
 
 	private void copyNonClassFiles(File source, File target) throws IOException {
-		Predicate<Path> filter = getExtension().isForgeAndOfficial() ? file -> {
+		Predicate<Path> filter = file -> {
 			String s = file.toString();
-			return !s.endsWith(".class");
-		} : file -> {
-			String s = file.toString();
-			return !s.endsWith(".class") || (s.startsWith("META-INF") && !s.startsWith("META-INF/services"));
+			return !s.endsWith(".class") && !s.startsWith("/META-INF");
 		};
 
 		walkFileSystems(source, target, filter, this::copyReplacing);
@@ -675,16 +631,8 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		return minecraftMergedPatchedJar.toPath();
 	}
 
-	public File getForgeMergedJar() {
-		return forgeMergedJar;
-	}
-
 	@Override
 	public List<Path> getMinecraftJars() {
-		if (forgeMergedJar != null) {
-			return List.of(minecraftMergedPatchedJar.toPath(), forgeMergedJar.toPath());
-		} else {
-			return List.of(minecraftMergedPatchedJar.toPath());
-		}
+		return List.of(minecraftMergedPatchedJar.toPath());
 	}
 }
