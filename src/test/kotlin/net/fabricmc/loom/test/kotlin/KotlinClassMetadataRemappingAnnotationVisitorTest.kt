@@ -24,12 +24,12 @@
 
 package net.fabricmc.loom.test.kotlin
 
+import dev.architectury.tinyremapper.IMappingProvider
+import dev.architectury.tinyremapper.TinyRemapper
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.file.Paths
-import dev.architectury.tinyremapper.IMappingProvider
-import dev.architectury.tinyremapper.TinyRemapper
 import net.fabricmc.loom.kotlin.remapping.KotlinMetadataRemappingClassVisitor
 import net.fabricmc.loom.util.TinyRemapperHelper
 import net.fabricmc.mappingio.MappingReader
