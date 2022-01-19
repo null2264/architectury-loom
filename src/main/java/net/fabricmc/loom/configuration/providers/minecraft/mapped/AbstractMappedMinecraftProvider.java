@@ -93,7 +93,7 @@ public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvide
 	}
 
 	protected String getDependencyNotation(String name) {
-		return "net.minecraft:%s:%s/%s".formatted(getName(name), extension.getMinecraftProvider().minecraftVersion(), extension.getMappingsProvider().mappingsIdentifier());
+		return "net.minecraft:%s%s:%s/%s".formatted(getName(name), extension.getMinecraftProvider().getJarPrefix(), extension.getMinecraftProvider().minecraftVersion(), extension.getMappingsProvider().mappingsIdentifier());
 	}
 
 	private boolean areOutputsValid(List<RemappedJars> remappedJars) {

@@ -32,6 +32,7 @@ import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.MappedMinecraftProvider;
+import net.fabricmc.loom.task.ArchitecturyGenerateSourcesTask;
 import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.Constants;
 
@@ -68,6 +69,24 @@ public class SingleJarDecompileConfiguration extends DecompileConfiguration<Mapp
 
 				task.dependsOn(project.getTasks().named("validateAccessWidener"));
 				task.setDescription("Decompile minecraft using %s.".formatted(decompilerName));
+				task.setGroup(Constants.TaskGroup.FABRIC);
+
+				if (mappingsProvider.hasUnpickDefinitions()) {
+					task.dependsOn(project.getTasks().named("unpickJar"));
+				}
+			});
+		});
+
+		LoomGradleExtension.get(project).getArchGameDecompilers().configureEach(decompiler -> {
+			String taskName = "genSourcesWith" + decompiler.name();
+
+			// Decompiler will be passed to the constructor of ArchitecturyGenerateSourcesTask
+			project.getTasks().register(taskName, ArchitecturyGenerateSourcesTask.class, decompiler).configure(task -> {
+				task.getInputJar().set(inputJar);
+				task.getRuntimeJar().set(namedJar);
+
+				task.dependsOn(project.getTasks().named("validateAccessWidener"));
+				task.setDescription("Decompile minecraft using %s.".formatted(decompiler.name()));
 				task.setGroup(Constants.TaskGroup.FABRIC);
 
 				if (mappingsProvider.hasUnpickDefinitions()) {

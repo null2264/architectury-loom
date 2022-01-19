@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
@@ -39,7 +40,9 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.logging.configuration.ConsoleOutput;
 import org.gradle.api.tasks.TaskAction;
 
+import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.task.AbstractLoomTask;
+import net.fabricmc.loom.util.PropertyUtil;
 
 public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 	@TaskAction
@@ -53,12 +56,56 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 				.property("log4j2.formatMsgNoLookups", "true")
 
 				.property("client", "java.library.path", nativesPath)
-				.property("client", "org.lwjgl.librarypath", nativesPath)
+				.property("client", "org.lwjgl.librarypath", nativesPath);
 
-				.argument("client", "--assetIndex")
-				.argument("client", getExtension().getMinecraftProvider().getVersionInfo().assetIndex().fabricId(getExtension().getMinecraftProvider().minecraftVersion()))
-				.argument("client", "--assetsDir")
-				.argument("client", new File(getExtension().getFiles().getUserCache(), "assets").getAbsolutePath());
+		if (!getExtension().isForge()) {
+			launchConfig
+					.argument("client", "--assetIndex")
+					.argument("client", getExtension().getMinecraftProvider().getVersionInfo().assetIndex().fabricId(getExtension().getMinecraftProvider().minecraftVersion()))
+					.argument("client", "--assetsDir")
+					.argument("client", new File(getExtension().getFiles().getUserCache(), "assets").getAbsolutePath());
+		}
+
+		if (getExtension().isForge()) {
+			launchConfig
+					// Should match YarnNamingService.PATH_TO_MAPPINGS in forge-runtime
+					.property("fabric.yarnWithSrg.path", getExtension().getMappingsProvider().tinyMappingsWithSrg.toAbsolutePath().toString())
+
+					.argument("data", "--all")
+					.argument("data", "--mod")
+					.argument("data", String.join(",", getExtension().getForge().getDataGenMods()))
+					.argument("data", "--output")
+					.argument("data", getProject().file("src/generated/resources").getAbsolutePath())
+
+					.property("mixin.env.remapRefMap", "true");
+
+			if (PropertyUtil.getAndFinalize(getExtension().getForge().getUseCustomMixin())) {
+				launchConfig.property("mixin.forgeloom.inject.mappings.srg-named", getExtension().getMappingsProvider().mixinTinyMappingsWithSrg.toAbsolutePath().toString());
+			} else {
+				launchConfig.property("net.minecraftforge.gradle.GradleStart.srg.srg-mcp", getExtension().getMappingsProvider().srgToNamedSrg.toAbsolutePath().toString());
+			}
+
+			Set<String> mixinConfigs = PropertyUtil.getAndFinalize(getExtension().getForge().getMixinConfigs());
+
+			if (!mixinConfigs.isEmpty()) {
+				for (String config : mixinConfigs) {
+					launchConfig.argument("-mixin.config");
+					launchConfig.argument(config);
+				}
+			}
+		}
+
+		for (LaunchProviderSettings settings : getExtension().getLaunchConfigs()) {
+			settings.evaluateNow();
+
+			for (String argument : settings.getArguments()) {
+				launchConfig.argument(settings.getName(), argument);
+			}
+
+			for (Map.Entry<String, String> property : settings.getProperties()) {
+				launchConfig.property(settings.getName(), property.getKey(), property.getValue());
+			}
+		}
 
 		final boolean plainConsole = getProject().getGradle().getStartParameter().getConsoleOutput() == ConsoleOutput.Plain;
 		final boolean ansiSupportedIDE = new File(getProject().getRootDir(), ".vscode").exists()

@@ -66,6 +66,7 @@ public abstract class MinecraftProvider {
 	private BundleMetadata serverBundleMetadata;
 	private File versionManifestJson;
 	private File experimentalVersionsJson;
+	private String jarPrefix = "";
 
 	private final Project project;
 
@@ -76,6 +77,10 @@ public abstract class MinecraftProvider {
 	public void provide() throws Exception {
 		final DependencyInfo dependency = DependencyInfo.create(getProject(), Constants.Configurations.MINECRAFT);
 		minecraftVersion = dependency.getDependency().getVersion();
+
+		if (getExtension().shouldGenerateSrgTiny() && !getExtension().isForge()) {
+			getProject().getDependencies().add("de.oceanlabs.mcp:mcp_config:" + minecraftVersion, Constants.Configurations.SRG);
+		}
 
 		boolean offline = getProject().getGradle().getStartParameter().isOffline();
 
@@ -293,6 +298,14 @@ public abstract class MinecraftProvider {
 
 	public MinecraftLibraryProvider getLibraryProvider() {
 		return libraryProvider;
+	}
+
+	public String getJarPrefix() {
+		return jarPrefix;
+	}
+
+	public void setJarPrefix(String jarSuffix) {
+		this.jarPrefix = jarSuffix;
 	}
 
 	public String getTargetConfig() {

@@ -24,7 +24,9 @@
 
 package net.fabricmc.loom.configuration;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
@@ -41,6 +43,7 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.build.mixin.JavaApInvoker;
 import net.fabricmc.loom.build.mixin.KaptApInvoker;
 import net.fabricmc.loom.build.mixin.ScalaApInvoker;
+import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarProcessor;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.accesswidener.TransitiveAccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
@@ -187,6 +190,11 @@ public final class CompileConfiguration {
 		project.getDependencies().add(Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES, Constants.Dependencies.DEV_LAUNCH_INJECTOR + Constants.Dependencies.Versions.DEV_LAUNCH_INJECTOR);
 		project.getDependencies().add(Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES, Constants.Dependencies.TERMINAL_CONSOLE_APPENDER + Constants.Dependencies.Versions.TERMINAL_CONSOLE_APPENDER);
 		project.getDependencies().add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS);
+
+		if (extension.isForge()) {
+			project.getDependencies().add(Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME, Constants.Configurations.FORGE_EXTRA);
+			project.getDependencies().add(Constants.Dependencies.JAVAX_ANNOTATIONS + Constants.Dependencies.Versions.JAVAX_ANNOTATIONS, JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME);
+		}
 	}
 
 	public static void configureCompile(Project p) {
@@ -316,6 +324,14 @@ public final class CompileConfiguration {
 
 			if (!jarProcessor.isEmpty()) {
 				extension.getGameJarProcessors().add(jarProcessor);
+			}
+		}
+
+		if (extension.isForge()) {
+			Set<File> atFiles = AccessTransformerJarProcessor.getAccessTransformerFiles(project);
+
+			if (!atFiles.isEmpty()) {
+				extension.getGameJarProcessors().add(new AccessTransformerJarProcessor(project, atFiles));
 			}
 		}
 

@@ -96,6 +96,7 @@ public final class LoomTasks {
 
 		registerIDETasks(tasks);
 		registerRunTasks(tasks, project);
+		registerLaunchSettings(project);
 	}
 
 	private static void registerIDETasks(TaskContainer tasks) {
@@ -147,6 +148,17 @@ public final class LoomTasks {
 				extension.getRunConfigs().removeIf(settings -> settings.getName().equals("client"));
 			}
 		});
+	}
+
+	private static void registerLaunchSettings(Project project) {
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
+		Preconditions.checkArgument(extension.getLaunchConfigs().size() == 0, "Launch configurations must not be registered before loom");
+		extension.getLaunchConfigs().create("client");
+		extension.getLaunchConfigs().create("server");
+
+		if (extension.isForge()) {
+			extension.getLaunchConfigs().create("data");
+		}
 	}
 
 	public static Provider<Task> getIDELaunchConfigureTaskName(Project project) {

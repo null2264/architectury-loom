@@ -39,13 +39,25 @@ import org.gradle.api.tasks.TaskAction;
 
 import net.fabricmc.loom.api.decompilers.DecompilationMetadata;
 import net.fabricmc.loom.api.decompilers.architectury.ArchitecturyLoomDecompiler;
-import net.fabricmc.loom.util.FunnyTodoException;
+import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.OperatingSystem;
 
-public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
+public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask implements DecompilationTask {
 	private final ArchitecturyLoomDecompiler decompiler;
 
+	/**
+	 * The jar to decompile, can be the unpick jar.
+	 */
+	@Override
 	@InputFile
 	public abstract RegularFileProperty getInputJar();
+
+	/**
+	 * The jar used at runtime.
+	 */
+	@Override
+	@InputFile
+	public abstract RegularFileProperty getRuntimeJar();
 
 	@Input
 	public abstract MapProperty<String, String> getOptions();
@@ -59,16 +71,14 @@ public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
 
 	@TaskAction
 	public void run() throws IOException {
-		FunnyTodoException.yes("Architectury decompiler API");
-		/*if (!OperatingSystem.is64Bit()) {
+		if (!OperatingSystem.is64Bit()) {
 			throw new UnsupportedOperationException("GenSources task requires a 64bit JVM to run due to the memory requirements.");
 		}
 
 		// TODO: Need a good way to not keep a duplicated code for this
 		Path compiledJar = getInputJar().get().getAsFile().toPath();
-		Path runtimeJar = getExtension().getMappingsProvider().mappedProvider.getMappedJar().toPath();
-		Path sourcesDestination = GenerateSourcesTask.getMappedJarFileWithSuffix(getProject(), "-sources.jar").toPath();
-		Path linemapDestination = GenerateSourcesTask.getMappedJarFileWithSuffix(getProject(), "-sources.lmap").toPath();
+		Path sourcesDestination = GenerateSourcesTask.getMappedJarFileWithSuffix(getRuntimeJar(), "-sources.jar").toPath();
+		Path linemapDestination = GenerateSourcesTask.getMappedJarFileWithSuffix(getRuntimeJar(), "-sources.lmap").toPath();
 		DecompilationMetadata metadata = new DecompilationMetadata(
 				Runtime.getRuntime().availableProcessors(),
 				GenerateSourcesTask.getMappings(getProject(), getExtension()),
@@ -81,7 +91,8 @@ public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
 
 		// Apply linemap
 		if (Files.exists(linemapDestination)) {
-			Path linemapJar = GenerateSourcesTask.getMappedJarFileWithSuffix(getProject(), "-linemapped.jar").toPath();
+			Path linemapJar = GenerateSourcesTask.getMappedJarFileWithSuffix(getRuntimeJar(), "-linemapped.jar").toPath();
+			Path runtimeJar = getRuntimeJar().get().getAsFile().toPath();
 
 			try {
 				GenerateSourcesTask.DecompileAction.remapLineNumbers(getLogger()::info, runtimeJar, linemapDestination, linemapJar);
@@ -90,6 +101,6 @@ public abstract class ArchitecturyGenerateSourcesTask extends AbstractLoomTask {
 			} catch (Exception e) {
 				throw new RuntimeException("Could not remap line numbers", e);
 			}
-		}*/
+		}
 	}
 }

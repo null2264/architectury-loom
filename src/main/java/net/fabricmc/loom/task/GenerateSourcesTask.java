@@ -72,18 +72,20 @@ import net.fabricmc.loom.util.gradle.WorkerDaemonClientsManagerHelper;
 import net.fabricmc.loom.util.ipc.IPCClient;
 import net.fabricmc.loom.util.ipc.IPCServer;
 
-public abstract class GenerateSourcesTask extends AbstractLoomTask {
+public abstract class GenerateSourcesTask extends AbstractLoomTask implements DecompilationTask {
 	private final DecompilerOptions decompilerOptions;
 
 	/**
 	 * The jar to decompile, can be the unpick jar.
 	 */
+	@Override
 	@InputFile
 	public abstract RegularFileProperty getInputJar();
 
 	/**
 	 * The jar used at runtime.
 	 */
+	@Override
 	@InputFile
 	public abstract RegularFileProperty getRuntimeJar();
 
@@ -289,7 +291,11 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	}
 
 	private File getMappedJarFileWithSuffix(String suffix) {
-		String path = getRuntimeJar().get().getAsFile().getAbsolutePath();
+		return getMappedJarFileWithSuffix(getRuntimeJar(), suffix);
+	}
+
+	static File getMappedJarFileWithSuffix(RegularFileProperty runtimeJar, String suffix) {
+		String path = runtimeJar.get().getAsFile().getAbsolutePath();
 
 		if (!path.toLowerCase(Locale.ROOT).endsWith(".jar")) {
 			throw new RuntimeException("Invalid mapped JAR path: " + path);

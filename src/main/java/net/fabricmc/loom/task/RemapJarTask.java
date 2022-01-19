@@ -171,9 +171,14 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			}
 
 			params.getForge().set(extension.isForge());
+			params.getMappingBuildServiceUuid().convention("this should be unavailable!");
 
 			if (extension.isForge()) {
 				params.getAtAccessWideners().set(getAtAccessWideners());
+
+				if (!getAtAccessWideners().get().isEmpty()) {
+					params.getMappingBuildServiceUuid().set(UnsafeWorkQueueHelper.create(getProject(), MappingsService.createDefault(getProject(), getSourceNamespace().get(), getTargetNamespace().get())));
+				}
 			}
 		});
 	}
@@ -246,6 +251,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 		Property<JarManifestService> getJarManifestService();
 		Property<String> getTinyRemapperBuildServiceUuid();
+		Property<String> getMappingBuildServiceUuid();
 	}
 
 	public abstract static class RemapAction extends AbstractRemapAction<RemapParams> {
@@ -269,6 +275,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				remapAccessWidener();
 				addRefmaps();
 				addNestedJars();
+				convertAwToAt();
 
 				if (!getParameters().getForge().get()) {
 					modifyJarManifest();
@@ -309,8 +316,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		}
 
 		private void convertAwToAt() throws IOException {
-			FunnyTodoException.yes("AW2AT");
-			/*if (!this.getParameters().getAtAccessWideners().isPresent()) {
+			if (!this.getParameters().getAtAccessWideners().isPresent()) {
 				return;
 			}
 
@@ -345,14 +351,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 					Files.delete(awPath);
 				}
 
-				List<Provider<MappingsService>> providers = getParameters().getMappings().get();
-
-				// This is a bit of a hack, but we are going to get the first one, it should be the default one
-				if (providers.isEmpty()) {
-					throw new IllegalStateException("No mappings provider found for AW to AT conversion!");
-				}
-
-				MappingsService service = providers.get(0).get();
+				MappingsService service = UnsafeWorkQueueHelper.get(getParameters().getMappingBuildServiceUuid(), MappingsService.class);
 
 				try (TinyMappingsReader reader = new TinyMappingsReader(service.getMemoryMappingTree(), service.getFromNamespace(), service.getToNamespace())) {
 					MappingSet mappingSet = reader.read();
@@ -362,7 +361,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				try (Writer writer = new LfWriter(Files.newBufferedWriter(atPath))) {
 					AccessTransformFormats.FML.write(writer, at);
 				}
-			}*/
+			}
 		}
 
 		private byte[] remapAccessWidener(byte[] input) {
