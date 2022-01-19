@@ -162,6 +162,8 @@ public interface LoomGradleExtensionAPI {
 		getMinecraftJarConfiguration().set(MinecraftJarConfiguration.SPLIT);
 	}
 
+	Property<Boolean> getRuntimeOnlyLog4j();
+
 	// ===================
 	//  Architectury Loom
 	// ===================

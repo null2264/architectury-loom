@@ -81,6 +81,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	protected final Property<Boolean> transitiveAccessWideners;
 	protected final Property<String> intermediary;
 	protected final Property<Boolean> enableInterfaceInjection;
+	private final Property<Boolean> runtimeOnlyLog4j;
 	private final Property<MinecraftJarConfiguration> minecraftJarConfiguration;
 
 	private final ModVersionParser versionParser;
@@ -133,6 +134,9 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 		this.accessWidener.finalizeValueOnRead();
 		this.getGameJarProcessors().finalizeValueOnRead();
+
+		this.runtimeOnlyLog4j = project.getObjects().property(Boolean.class).convention(true);
+		this.runtimeOnlyLog4j.finalizeValueOnRead();
 		this.platform = project.provider(Suppliers.memoize(() -> {
 			Object platformProperty = project.findProperty(PLATFORM_PROPERTY);
 
@@ -261,6 +265,11 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	@Override
 	public Property<MinecraftJarConfiguration> getMinecraftJarConfiguration() {
 		return minecraftJarConfiguration;
+	}
+
+	@Override
+	public Property<Boolean> getRuntimeOnlyLog4j() {
+		return runtimeOnlyLog4j;
 	}
 
 	@Override
