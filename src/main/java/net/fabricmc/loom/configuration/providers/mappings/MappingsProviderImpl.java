@@ -333,9 +333,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 			provider = new SrgProvider(project);
 			project.getDependencies().add(provider.getTargetConfig(), "de.oceanlabs.mcp:mcp_config:" + extension.getMinecraftProvider().minecraftVersion());
 			Configuration configuration = project.getConfigurations().getByName(provider.getTargetConfig());
-			provider.provide(DependencyInfo.create(project, configuration.getDependencies().iterator().next(), configuration), runnable -> {
-				throw new UnsupportedOperationException("No postPopulationScheduler available");
-			});
+			provider.provide(DependencyInfo.create(project, configuration.getDependencies().iterator().next(), configuration));
 		}
 
 		Path srgPath = getRawSrgFile(project);
