@@ -270,11 +270,13 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		Path tmpSrg = getToSrgMappings();
 		Set<File> mcLibs = getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_DEPENDENCIES).resolve();
 
-		ThreadingUtils.run(() -> {
-			Files.copy(SpecialSourceExecutor.produceSrgJar(getExtension().getMcpConfigProvider().getRemapAction(), getProject(), "client", mcLibs, clientJar, tmpSrg), minecraftClientSrgJar.toPath());
-		}, () -> {
-			Files.copy(SpecialSourceExecutor.produceSrgJar(getExtension().getMcpConfigProvider().getRemapAction(), getProject(), "server", mcLibs, serverJar, tmpSrg), minecraftServerSrgJar.toPath());
-		});
+		// These can't be threaded because accessing getRemapAction().getMainClass() can cause a situation where
+		// 1. thread A has an FS open
+		// 2. thread B tries to open a new one, but fails
+		// 3. thread A closes its FS
+		// 4. thread B tries to get the already open one => crash
+		Files.copy(SpecialSourceExecutor.produceSrgJar(getExtension().getMcpConfigProvider().getRemapAction(), getProject(), "client", mcLibs, clientJar, tmpSrg), minecraftClientSrgJar.toPath());
+		Files.copy(SpecialSourceExecutor.produceSrgJar(getExtension().getMcpConfigProvider().getRemapAction(), getProject(), "server", mcLibs, serverJar, tmpSrg), minecraftServerSrgJar.toPath());
 	}
 
 	private Path getToSrgMappings() throws IOException {

@@ -57,7 +57,7 @@ public class SpecialSourceExecutor {
 	}
 
 	public static Path produceSrgJar(RemapAction remapAction, Project project, String side, Set<File> mcLibs, Path officialJar, Path mappings)
-			throws Exception {
+			throws IOException {
 		Set<String> filter = Files.readAllLines(mappings, StandardCharsets.UTF_8).stream()
 				.filter(s -> !s.startsWith("\t"))
 				.map(s -> s.split(" ")[0] + ".class")
