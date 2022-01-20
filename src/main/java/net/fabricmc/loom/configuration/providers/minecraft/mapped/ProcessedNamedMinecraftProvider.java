@@ -100,7 +100,7 @@ public abstract class ProcessedNamedMinecraftProvider<M extends MinecraftProvide
 
 	@Override
 	protected String getName(String name) {
-		return "%s%s-%s".formatted(projectMappedName, name, getTargetNamespace().toString());
+		return "%s%s%s-%s".formatted(parentMinecraftProvider.getMinecraftProvider().getJarPrefix(), projectMappedName, name, getTargetNamespace().toString());
 	}
 
 	@Override

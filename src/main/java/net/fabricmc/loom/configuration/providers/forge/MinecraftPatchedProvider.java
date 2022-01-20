@@ -110,6 +110,7 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	private File minecraftClientExtra;
 
 	private boolean dirty;
+	private boolean serverJarInitialized = false;
 
 	public static MergedMinecraftProvider createMergedMinecraftProvider(Project project) {
 		return LoomGradleExtension.get(project).isForge() ? new MinecraftPatchedProvider(project) : new MergedMinecraftProvider(project);
@@ -146,8 +147,13 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 		minecraftClientExtra = file("forge-client-extra.jar");
 	}
 
-	private File getEffectiveServerJar() {
+	private File getEffectiveServerJar() throws IOException {
 		if (getServerBundleMetadata() != null) {
+			if (!serverJarInitialized) {
+				extractBundledServerJar();
+				serverJarInitialized = true;
+			}
+
 			return getMinecraftExtractedServerJar();
 		} else {
 			return getMinecraftServerJar();

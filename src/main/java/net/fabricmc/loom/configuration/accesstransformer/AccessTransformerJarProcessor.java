@@ -37,6 +37,8 @@ import java.util.Set;
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteSource;
 import org.apache.commons.io.output.NullOutputStream;
+import org.cadixdev.at.AccessTransformSet;
+import org.cadixdev.at.io.AccessTransformFormats;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -46,10 +48,13 @@ import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
 import net.fabricmc.loom.util.Checksum;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
+import net.fabricmc.lorenztiny.TinyMappingsReader;
+import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public final class AccessTransformerJarProcessor implements JarProcessor {
 	private final Project project;
@@ -112,22 +117,52 @@ public final class AccessTransformerJarProcessor implements JarProcessor {
 	@Override
 	public void process(File file) {
 		try {
+			project.getLogger().lifecycle(":applying project access transformers");
 			Path tempDir = Files.createTempDirectory("loom-access-transforming");
 			Path tempInput = tempDir.resolve("input.jar");
 			Files.copy(file.toPath(), tempInput);
+			Path atPath = mergeAndRemapAccessTransformers(tempDir);
 
 			executeAt(project, tempInput, file.toPath(), args -> {
-				for (File atFile : atFiles) {
-					args.add("--atFile");
-					args.add(atFile.getAbsolutePath());
-				}
+				args.add("--atFile");
+				args.add(atPath.toAbsolutePath().toString());
 			});
 
+			Files.delete(atPath);
 			Files.delete(tempInput);
 			Files.delete(tempDir);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Could not access transform " + file.getAbsolutePath(), e);
 		}
+	}
+
+	private Path mergeAndRemapAccessTransformers(Path tempDir) {
+		AccessTransformSet accessTransformSet = AccessTransformSet.create();
+
+		for (File atFile : atFiles) {
+			try {
+				accessTransformSet.merge(AccessTransformFormats.FML.read(atFile.toPath()));
+			} catch (IOException e) {
+				throw new UncheckedIOException("Could not read access transformer " + atFile, e);
+			}
+		}
+
+		try {
+			MemoryMappingTree mappings = LoomGradleExtension.get(project).getMappingsProvider().getMappingsWithSrg();
+			accessTransformSet = accessTransformSet.remap(new TinyMappingsReader(mappings, MappingsNamespace.SRG.toString(), MappingsNamespace.NAMED.toString()).read());
+		} catch (IOException e) {
+			throw new UncheckedIOException("Could not remap access transformers from srg to named", e);
+		}
+
+		Path accessTransformerPath = tempDir.resolve("accesstransformer.cfg");
+
+		try {
+			AccessTransformFormats.FML.write(accessTransformerPath, accessTransformSet);
+		} catch (IOException e) {
+			throw new UncheckedIOException("Could not write access transformers to " + accessTransformerPath, e);
+		}
+
+		return accessTransformerPath;
 	}
 
 	public static void executeAt(Project project, Path input, Path output, AccessTransformerConfiguration configuration) throws IOException {
