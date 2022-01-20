@@ -116,7 +116,7 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 		if (extension.shouldGenerateSrgTiny()) {
 			if (Files.notExists(rawTinyMappingsWithSrg) || isRefreshDeps()) {
 				// Merge tiny mappings with srg
-				SrgMerger.mergeSrg(project.getLogger(), () -> getMojmapSrgFileIfPossible(project), getRawSrgFile(project), rawTinyMappings, rawTinyMappingsWithSrg, true);
+				SrgMerger.mergeSrg(project.getLogger(), getRawSrgFile(project), rawTinyMappings, rawTinyMappingsWithSrg, true);
 			}
 		}
 

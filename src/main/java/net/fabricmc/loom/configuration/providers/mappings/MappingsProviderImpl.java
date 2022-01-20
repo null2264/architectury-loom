@@ -198,7 +198,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		if (extension.shouldGenerateSrgTiny()) {
 			if (Files.notExists(tinyMappingsWithSrg) || isRefreshDeps()) {
 				// Merge tiny mappings with srg
-				SrgMerger.mergeSrg(project.getLogger(), () -> getMojmapSrgFileIfPossible(project), getRawSrgFile(project), tinyMappings, tinyMappingsWithSrg, true);
+				SrgMerger.mergeSrg(project.getLogger(), getRawSrgFile(project), tinyMappings, tinyMappingsWithSrg, true);
 			}
 
 			mappingTreeWithSrg = Suppliers.memoize(() -> readMappings(tinyMappingsWithSrg));
@@ -247,15 +247,6 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		}
 
 		return extension.getSrgProvider().getSrg();
-	}
-
-	public Path getMojmapSrgFileIfPossible(Project project) {
-		try {
-			LoomGradleExtension extension = LoomGradleExtension.get(project);
-			return SrgProvider.getMojmapTsrg2(project, extension);
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
 	}
 
 	public void manipulateMappings(Project project, Path mappingsJar) throws IOException {
