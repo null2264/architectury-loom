@@ -37,6 +37,7 @@ import org.gradle.api.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.util.function.CollectionUtil;
 import net.fabricmc.mappingio.FlatMappingVisitor;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.adapter.MappingNsRenamer;
@@ -135,20 +136,30 @@ public final class SrgMerger {
 	private void mergeField(MappingTree.ClassMapping srgClass, MappingTree.FieldMapping srgField, @Nullable MappingTree.ClassMapping tinyClass) throws IOException {
 		String[] dstNames = createDstNameArray(srgField);
 		MappingTree.FieldMapping tinyField = null;
+		String srcDesc = srgField.getSrcDesc();
 
 		if (tinyClass != null) {
-			tinyField = tinyClass.getField(srgField.getSrcName(), srgField.getSrcDesc());
+			if (srcDesc != null) {
+				tinyField = tinyClass.getField(srgField.getSrcName(), srgField.getSrcDesc());
+			} else {
+				tinyField = CollectionUtil.find(tinyClass.getFields(), field -> field.getSrcName().equals(srgField.getSrcName())).orElse(null);
+			}
 		} else if (!lenient) {
 			throw new MappingException("Could not find field " + srgClass.getDstName(0) + '.' + srgField.getDstName(0) + ' ' + srgField.getDstDesc(0));
 		}
 
 		if (tinyField != null) {
 			copyDstNames(dstNames, tinyField);
+			srcDesc = tinyField.getSrcDesc();
 		} else {
 			fillMappings(dstNames, srgField);
 		}
 
-		flatOutput.visitField(srgClass.getSrcName(), srgField.getSrcName(), srgField.getSrcDesc(), dstNames);
+		if (srcDesc != null) {
+			flatOutput.visitField(srgClass.getSrcName(), srgField.getSrcName(), srcDesc, dstNames);
+		} else if (!lenient) {
+			throw new MappingException("Could not find descriptor for field " + srgClass.getDstName(0) + '.' + srgField.getDstName(0));
+		}
 	}
 
 	private void mergeMethod(MappingTree.ClassMapping srgClass, MappingTree.MethodMapping srgMethod, @Nullable MappingTree.ClassMapping tinyClass) throws IOException {
