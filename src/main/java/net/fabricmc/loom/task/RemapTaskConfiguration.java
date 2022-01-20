@@ -40,6 +40,8 @@ import org.gradle.api.tasks.bundling.Jar;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.PropertyUtil;
+import net.fabricmc.loom.util.aw2at.Aw2At;
 
 public class RemapTaskConfiguration {
 	public static final String REMAP_JAR_TASK_NAME = "remapJar";
@@ -91,6 +93,14 @@ public class RemapTaskConfiguration {
 				});
 			}
 		}
+
+		project.afterEvaluate(p -> {
+			if (extension.isForge()) {
+				if (PropertyUtil.getAndFinalize(extension.getForge().getConvertAccessWideners())) {
+					Aw2At.setup(project, remapJarTask);
+				}
+			}
+		});
 	}
 
 	private static void trySetupSourceRemapping(Project project) {

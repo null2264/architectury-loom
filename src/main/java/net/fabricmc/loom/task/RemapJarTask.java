@@ -169,13 +169,10 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 			params.getForge().set(extension.isForge());
 			params.getMappingBuildServiceUuid().convention("this should be unavailable!");
+			params.getAtAccessWideners().set(getAtAccessWideners());
 
-			if (extension.isForge()) {
-				params.getAtAccessWideners().set(getAtAccessWideners());
-
-				if (!getAtAccessWideners().get().isEmpty()) {
-					params.getMappingBuildServiceUuid().set(UnsafeWorkQueueHelper.create(getProject(), MappingsService.createDefault(getProject(), getSourceNamespace().get(), getTargetNamespace().get())));
-				}
+			if (!getAtAccessWideners().get().isEmpty()) {
+				params.getMappingBuildServiceUuid().set(UnsafeWorkQueueHelper.create(getProject(), MappingsService.createDefault(getProject(), getSourceNamespace().get(), getTargetNamespace().get())));
 			}
 		});
 	}
@@ -324,7 +321,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			}
 
 			AccessTransformSet at = AccessTransformSet.create();
-			File jar = inputFile.toFile();
+			File jar = outputFile.toFile();
 
 			try (FileSystemUtil.Delegate fileSystem = FileSystemUtil.getJarFileSystem(jar, false)) {
 				FileSystem fs = fileSystem.get();
