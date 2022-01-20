@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 FabricMC
+ * Copyright (c) 2021-2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 package net.fabricmc.loom.util;
 
 import java.util.Locale;
+import java.util.function.Supplier;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
@@ -41,10 +42,16 @@ public enum ModPlatform {
 	}
 
 	public static void assertPlatform(LoomGradleExtensionAPI extension, ModPlatform platform) {
-		if (extension.getPlatform().get() != platform) {
+		assertPlatform(extension, platform, () -> {
 			String msg = "Loom is not running on %s.%nYou can switch to it by adding 'loom.platform = %s' to your gradle.properties";
 			String name = platform.name().toLowerCase(Locale.ROOT);
-			throw new GradleException(String.format(msg, name, name));
+			return msg.formatted(name, name);
+		});
+	}
+
+	public static void assertPlatform(LoomGradleExtensionAPI extension, ModPlatform platform, Supplier<String> message) {
+		if (extension.getPlatform().get() != platform) {
+			throw new GradleException(message.get());
 		}
 	}
 }

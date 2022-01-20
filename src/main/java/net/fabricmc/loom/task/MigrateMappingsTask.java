@@ -181,8 +181,10 @@ public class MigrateMappingsTask extends AbstractLoomTask {
 			mercury.getClassPath().add(intermediaryJar);
 		}
 
-		for (Path srgJar : extension.getMinecraftJars(MappingsNamespace.SRG)) {
-			mercury.getClassPath().add(srgJar);
+		if (extension.isForge()) {
+			for (Path srgJar : extension.getMinecraftJars(MappingsNamespace.SRG)) {
+				mercury.getClassPath().add(srgJar);
+			}
 		}
 
 		mercury.getProcessors().add(MercuryRemapper.create(mappingSet));

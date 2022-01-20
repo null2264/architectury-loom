@@ -57,6 +57,7 @@ import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraft
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.SrgMinecraftProvider;
 import net.fabricmc.loom.extension.LoomFiles;
 import net.fabricmc.loom.extension.MixinExtension;
+import net.fabricmc.loom.util.ModPlatform;
 
 public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 	static LoomGradleExtension get(Project project) {
@@ -117,7 +118,10 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 		case NAMED -> getNamedMinecraftProvider().getMinecraftJars();
 		case INTERMEDIARY -> getIntermediaryMinecraftProvider().getMinecraftJars();
 		case OFFICIAL -> getMinecraftProvider().getMinecraftJars();
-		case SRG -> getSrgMinecraftProvider().getMinecraftJars();
+		case SRG -> {
+			ModPlatform.assertPlatform(this, ModPlatform.FORGE, () -> "SRG jars are only available on Forge.");
+			yield getSrgMinecraftProvider().getMinecraftJars();
+		}
 		};
 	}
 
