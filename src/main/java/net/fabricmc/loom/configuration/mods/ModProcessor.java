@@ -24,8 +24,6 @@
 
 package net.fabricmc.loom.configuration.mods;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,13 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
-import java.util.stream.Stream;
 
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonObject;
@@ -60,7 +53,6 @@ import net.fabricmc.loom.configuration.processors.dependency.ModDependencyInfo;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.kotlin.remapping.KotlinMetadataTinyRemapperExtension;
 import net.fabricmc.loom.util.Constants;
-import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.LoggerFilter;
 import net.fabricmc.loom.util.TinyRemapperHelper;
 import net.fabricmc.loom.util.ZipUtils;
@@ -245,60 +237,9 @@ public class ModProcessor {
 			if (extension.isForge()) {
 				AtRemapper.remap(project.getLogger(), info.getRemappedOutput().toPath(), mappings);
 				CoreModClassRemapper.remapJar(info.getRemappedOutput().toPath(), mappings, project.getLogger());
-
-				ZipUtils.transform(info.getRemappedOutput().toPath(), Map.of("META-INF/MANIFEST.MF", bytes -> {
-					Manifest manifest = new Manifest(new ByteArrayInputStream(bytes));
-					fixManifest(manifest);
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					manifest.write(out);
-					return out.toByteArray();
-				}));
-
-				try (FileSystemUtil.Delegate fs = FileSystemUtil.getJarFileSystem(info.getRemappedOutput().toPath(), false);
-						Stream<Path> walk = Files.walk(fs.get().getPath("/"))) {
-					List<Path> filesToRemove = new ArrayList<>();
-					Iterator<Path> iterator = walk.iterator();
-
-					while (iterator.hasNext()) {
-						Path fsPath = iterator.next();
-						if (!Files.isRegularFile(fsPath)) continue;
-						String fileName = fsPath.toString();
-
-						if (fileName.toLowerCase(Locale.ROOT).endsWith(".rsa") || fileName.toLowerCase(Locale.ROOT).endsWith(".sf")) {
-							if (fileName.startsWith("META-INF")) {
-								filesToRemove.add(fsPath);
-							}
-						}
-					}
-
-					for (Path fileToRemove : filesToRemove) {
-						Files.delete(fileToRemove);
-					}
-				}
 			}
 
 			info.finaliseRemapping();
-		}
-	}
-
-	private static void fixManifest(Manifest manifest) {
-		Attributes mainAttrs = manifest.getMainAttributes();
-
-		mainAttrs.remove(Attributes.Name.SIGNATURE_VERSION);
-
-		for (Iterator<Attributes> it = manifest.getEntries().values().iterator(); it.hasNext(); ) {
-			Attributes attrs = it.next();
-
-			for (Iterator<Object> it2 = attrs.keySet().iterator(); it2.hasNext(); ) {
-				Attributes.Name attrName = (Attributes.Name) it2.next();
-				String name = attrName.toString();
-
-				if (name.endsWith("-Digest") || name.contains("-Digest-") || name.equals("Magic")) {
-					it2.remove();
-				}
-			}
-
-			if (attrs.isEmpty()) it.remove();
 		}
 	}
 }
