@@ -96,11 +96,11 @@ public final class SrgMerger {
 	}
 
 	/**
-	 * Fills in an array of destination names with the element's srg name.
+	 * Fills in an array of destination names with the element's source name.
 	 */
 	private void fillMappings(String[] names, MappingTree.ElementMappingView srg) {
 		for (int i = 1; i < names.length; i++) {
-			names[i] = srg.getDstName(0);
+			names[i] = srg.getSrcName();
 		}
 	}
 
