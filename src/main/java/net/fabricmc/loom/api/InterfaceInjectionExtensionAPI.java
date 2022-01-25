@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 FabricMC
+ * Copyright (c) 2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,31 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test
+package net.fabricmc.loom.api;
 
-import org.gradle.util.GradleVersion
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.SourceSet;
 
-class LoomTestConstants {
-    public final static String DEFAULT_GRADLE = GradleVersion.current().getVersion()
-    public final static String PRE_RELEASE_GRADLE = "7.5-20220124231322+0000"
+public interface InterfaceInjectionExtensionAPI {
+	/**
+	 * When true loom will inject interfaces declared in dependency mod manifests into the minecraft jar file.
+	 * This is used to expose interfaces that are implemented on Minecraft classes by mixins at runtime
+	 * in the dev environment.
+	 *
+	 * @return the property controlling interface injection.
+	 */
+	Property<Boolean> getEnableDependencyInterfaceInjection();
 
-    public final static String[] STANDARD_TEST_VERSIONS = [DEFAULT_GRADLE, PRE_RELEASE_GRADLE]
+	/**
+	 * Contains a list of {@link SourceSet} that may contain a fabric.mod.json file with interfaces to inject.
+	 * By default, this list contains only the main {@link SourceSet}.
+	 *
+	 * @return the list property containing the {@link SourceSet}
+	 */
+	ListProperty<SourceSet> getInterfaceInjectionSourceSets();
+
+	default boolean isEnabled() {
+		return getEnableDependencyInterfaceInjection().get() || !getInterfaceInjectionSourceSets().get().isEmpty();
+	}
 }

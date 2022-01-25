@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2018-2021 FabricMC
+ * Copyright (c) 2018-2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,13 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.ExternalModuleDependency;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.LoomRepositoryPlugin;
 import net.fabricmc.loom.configuration.providers.BundleMetadata;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.OperatingSystem;
 
 public class MinecraftLibraryProvider {
-	private static final Pattern NATIVES_PATTERN = Pattern.compile("^(?<group>.*)/(.*?)/(?<version>.*)/((?<name>.*?)-([0-9].*?)-)(?<classifier>.*).jar$");
+	private static final Pattern NATIVES_PATTERN = Pattern.compile("^(?<group>.*)/(.*?)/(?<version>.*)/((?<name>.*?)-(\\k<version>)-)(?<classifier>.*).jar$");
 
 	public void provide(MinecraftProvider minecraftProvider, Project project) {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
@@ -45,6 +47,7 @@ public class MinecraftLibraryProvider {
 		final boolean runtimeOnlyLog4j = extension.getRuntimeOnlyLog4j().get();
 
 		final boolean overrideLWJGL = LWJGLVersionOverride.overrideByDefault() || LWJGLVersionOverride.forceOverride(project) || Boolean.getBoolean("loom.test.lwjgloverride");
+		final boolean isMacOS = OperatingSystem.CURRENT_OS.equals(OperatingSystem.MAC_OS);
 
 		if (overrideLWJGL) {
 			project.getLogger().warn("Loom is upgrading Minecraft's LWJGL version to {}", LWJGLVersionOverride.LWJGL_VERSION);
@@ -56,6 +59,11 @@ public class MinecraftLibraryProvider {
 			}
 
 			if (library.isValidForOS() && !library.hasNatives() && library.artifact() != null) {
+				// 1.4.7 contains an LWJGL version with an invalid maven pom, set the metadata sources to not use the pom for this version.
+				if ("org.lwjgl.lwjgl:lwjgl:2.9.1-nightly-20130708-debug3".equals(library.name())) {
+					LoomRepositoryPlugin.setupForLegacyVersions(project);
+				}
+
 				if (runtimeOnlyLog4j && library.name().startsWith("org.apache.logging.log4j")) {
 					// Make log4j a runtime only dep to force slf4j.
 					project.getDependencies().add(Constants.Configurations.MINECRAFT_RUNTIME_DEPENDENCIES, library.name());
@@ -72,10 +80,15 @@ public class MinecraftLibraryProvider {
 			if (library.hasNativesForOS()) {
 				MinecraftVersionMeta.Download nativeDownload = library.classifierForOS();
 
-				Matcher matcher = NATIVES_PATTERN.matcher(nativeDownload.path());
+				if (nativeDownload == null) {
+					continue;
+				}
+
+				final String path = nativeDownload.path();
+				final Matcher matcher = NATIVES_PATTERN.matcher(path);
 
 				if (!matcher.find()) {
-					project.getLogger().warn("Failed to match regex for natives path : " + nativeDownload.path());
+					project.getLogger().warn("Failed to match regex for natives path : " + path);
 					continue;
 				}
 
@@ -86,6 +99,11 @@ public class MinecraftLibraryProvider {
 
 				final String dependencyNotation = "%s:%s:%s:%s".formatted(group, name, version, classifier);
 
+				if (overrideLWJGL && isMacOS && "java-objc-bridge".equals(name)) {
+					// Mojang split out the natives into their own jar, skip over Mojang's jar and use the official jar later on.
+					continue;
+				}
+
 				project.getLogger().debug("Add native dependency '{}'", dependencyNotation);
 				project.getDependencies().add(Constants.Configurations.MINECRAFT_NATIVES, dependencyNotation);
 			}
@@ -94,6 +112,11 @@ public class MinecraftLibraryProvider {
 		if (overrideLWJGL) {
 			LWJGLVersionOverride.DEPENDENCIES.forEach(s -> project.getDependencies().add(Constants.Configurations.MINECRAFT_DEPENDENCIES, s));
 			LWJGLVersionOverride.NATIVES.forEach(s -> project.getDependencies().add(Constants.Configurations.MINECRAFT_NATIVES, s));
+
+			if (isMacOS) {
+				LWJGLVersionOverride.MACOS_DEPENDENCIES.forEach(s -> project.getDependencies().add(Constants.Configurations.MINECRAFT_DEPENDENCIES, s));
+				LWJGLVersionOverride.MACOS_NATIVES.forEach(s -> project.getDependencies().add(Constants.Configurations.MINECRAFT_NATIVES, s));
+			}
 
 			// Add the native support mod that fixes a handful of issues related to the LWJGL update at runtime.
 			ExternalModuleDependency dependency = (ExternalModuleDependency) project.getDependencies().create(Constants.Dependencies.NATIVE_SUPPORT + Constants.Dependencies.Versions.NATIVE_SUPPORT_VERSION);

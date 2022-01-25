@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2016-2021 FabricMC
+ * Copyright (c) 2016-2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.build.mixin.GroovyApInvoker;
 import net.fabricmc.loom.build.mixin.JavaApInvoker;
 import net.fabricmc.loom.build.mixin.KaptApInvoker;
 import net.fabricmc.loom.build.mixin.ScalaApInvoker;
@@ -324,7 +325,7 @@ public final class CompileConfiguration {
 			}
 		}
 
-		if (extension.getEnableInterfaceInjection().get()) {
+		if (extension.getInterfaceInjection().isEnabled()) {
 			InterfaceInjectionProcessor jarProcessor = new InterfaceInjectionProcessor(project);
 
 			if (!jarProcessor.isEmpty()) {
@@ -367,6 +368,11 @@ public final class CompileConfiguration {
 		if (project.getPluginManager().hasPlugin("org.jetbrains.kotlin.kapt")) {
 			project.getLogger().info("Configuring compiler arguments for Kapt plugin");
 			new KaptApInvoker(project).configureMixin();
+		}
+
+		if (project.getPluginManager().hasPlugin("groovy")) {
+			project.getLogger().info("Configuring compiler arguments for Groovy");
+			new GroovyApInvoker(project).configureMixin();
 		}
 	}
 
