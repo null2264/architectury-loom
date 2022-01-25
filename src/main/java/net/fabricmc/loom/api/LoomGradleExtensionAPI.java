@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.gradle.api.Action;
-import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -40,7 +39,6 @@ import org.gradle.api.publish.maven.MavenPublication;
 import org.jetbrains.annotations.ApiStatus;
 
 import net.fabricmc.loom.api.decompilers.DecompilerOptions;
-import net.fabricmc.loom.api.decompilers.architectury.ArchitecturyLoomDecompiler;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.ide.RunConfig;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
@@ -164,12 +162,6 @@ public interface LoomGradleExtensionAPI {
 	// ===================
 	//  Architectury Loom
 	// ===================
-	DomainObjectCollection<ArchitecturyLoomDecompiler> getArchGameDecompilers();
-
-	default void addArchDecompiler(ArchitecturyLoomDecompiler decompiler) {
-		getArchGameDecompilers().add(decompiler);
-	}
-
 	void silentMojangMappingsLicense();
 
 	boolean isSilentMojangMappingsLicenseEnabled();

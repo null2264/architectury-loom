@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
@@ -60,7 +59,6 @@ import org.gradle.workers.WorkerExecutor;
 import org.gradle.workers.internal.WorkerDaemonClientsManager;
 import org.jetbrains.annotations.Nullable;
 
-import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.decompilers.DecompilationMetadata;
 import net.fabricmc.loom.api.decompilers.DecompilerOptions;
 import net.fabricmc.loom.api.decompilers.LoomDecompiler;
@@ -82,20 +80,18 @@ import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.Tiny2Writer;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
-public abstract class GenerateSourcesTask extends AbstractLoomTask implements DecompilationTask {
+public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	private final DecompilerOptions decompilerOptions;
 
 	/**
 	 * The jar to decompile, can be the unpick jar.
 	 */
-	@Override
 	@InputFile
 	public abstract RegularFileProperty getInputJar();
 
 	/**
 	 * The jar used at runtime.
 	 */
-	@Override
 	@InputFile
 	public abstract RegularFileProperty getRuntimeJar();
 
@@ -156,7 +152,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask implements De
 			params.getSourcesDestinationJar().set(getMappedJarFileWithSuffix("-sources.jar"));
 			params.getLinemap().set(getMappedJarFileWithSuffix("-sources.lmap"));
 			params.getLinemapJar().set(getMappedJarFileWithSuffix("-linemapped.jar"));
-			params.getMappings().set(getMappings(getProject(), getExtension()).toFile());
+			params.getMappings().set(getMappings().toFile());
 
 			if (ipcServer != null) {
 				params.getIPCPath().set(ipcServer.getPath().toFile());
@@ -325,8 +321,8 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask implements De
 		return new File(path.substring(0, path.length() - 4) + suffix);
 	}
 
-	static Path getMappings(Project project, LoomGradleExtension extension) {
-		Path inputMappings = extension.isForge() ? extension.getMappingsProvider().tinyMappingsWithSrg : extension.getMappingsProvider().tinyMappings;
+	private Path getMappings() {
+		Path inputMappings = getExtension().isForge() ? getExtension().getMappingsProvider().tinyMappingsWithSrg : getExtension().getMappingsProvider().tinyMappings;
 
 		MemoryMappingTree mappingTree = new MemoryMappingTree();
 
