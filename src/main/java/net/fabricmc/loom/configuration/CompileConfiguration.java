@@ -298,6 +298,7 @@ public final class CompileConfiguration {
 		if (extension.isForge()) {
 			final SrgMinecraftProvider<?> srgMinecraftProvider = jarConfiguration.getSrgMinecraftProviderBiFunction().apply(project, minecraftProvider);
 			extension.setSrgMinecraftProvider(srgMinecraftProvider);
+			srgMinecraftProvider.provide(true);
 
 			// TODO: Find a better place for this?
 			if (!OperatingSystem.isCIBuild()) {
