@@ -71,6 +71,7 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -254,13 +255,18 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		File inputJar = getInputFile().get().getAsFile();
 
 		try (JarFile jar = new JarFile(inputJar)) {
-			Attributes attributes = jar.getManifest().getMainAttributes();
+			@Nullable Manifest manifest = jar.getManifest();
 
-			if (attributes.containsKey(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY)) {
-				return Set.of(attributes.getValue(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY).split(","));
-			} else {
-				return Set.of();
+			if (manifest != null) {
+				Attributes attributes = manifest.getMainAttributes();
+				String mixinConfigs = attributes.getValue(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY);
+
+				if (mixinConfigs != null) {
+					return Set.of(mixinConfigs.split(","));
+				}
 			}
+
+			return Set.of();
 		} catch (IOException e) {
 			throw new UncheckedIOException("Could not read mixin configs from input jar", e);
 		}
