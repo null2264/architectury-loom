@@ -75,19 +75,9 @@ public class RemapTaskConfiguration {
 		});
 
 		// Configure the default jar task
-		tasks.named(JavaPlugin.JAR_TASK_NAME, Jar.class).configure(task -> {
+		tasks.named(JavaPlugin.JAR_TASK_NAME, AbstractArchiveTask.class).configure(task -> {
 			task.getArchiveClassifier().convention("dev");
 			task.getDestinationDirectory().set(new File(project.getBuildDir(), "devlibs"));
-
-			if (extension.isForge()) {
-				Set<String> mixinConfigs = PropertyUtil.getAndFinalize(extension.getForge().getMixinConfigs());
-
-				if (!mixinConfigs.isEmpty()) {
-					task.manifest(manifest -> {
-						manifest.attributes(Map.of(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY, String.join(",", mixinConfigs)));
-					});
-				}
-			}
 		});
 
 		tasks.named(BasePlugin.ASSEMBLE_TASK_NAME).configure(task -> task.dependsOn(remapJarTask));
@@ -110,6 +100,16 @@ public class RemapTaskConfiguration {
 			if (extension.isForge()) {
 				if (PropertyUtil.getAndFinalize(extension.getForge().getConvertAccessWideners())) {
 					Aw2At.setup(project, remapJarTask);
+				}
+
+				Set<String> mixinConfigs = PropertyUtil.getAndFinalize(extension.getForge().getMixinConfigs());
+
+				if (!mixinConfigs.isEmpty()) {
+					tasks.named(JavaPlugin.JAR_TASK_NAME, Jar.class, task -> {
+						task.manifest(manifest -> {
+							manifest.attributes(Map.of(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY, String.join(",", mixinConfigs)));
+						});
+					});
 				}
 			}
 		});
