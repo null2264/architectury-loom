@@ -25,6 +25,8 @@
 package net.fabricmc.loom.task;
 
 import java.io.File;
+import java.util.Map;
+import java.util.Set;
 
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -73,9 +75,19 @@ public class RemapTaskConfiguration {
 		});
 
 		// Configure the default jar task
-		tasks.named(JavaPlugin.JAR_TASK_NAME, AbstractArchiveTask.class).configure(task -> {
+		tasks.named(JavaPlugin.JAR_TASK_NAME, Jar.class).configure(task -> {
 			task.getArchiveClassifier().convention("dev");
 			task.getDestinationDirectory().set(new File(project.getBuildDir(), "devlibs"));
+
+			if (extension.isForge()) {
+				Set<String> mixinConfigs = PropertyUtil.getAndFinalize(extension.getForge().getMixinConfigs());
+
+				if (!mixinConfigs.isEmpty()) {
+					task.manifest(manifest -> {
+						manifest.attributes(Map.of("MixinConfigs", String.join(",", mixinConfigs)));
+					});
+				}
+			}
 		});
 
 		tasks.named(BasePlugin.ASSEMBLE_TASK_NAME).configure(task -> task.dependsOn(remapJarTask));
