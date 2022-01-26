@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
@@ -43,6 +44,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
@@ -111,6 +114,17 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 	@Input
 	public abstract SetProperty<String> getAtAccessWideners();
 
+	/**
+	 * Configures whether to read mixin configs from jar manifest
+	 * if a fabric.mod.json cannot be found.
+	 *
+	 * <p>This is enabled by default on Forge, but not on other platforms.
+	 *
+	 * @return the property
+	 */
+	@Input
+	public abstract Property<Boolean> getReadMixinConfigsFromManifest();
+
 	private Supplier<TinyRemapperService> tinyRemapperService = Suppliers.memoize(() -> TinyRemapperService.getOrCreate(this));
 
 	@Inject
@@ -119,6 +133,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 		getClasspath().from(getProject().getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
 		getAddNestedDependencies().convention(true).finalizeValueOnRead();
+		getReadMixinConfigsFromManifest().convention(LoomGradleExtension.get(getProject()).isForge()).finalizeValueOnRead();
 
 		if (LoomGradleExtension.get(getProject()).supportsInclude()) {
 			Configuration includeConfiguration = getProject().getConfigurations().getByName(Constants.Configurations.INCLUDE);
@@ -180,15 +195,20 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 	private void setupLegacyMixinRefmapRemapping(RemapParams params) {
 		final LoomGradleExtension extension = LoomGradleExtension.get(getProject());
 		final MixinExtension mixinExtension = extension.getMixin();
+		final Collection<String> allMixinConfigs;
 
 		final JsonObject fabricModJson = MixinRefmapHelper.readFabricModJson(getInputFile().getAsFile().get());
 
 		if (fabricModJson == null) {
-			getProject().getLogger().warn("Could not find fabric.mod.json file in: " + getInputFile().getAsFile().get().getName());
-			return;
+			if (getReadMixinConfigsFromManifest().get()) {
+				allMixinConfigs = readMixinConfigsFromManifest();
+			} else {
+				getProject().getLogger().warn("Could not find fabric.mod.json file in: " + getInputFile().getAsFile().get().getName());
+				return;
+			}
+		} else {
+			allMixinConfigs = MixinRefmapHelper.getMixinConfigurationFiles(fabricModJson);
 		}
-
-		final Collection<String> allMixinConfigs = MixinRefmapHelper.getMixinConfigurationFiles(fabricModJson);
 
 		for (SourceSet sourceSet : mixinExtension.getMixinSourceSets()) {
 			MixinExtension.MixinInformationContainer container = Objects.requireNonNull(
@@ -227,6 +247,22 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 					.toList();
 
 			params.getMixinData().add(new RemapParams.RefmapData(mixinConfigs, refmapName));
+		}
+	}
+
+	private Collection<String> readMixinConfigsFromManifest() {
+		File inputJar = getInputFile().get().getAsFile();
+
+		try (JarFile jar = new JarFile(inputJar)) {
+			Attributes attributes = jar.getManifest().getMainAttributes();
+
+			if (attributes.containsKey(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY)) {
+				return Set.of(attributes.getValue(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY).split(","));
+			} else {
+				return Set.of();
+			}
+		} catch (IOException e) {
+			throw new UncheckedIOException("Could not read mixin configs from input jar", e);
 		}
 	}
 

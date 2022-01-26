@@ -178,6 +178,7 @@ public class Constants {
 	public static final class Forge {
 		public static final String LAUNCH_TESTING = "net.minecraftforge.userdev.LaunchTesting";
 		public static final String ACCESS_TRANSFORMER_PATH = "META-INF/accesstransformer.cfg";
+		public static final String MIXIN_CONFIGS_MANIFEST_KEY = "MixinConfigs";
 
 		private Forge() {
 		}

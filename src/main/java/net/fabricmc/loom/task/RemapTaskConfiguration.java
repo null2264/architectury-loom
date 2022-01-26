@@ -84,7 +84,7 @@ public class RemapTaskConfiguration {
 
 				if (!mixinConfigs.isEmpty()) {
 					task.manifest(manifest -> {
-						manifest.attributes(Map.of("MixinConfigs", String.join(",", mixinConfigs)));
+						manifest.attributes(Map.of(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY, String.join(",", mixinConfigs)));
 					});
 				}
 			}
