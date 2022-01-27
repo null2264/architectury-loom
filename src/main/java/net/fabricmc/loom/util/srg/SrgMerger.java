@@ -175,7 +175,11 @@ public final class SrgMerger {
 		if (tinyMethod != null) {
 			copyDstNames(dstNames, tinyMethod);
 		} else {
-			fillMappings(dstNames, srgMethod);
+			// Do not allow missing methods as these are typically subclass methods and cause issues where
+			// class B extends A, and overrides a method from the superclass. Then the subclass method
+			// DOES get a srg name but not a yarn/intermediary name.
+			// In the best case, they are only methods like <init> or toString which have the same name in every NS.
+			return;
 		}
 
 		flatOutput.visitMethod(srgClass.getSrcName(), srgMethod.getSrcName(), srgMethod.getSrcDesc(), dstNames);
