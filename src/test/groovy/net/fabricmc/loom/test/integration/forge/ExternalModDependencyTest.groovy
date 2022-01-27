@@ -32,13 +32,13 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class ExternalModDependencyTest extends Specification implements GradleProjectTestTrait {
     def "build"() {
-		setup:
-			def gradle = gradleProject(project: "forge/externalModDependency", version: DEFAULT_GRADLE)
+        setup:
+        	def gradle = gradleProject(project: "forge/externalModDependency", version: DEFAULT_GRADLE)
 
-		when:
-			def result = gradle.run(task: "build")
+        when:
+        	def result = gradle.run(task: "build")
 
-		then:
-			result.task(":build").outcome == SUCCESS
+        then:
+        	result.task(":build").outcome == SUCCESS
     }
 }
