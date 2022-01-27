@@ -349,7 +349,10 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 
 	private static boolean areMappingsMergedV2(Path path) throws IOException {
 		try (BufferedReader reader = Files.newBufferedReader(path)) {
-			return MappingReader.detectFormat(reader) == MappingFormat.TINY_2 && MappingReader.getNamespaces(reader).containsAll(Arrays.asList("named", "intermediary", "official"));
+			reader.mark(4096); // == DETECT_HEADER_LEN
+			boolean isTinyV2 = MappingReader.detectFormat(reader) == MappingFormat.TINY_2;
+			reader.reset();
+			return isTinyV2 && MappingReader.getNamespaces(reader, MappingFormat.TINY_2).containsAll(Arrays.asList("named", "intermediary", "official"));
 		} catch (NoSuchFileException e) {
 			return false;
 		}
