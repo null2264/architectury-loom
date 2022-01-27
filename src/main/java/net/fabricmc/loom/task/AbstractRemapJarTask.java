@@ -72,7 +72,7 @@ public abstract class AbstractRemapJarTask extends Jar {
 	public AbstractRemapJarTask() {
 		getSourceNamespace().convention(MappingsNamespace.NAMED.toString()).finalizeValueOnRead();
 		getTargetNamespace().convention(SourceRemapper.intermediary(getProject())).finalizeValueOnRead();
-		getRemapperIsolation().convention(false).finalizeValueOnRead();
+		getRemapperIsolation().convention(true).finalizeValueOnRead();
 	}
 
 	public final <P extends AbstractRemapParams> void submitWork(Class<? extends AbstractRemapAction<P>> workAction, Action<P> action) {
