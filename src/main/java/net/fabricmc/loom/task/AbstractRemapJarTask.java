@@ -41,6 +41,7 @@ import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
+import org.jetbrains.annotations.ApiStatus;
 
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.util.SourceRemapper;
@@ -62,10 +63,23 @@ public abstract class AbstractRemapJarTask extends Jar {
 	@Inject
 	protected abstract WorkerExecutor getWorkerExecutor();
 
+	/**
+	 * Whether the remap jar service is reused between different projects, this is defaulted to true on upstream, but
+	 * it is false by default on this fork, as it breaks setups where remap jar services are receiving the same classes.
+	 * This is a temporary workaround until we can figure out a better solution.
+	 *
+	 * @see <a href="https://github.com/FabricMC/fabric-loom/issues/587">Issue 587</a>
+	 * @return Whether the remap jar service is reused between different projects
+	 */
+	@ApiStatus.Experimental
+	@Input
+	public abstract Property<Boolean> getDoesShareProjectState();
+
 	@Inject
 	public AbstractRemapJarTask() {
 		getSourceNamespace().convention(MappingsNamespace.NAMED.toString()).finalizeValueOnRead();
 		getTargetNamespace().convention(SourceRemapper.intermediary(getProject())).finalizeValueOnRead();
+		getDoesShareProjectState().convention(false);
 	}
 
 	public final <P extends AbstractRemapParams> void submitWork(Class<? extends AbstractRemapAction<P>> workAction, Action<P> action) {

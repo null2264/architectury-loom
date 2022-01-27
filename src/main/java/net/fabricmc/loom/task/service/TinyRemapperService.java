@@ -54,9 +54,10 @@ public class TinyRemapperService implements SharedService {
 		final SharedServiceManager sharedServiceManager = SharedServiceManager.get(project);
 		final boolean legacyMixin = extension.getMixin().getUseLegacyMixinAp().get();
 		final boolean useKotlinExtension = project.getPluginManager().hasPlugin("org.jetbrains.kotlin.jvm");
+		final boolean doesShareProjectState = remapJarTask.getDoesShareProjectState().get();
 
 		// Generates an id that is used to share the remapper across projects. This tasks in the remap jar task name to handle custom remap jar tasks separately.
-		final String id = extension.getMappingsProvider().getBuildServiceName("remapJarService", from, to) + ":" + remapJarTask.getName() + (useKotlinExtension ? ":kotlin" : "");
+		final String id = extension.getMappingsProvider().getBuildServiceName("remapJarService", from, to) + ":" + (doesShareProjectState ? "" : project.getPath() + ":") + remapJarTask.getName() + (useKotlinExtension ? ":kotlin" : "");
 
 		TinyRemapperService service = sharedServiceManager.getOrCreateService(id, () -> {
 			List<IMappingProvider> mappings = new ArrayList<>();
