@@ -35,14 +35,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Stopwatch;
-import org.apache.commons.io.output.NullOutputStream;
 import org.gradle.api.Project;
-import org.gradle.api.logging.LogLevel;
-import org.gradle.api.logging.configuration.ShowStacktrace;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.providers.forge.McpConfigProvider.RemapAction;
 import net.fabricmc.loom.util.FileSystemUtil;
+import net.fabricmc.loom.util.ForgeToolExecutor;
 import net.fabricmc.loom.util.ThreadingUtils;
 
 public class SpecialSourceExecutor {
@@ -109,21 +107,11 @@ public class SpecialSourceExecutor {
 
 		Path workingDir = tmpDir();
 
-		project.javaexec(spec -> {
+		ForgeToolExecutor.exec(project, spec -> {
 			spec.setArgs(args);
 			spec.setClasspath(remapAction.getClasspath());
 			spec.workingDir(workingDir.toFile());
 			spec.getMainClass().set(remapAction.getMainClass());
-
-			// if running with INFO or DEBUG logging
-			if (project.getGradle().getStartParameter().getShowStacktrace() != ShowStacktrace.INTERNAL_EXCEPTIONS
-					|| project.getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.LIFECYCLE) < 0) {
-				spec.setStandardOutput(System.out);
-				spec.setErrorOutput(System.err);
-			} else {
-				spec.setStandardOutput(NullOutputStream.NULL_OUTPUT_STREAM);
-				spec.setErrorOutput(NullOutputStream.NULL_OUTPUT_STREAM);
-			}
 		}).rethrowFailure().assertNormalExitValue();
 
 		project.getLogger().lifecycle(":remapped minecraft (" + remapAction + ", " + side + ", official -> mojang) in " + stopwatch.stop());

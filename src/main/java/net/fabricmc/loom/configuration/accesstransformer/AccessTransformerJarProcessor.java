@@ -36,14 +36,11 @@ import java.util.Set;
 
 import com.google.common.hash.Hashing;
 import com.google.common.io.ByteSource;
-import org.apache.commons.io.output.NullOutputStream;
 import org.cadixdev.at.AccessTransformSet;
 import org.cadixdev.at.io.AccessTransformFormats;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.logging.LogLevel;
-import org.gradle.api.logging.configuration.ShowStacktrace;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 
@@ -53,6 +50,7 @@ import net.fabricmc.loom.configuration.processors.JarProcessor;
 import net.fabricmc.loom.util.Checksum;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
+import net.fabricmc.loom.util.ForgeToolExecutor;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
@@ -177,20 +175,10 @@ public final class AccessTransformerJarProcessor implements JarProcessor {
 
 		configuration.apply(args);
 
-		project.javaexec(spec -> {
+		ForgeToolExecutor.exec(project, spec -> {
 			spec.getMainClass().set("net.minecraftforge.accesstransformer.TransformerProcessor");
 			spec.setArgs(args);
 			spec.setClasspath(classpath);
-
-			// if running with INFO or DEBUG logging
-			if (project.getGradle().getStartParameter().getShowStacktrace() != ShowStacktrace.INTERNAL_EXCEPTIONS
-					|| project.getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.LIFECYCLE) < 0) {
-				spec.setStandardOutput(System.out);
-				spec.setErrorOutput(System.err);
-			} else {
-				spec.setStandardOutput(NullOutputStream.NULL_OUTPUT_STREAM);
-				spec.setErrorOutput(NullOutputStream.NULL_OUTPUT_STREAM);
-			}
 		}).rethrowFailure().assertNormalExitValue();
 	}
 

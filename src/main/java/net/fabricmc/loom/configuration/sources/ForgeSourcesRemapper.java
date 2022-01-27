@@ -46,8 +46,6 @@ import org.cadixdev.mercury.Mercury;
 import org.cadixdev.mercury.remapper.MercuryRemapper;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ResolvedArtifact;
-import org.gradle.api.logging.LogLevel;
-import org.gradle.api.logging.configuration.ShowStacktrace;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
@@ -56,6 +54,7 @@ import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DeletingFileVisitor;
 import net.fabricmc.loom.util.FileSystemUtil;
+import net.fabricmc.loom.util.ForgeToolExecutor;
 import net.fabricmc.loom.util.SourceRemapper;
 import net.fabricmc.loom.util.ThreadingUtils;
 import net.fabricmc.loom.util.TinyRemapperHelper;
@@ -155,14 +154,14 @@ public class ForgeSourcesRemapper {
 		PrintStream out = System.out;
 		PrintStream err = System.err;
 
-		if (project.getGradle().getStartParameter().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS && project.getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.LIFECYCLE) >= 0) {
+		if (!ForgeToolExecutor.shouldShowVerboseOutput(project)) {
 			System.setOut(new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM));
 			System.setErr(new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM));
 		}
 
 		remapForgeSourcesInner(project, tmpInput.toPath(), tmpOutput.toPath());
 
-		if (project.getGradle().getStartParameter().getShowStacktrace() == ShowStacktrace.INTERNAL_EXCEPTIONS && project.getGradle().getStartParameter().getLogLevel().compareTo(LogLevel.LIFECYCLE) >= 0) {
+		if (!ForgeToolExecutor.shouldShowVerboseOutput(project)) {
 			System.setOut(out);
 			System.setErr(err);
 		}
