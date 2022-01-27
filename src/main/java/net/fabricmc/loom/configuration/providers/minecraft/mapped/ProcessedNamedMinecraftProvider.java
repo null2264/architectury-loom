@@ -50,7 +50,7 @@ public abstract class ProcessedNamedMinecraftProvider<M extends MinecraftProvide
 		this.parentMinecraftProvider = parentMinecraftProvide;
 		this.jarProcessorManager = jarProcessorManager;
 
-		this.projectMappedName = parentMinecraftProvide.getMinecraftProvider().getJarPrefix() + "minecraft-project-%s-".formatted(getProject().getPath().replace(':', '@'));
+		this.projectMappedName = "minecraft-project-%s-".formatted(getProject().getPath().replace(':', '@'));
 
 		final LoomGradleExtension extension = LoomGradleExtension.get(getProject());
 		this.projectMappedDir = extension.getFiles().getRootProjectPersistentCache().toPath()
