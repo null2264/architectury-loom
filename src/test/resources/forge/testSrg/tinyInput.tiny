@@ -1,0 +1,5 @@
+tiny	2	0	official	intermediary	named
+c	a	class_1	test/SomeClass
+	f	I	a	field_1	myInt
+	m	()I	a	method_1	getMyInt
+c	b	class_2	test/SomeSubclass

@@ -1,0 +1,7 @@
+tiny	2	0	official	srg	intermediary	named
+c	a	test/FakeClass	class_1	test/SomeClass
+	f	I	a	f_1_	field_1	myInt
+	m	()I	a	m_1_	method_1	getMyInt
+c	b	test/FakeSubclass	class_2	test/SomeSubclass
+c	test/DeObfClass	test/DeObfClass	test/DeObfClass	test/DeObfClass
+	m	()V	iAmNotObfuscated	m_2_	iAmNotObfuscated	iAmNotObfuscated

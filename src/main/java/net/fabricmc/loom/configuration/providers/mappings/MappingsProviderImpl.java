@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Suppliers;
 import com.google.gson.JsonObject;
 import org.apache.tools.ant.util.StringUtils;
@@ -198,7 +199,9 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		if (extension.shouldGenerateSrgTiny()) {
 			if (Files.notExists(tinyMappingsWithSrg) || isRefreshDeps()) {
 				// Merge tiny mappings with srg
-				SrgMerger.mergeSrg(project.getLogger(), getRawSrgFile(project), tinyMappings, tinyMappingsWithSrg, true);
+				Stopwatch stopwatch = Stopwatch.createStarted();
+				SrgMerger.mergeSrg(getRawSrgFile(project), tinyMappings, tinyMappingsWithSrg, getMojmapSrgFileIfPossible(project), true);
+				project.getLogger().info(":merged srg mappings in " + stopwatch.stop());
 			}
 
 			mappingTreeWithSrg = Suppliers.memoize(() -> readMappings(tinyMappingsWithSrg));
@@ -247,6 +250,15 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		}
 
 		return extension.getSrgProvider().getSrg();
+	}
+
+	public Path getMojmapSrgFileIfPossible(Project project) {
+		try {
+			LoomGradleExtension extension = LoomGradleExtension.get(project);
+			return SrgProvider.getMojmapTsrg2(project, extension);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	public void manipulateMappings(Project project, Path mappingsJar) throws IOException {

@@ -1,0 +1,9 @@
+test.FakeClass -> a:
+    void <init>() -> <init>
+    int fakeField -> a
+    int getFakeField() -> a
+test.FakeSubclass -> b:
+    void <init>() -> <init>
+test.DeObfClass -> test.DeObfClass:
+    void <init>() -> <init>
+    void iAmNotObfuscated() -> iAmNotObfuscated

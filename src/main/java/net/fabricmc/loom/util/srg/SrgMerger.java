@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2020-2021 FabricMC
+ * Copyright (c) 2020-2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.base.Stopwatch;
-import org.gradle.api.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
@@ -41,14 +39,15 @@ import net.fabricmc.loom.util.function.CollectionUtil;
 import net.fabricmc.mappingio.FlatMappingVisitor;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.adapter.MappingNsRenamer;
+import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.adapter.RegularAsFlatMappingVisitor;
+import net.fabricmc.mappingio.format.ProGuardReader;
 import net.fabricmc.mappingio.format.Tiny2Writer;
 import net.fabricmc.mappingio.format.TsrgReader;
 import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
-// TODO: Check if #49 came back with the rewrite
 /**
  * Utilities for merging SRG mappings.
  *
@@ -60,13 +59,25 @@ public final class SrgMerger {
 	private final MemoryMappingTree output;
 	private final FlatMappingVisitor flatOutput;
 	private final boolean lenient;
+	private final @Nullable MemoryMappingTree extra;
 
-	private SrgMerger(Path srg, Path tiny, boolean lenient) throws IOException {
+	private SrgMerger(Path srg, Path tiny, @Nullable Path extraProguard, boolean lenient) throws IOException {
 		this.srg = readSrg(srg);
 		this.src = new MemoryMappingTree();
 		this.output = new MemoryMappingTree();
 		this.flatOutput = new RegularAsFlatMappingVisitor(output);
 		this.lenient = lenient;
+
+		if (extraProguard != null) {
+			this.extra = new MemoryMappingTree();
+
+			try (BufferedReader reader = Files.newBufferedReader(extraProguard)) {
+				MappingSourceNsSwitch nsSwitch = new MappingSourceNsSwitch(extra, "official");
+				ProGuardReader.read(reader, "named", "official", nsSwitch);
+			}
+		} else {
+			this.extra = null;
+		}
 
 		MappingReader.read(tiny, this.src);
 
@@ -175,11 +186,30 @@ public final class SrgMerger {
 		if (tinyMethod != null) {
 			copyDstNames(dstNames, tinyMethod);
 		} else {
-			// Do not allow missing methods as these are typically subclass methods and cause issues where
-			// class B extends A, and overrides a method from the superclass. Then the subclass method
-			// DOES get a srg name but not a yarn/intermediary name.
-			// In the best case, they are only methods like <init> or toString which have the same name in every NS.
-			return;
+			if (srgMethod.getSrcName().equals(srgMethod.getDstName(0))) {
+				// These are only methods like <init> or toString which have the same name in every NS.
+				// We can safely ignore those.
+				return;
+			}
+
+			@Nullable MappingTree.MethodMapping fillMethod = null;
+
+			if (extra != null) {
+				MappingTree.MethodMapping extraMethod = extra.getMethod(srgClass.getSrcName(), srgMethod.getSrcName(), srgMethod.getSrcDesc());
+
+				if (extraMethod != null && extraMethod.getSrcName().equals(extraMethod.getDstName(0))) {
+					fillMethod = extraMethod;
+				}
+			}
+
+			if (fillMethod != null) {
+				fillMappings(dstNames, fillMethod);
+			} else {
+				// Do not allow missing methods as these are typically subclass methods and cause issues where
+				// class B extends A, and overrides a method from the superclass. Then the subclass method
+				// DOES get a srg name but not a yarn/intermediary name.
+				return;
+			}
 		}
 
 		flatOutput.visitMethod(srgClass.getSrcName(), srgMethod.getSrcName(), srgMethod.getSrcDesc(), dstNames);
@@ -194,26 +224,25 @@ public final class SrgMerger {
 	 * <p>If {@code lenient} is true, the merger will not error when encountering names not present
 	 * in the tiny mappings. Instead, the names will be filled from the {@code official} namespace.
 	 *
-	 * @param srg     the SRG file in .tsrg format
-	 * @param tiny    the tiny file
-	 * @param out     the output file, will be in tiny v2
-	 * @param lenient whether lenient mode is enabled
+	 * @param srg           the SRG file in .tsrg format
+	 * @param tiny          the tiny file
+	 * @param out           the output file, will be in tiny v2
+	 * @param extraProguard an extra Proguard obfuscation mappings file that will be used to determine
+	 *                      whether an unobfuscated name is needed
+	 * @param lenient       whether lenient mode is enabled
 	 * @throws IOException      if an IO error occurs while reading or writing the mappings
 	 * @throws MappingException if the input tiny tree's default namespace is not 'official'
 	 *                          or if an element mentioned in the SRG file does not have tiny mappings in non-lenient mode
 	 */
-	public static void mergeSrg(Logger logger, Path srg, Path tiny, Path out, boolean lenient)
+	public static void mergeSrg(Path srg, Path tiny, Path out, @Nullable Path extraProguard, boolean lenient)
 			throws IOException, MappingException {
-		Stopwatch stopwatch = Stopwatch.createStarted();
-		MemoryMappingTree tree = new SrgMerger(srg, tiny, lenient).merge();
+		MemoryMappingTree tree = new SrgMerger(srg, tiny, extraProguard, lenient).merge();
 
 		try (Tiny2Writer writer = new Tiny2Writer(Files.newBufferedWriter(out), false)) {
 			tree.accept(writer);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		logger.info(":merged srg mappings in " + stopwatch.stop());
 	}
 
 	private MemoryMappingTree readSrg(Path srg) throws IOException {
