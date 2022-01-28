@@ -25,6 +25,8 @@
 package net.fabricmc.loom.test.unit.forge
 
 import net.fabricmc.loom.util.srg.SrgMerger
+import net.fabricmc.mappingio.MappingUtil
+import net.fabricmc.mappingio.format.MappingFormat
 import spock.lang.Specification
 import spock.lang.TempDir
 
@@ -35,18 +37,36 @@ class SrgMergerTest extends Specification {
     @TempDir
     Path mappingsDir
 
-    def "test SrgMerger"() {
-        def srgInput = extractTempFile("srgInput.tsrg")
-        def tinyInput = extractTempFile("tinyInput.tiny")
-        def proguardInput = extractTempFile("proguard.txt")
+    def "test with proguard extras"() {
         def output = mappingsDir.resolve("output.tiny")
         def expected = readTestData("expectedOutput.tiny")
+        def proguardInput = extractTempFile("proguard.txt")
+        def extraMappings = new SrgMerger.ExtraMappings(proguardInput, MappingFormat.PROGUARD, MappingUtil.NS_TARGET_FALLBACK, MappingUtil.NS_SOURCE_FALLBACK)
 
         when:
-            SrgMerger.mergeSrg(srgInput, tinyInput, output, proguardInput, true)
+            merge(extraMappings, output)
 
         then:
             Files.readAllLines(output) == expected
+    }
+
+    def "test with srg extras"() {
+        def output = mappingsDir.resolve("output.tiny")
+        def expected = readTestData("expectedOutput.tiny")
+        def extraInput = extractTempFile("extraInput.tsrg")
+        def extraMappings = SrgMerger.ExtraMappings.ofMojmapTsrg(extraInput)
+
+        when:
+            merge(extraMappings, output)
+
+        then:
+            Files.readAllLines(output) == expected
+    }
+
+    private def merge(SrgMerger.ExtraMappings extraMappings, Path output) {
+        def srgInput = extractTempFile("srgInput.tsrg")
+        def tinyInput = extractTempFile("tinyInput.tiny")
+        SrgMerger.mergeSrg(srgInput, tinyInput, output, extraMappings, true)
     }
 
     private InputStream openTestDataStream(String path) {

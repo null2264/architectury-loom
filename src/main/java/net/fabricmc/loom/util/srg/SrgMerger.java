@@ -38,10 +38,11 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.util.function.CollectionUtil;
 import net.fabricmc.mappingio.FlatMappingVisitor;
 import net.fabricmc.mappingio.MappingReader;
+import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.adapter.MappingNsRenamer;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.adapter.RegularAsFlatMappingVisitor;
-import net.fabricmc.mappingio.format.ProGuardReader;
+import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.format.Tiny2Writer;
 import net.fabricmc.mappingio.format.TsrgReader;
 import net.fabricmc.mappingio.tree.MappingTree;
@@ -61,20 +62,27 @@ public final class SrgMerger {
 	private final boolean lenient;
 	private final @Nullable MemoryMappingTree extra;
 
-	private SrgMerger(Path srg, Path tiny, @Nullable Path extraProguard, boolean lenient) throws IOException {
+	private SrgMerger(Path srg, Path tiny, @Nullable ExtraMappings extraMappings, boolean lenient) throws IOException {
 		this.srg = readSrg(srg);
 		this.src = new MemoryMappingTree();
 		this.output = new MemoryMappingTree();
 		this.flatOutput = new RegularAsFlatMappingVisitor(output);
 		this.lenient = lenient;
 
-		if (extraProguard != null) {
+		if (extraMappings != null) {
 			this.extra = new MemoryMappingTree();
+			MappingSourceNsSwitch nsSwitch = new MappingSourceNsSwitch(extra, "official");
+			MappingVisitor visitor = nsSwitch;
 
-			try (BufferedReader reader = Files.newBufferedReader(extraProguard)) {
-				MappingSourceNsSwitch nsSwitch = new MappingSourceNsSwitch(extra, "official");
-				ProGuardReader.read(reader, "named", "official", nsSwitch);
+			if (!extraMappings.hasCorrectNamespaces()) {
+				Map<String, String> namespaces = Map.of(
+						extraMappings.obfuscatedNamespace(), MappingsNamespace.OFFICIAL.toString(),
+						extraMappings.deobfuscatedNamespace(), MappingsNamespace.NAMED.toString()
+				);
+				visitor = new MappingNsRenamer(visitor, namespaces);
 			}
+
+			MappingReader.read(extraMappings.path(), extraMappings.format(), visitor);
 		} else {
 			this.extra = null;
 		}
@@ -227,16 +235,16 @@ public final class SrgMerger {
 	 * @param srg           the SRG file in .tsrg format
 	 * @param tiny          the tiny file
 	 * @param out           the output file, will be in tiny v2
-	 * @param extraProguard an extra Proguard obfuscation mappings file that will be used to determine
-	 *                      whether an unobfuscated name is needed
+	 * @param extraMappings an extra mappings file that will be used to determine
+	 *                      whether an unobfuscated name is needed in the result file
 	 * @param lenient       whether lenient mode is enabled
 	 * @throws IOException      if an IO error occurs while reading or writing the mappings
 	 * @throws MappingException if the input tiny tree's default namespace is not 'official'
 	 *                          or if an element mentioned in the SRG file does not have tiny mappings in non-lenient mode
 	 */
-	public static void mergeSrg(Path srg, Path tiny, Path out, @Nullable Path extraProguard, boolean lenient)
+	public static void mergeSrg(Path srg, Path tiny, Path out, @Nullable ExtraMappings extraMappings, boolean lenient)
 			throws IOException, MappingException {
-		MemoryMappingTree tree = new SrgMerger(srg, tiny, extraProguard, lenient).merge();
+		MemoryMappingTree tree = new SrgMerger(srg, tiny, extraMappings, lenient).merge();
 
 		try (Tiny2Writer writer = new Tiny2Writer(Files.newBufferedWriter(out), false)) {
 			tree.accept(writer);
@@ -256,6 +264,16 @@ public final class SrgMerger {
 			);
 			temp.accept(new MappingNsRenamer(tsrg, namespaces));
 			return tsrg;
+		}
+	}
+
+	public record ExtraMappings(Path path, MappingFormat format, String obfuscatedNamespace, String deobfuscatedNamespace) {
+		boolean hasCorrectNamespaces() {
+			return obfuscatedNamespace.equals(MappingsNamespace.OFFICIAL.toString()) && deobfuscatedNamespace.equals(MappingsNamespace.NAMED.toString());
+		}
+
+		public static ExtraMappings ofMojmapTsrg(Path path) {
+			return new ExtraMappings(path, MappingFormat.TSRG2, MappingsNamespace.OFFICIAL.toString(), MappingsNamespace.NAMED.toString());
 		}
 	}
 }

@@ -1,0 +1,10 @@
+tsrg2 official named
+a test/FakeClass
+	<init> ()V <init>
+	a I fakeField
+	a ()I getFakeField
+b test/FakeSubclass
+	<init> ()V <init>
+test/DeObfClass test/DeObfClass
+	<init> ()V <init>
+	iAmNotObfuscated ()V iAmNotObfuscated
