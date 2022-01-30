@@ -2,4 +2,9 @@ tiny	2	0	official	intermediary	named
 c	a	class_1	test/SomeClass
 	f	I	a	field_1	myInt
 	m	()I	a	method_1	getMyInt
+	m	()V	evilUnobfMethod	method_2	differentNamedName
 c	b	class_2	test/SomeSubclass
+c	c	class_3	test/RelatedA
+	m	()V	a	method_3	fromClassA
+c	d	class_4	test/RelatedB
+	m	()V	a	method_4	fromClassB

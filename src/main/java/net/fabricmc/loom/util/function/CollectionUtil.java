@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2020-2021 FabricMC
+ * Copyright (c) 2020-2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 package net.fabricmc.loom.util.function;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -70,6 +71,20 @@ public final class CollectionUtil {
 			result.add(transform.apply(a));
 		}
 
+		return result;
+	}
+
+	/**
+	 * Filters a list based on a predicate.
+	 *
+	 * @param collection the source collection
+	 * @param filter     the filtering predicate
+	 * @param <A> the element type
+	 * @return a mutable list with the filtered entries
+	 */
+	public static <A> List<A> filter(Collection<? extends A> collection, Predicate<? super A> filter) {
+		ArrayList<A> result = new ArrayList<>(collection);
+		result.removeIf(filter.negate());
 		return result;
 	}
 }

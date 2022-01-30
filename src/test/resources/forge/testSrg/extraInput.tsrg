@@ -3,8 +3,13 @@ a test/FakeClass
 	<init> ()V <init>
 	a I fakeField
 	a ()I getFakeField
+	evilUnobfMethod ()V evilUnobfMethod
 b test/FakeSubclass
 	<init> ()V <init>
 test/DeObfClass test/DeObfClass
 	<init> ()V <init>
 	iAmNotObfuscated ()V iAmNotObfuscated
+c test/FormerSiblingA
+	a ()V something
+d test/FormerSiblingB
+	a ()V something

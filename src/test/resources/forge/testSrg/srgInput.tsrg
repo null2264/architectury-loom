@@ -3,9 +3,15 @@ a test/FakeClass
 	<init> ()V <init>
 	a I f_1_
 	a ()I m_1_
+	evilUnobfMethod ()V m_3_
 b test/FakeSubclass
 	<init> ()V <init>
 	a ()I m_1_
+	evilUnobfMethod ()V m_3_
 test/DeObfClass test/DeObfClass
 	<init> ()V <init>
 	iAmNotObfuscated ()V m_2_
+c test/FormerSiblingA
+	a ()V m_4_
+d test/FormerSiblingB
+	a ()V m_4_
