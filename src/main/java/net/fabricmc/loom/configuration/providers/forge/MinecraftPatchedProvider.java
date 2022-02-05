@@ -131,20 +131,22 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	}
 
 	private void initPatchedFiles() {
-		String patchId = "forge-" + getExtension().getForgeProvider().getVersion().getCombined() + "-";
+		String forgeVersion = getExtension().getForgeProvider().getVersion().getCombined();
+		File forgeWorkingDir = dir("forge/" + forgeVersion);
+		String patchId = "forge-" + forgeVersion + "-";
 
 		if (getExtension().isForgeAndOfficial()) {
 			setJarPrefix(patchId);
 		}
 
-		minecraftClientSrgJar = file("minecraft-client-srg.jar");
-		minecraftServerSrgJar = file("minecraft-server-srg.jar");
-		minecraftClientPatchedSrgJar = file("client-srg-patched.jar");
-		minecraftServerPatchedSrgJar = file("server-srg-patched.jar");
-		minecraftMergedPatchedSrgJar = file("merged-srg-patched.jar");
-		minecraftMergedPatchedSrgAtJar = file("merged-srg-at-patched.jar");
-		minecraftMergedPatchedJar = file("merged-patched.jar");
-		minecraftClientExtra = file("forge-client-extra.jar");
+		minecraftClientSrgJar = new File(forgeWorkingDir, "minecraft-client-srg.jar");
+		minecraftServerSrgJar = new File(forgeWorkingDir, "minecraft-server-srg.jar");
+		minecraftClientPatchedSrgJar = new File(forgeWorkingDir, "client-srg-patched.jar");
+		minecraftServerPatchedSrgJar = new File(forgeWorkingDir, "server-srg-patched.jar");
+		minecraftMergedPatchedSrgJar = new File(forgeWorkingDir, "merged-srg-patched.jar");
+		minecraftMergedPatchedSrgAtJar = new File(forgeWorkingDir, "merged-srg-at-patched.jar");
+		minecraftMergedPatchedJar = new File(forgeWorkingDir, "merged-patched.jar");
+		minecraftClientExtra = new File(forgeWorkingDir, "forge-client-extra.jar");
 	}
 
 	private File getEffectiveServerJar() throws IOException {
