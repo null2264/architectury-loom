@@ -61,7 +61,7 @@ public record AccessWidenerFile(
 				try {
 					commonJsonBytes = ZipUtils.unpackNullable(modJarPath, "architectury.common.json");
 				} catch (IOException e) {
-					throw new UncheckedIOException("Failed to read access-widener file from: " + modJarPath.toAbsolutePath(), e);
+					throw new UncheckedIOException("Failed to read architectury.common.json file from: " + modJarPath.toAbsolutePath(), e);
 				}
 
 				if (commonJsonBytes != null) {

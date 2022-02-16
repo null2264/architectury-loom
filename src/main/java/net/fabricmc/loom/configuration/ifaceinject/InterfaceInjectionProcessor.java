@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -282,6 +283,34 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 			}
 
 			if (modJsonBytes == null) {
+				byte[] commonJsonBytes;
+
+				try {
+					commonJsonBytes = ZipUtils.unpackNullable(modJarPath, "architectury.common.json");
+				} catch (IOException e) {
+					throw new UncheckedIOException("Failed to read architectury.common.json file from: " + modJarPath.toAbsolutePath(), e);
+				}
+
+				if (commonJsonBytes != null) {
+					JsonObject jsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
+
+					if (jsonObject.has("injected_interfaces")) {
+						JsonObject addedIfaces = jsonObject.getAsJsonObject("injected_interfaces");
+
+						final List<InjectedInterface> result = new ArrayList<>();
+
+						for (String className : addedIfaces.keySet()) {
+							final JsonArray ifaceNames = addedIfaces.getAsJsonArray(className);
+
+							for (JsonElement ifaceName : ifaceNames) {
+								result.add(new InjectedInterface(modJarPath.toString(), className, ifaceName.getAsString()));
+							}
+						}
+
+						return result;
+					}
+				}
+
 				return Collections.emptyList();
 			}
 
