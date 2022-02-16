@@ -62,6 +62,7 @@ import org.cadixdev.lorenz.MappingSet;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
@@ -126,6 +127,15 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 	@Input
 	public abstract Property<Boolean> getReadMixinConfigsFromManifest();
 
+	/**
+	 * Sets the "accessWidener" property in the fabric.mod.json, if the project is
+	 * using access wideners.
+	 *
+	 * @return the property
+	 */
+	@Input
+	public abstract Property<Boolean> getInjectAccessWidener();
+
 	private Supplier<TinyRemapperService> tinyRemapperService = Suppliers.memoize(() -> TinyRemapperService.getOrCreate(this));
 
 	@Inject
@@ -135,6 +145,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		getClasspath().from(getProject().getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
 		getAddNestedDependencies().convention(true).finalizeValueOnRead();
 		getReadMixinConfigsFromManifest().convention(LoomGradleExtension.get(getProject()).isForge()).finalizeValueOnRead();
+		getInjectAccessWidener().convention(false);
 
 		if (LoomGradleExtension.get(getProject()).supportsInclude()) {
 			Configuration includeConfiguration = getProject().getConfigurations().getByName(Constants.Configurations.INCLUDE);
@@ -184,6 +195,11 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			}
 
 			params.getForge().set(extension.isForge());
+
+			if (getInjectAccessWidener().get() && extension.getAccessWidenerPath().isPresent()) {
+				params.getInjectAccessWidener().set(extension.getAccessWidenerPath());
+			}
+
 			params.getMappingBuildServiceUuid().convention("this should be unavailable!");
 			params.getAtAccessWideners().set(getAtAccessWideners());
 
@@ -278,6 +294,8 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 		Property<Boolean> getForge();
 
+		RegularFileProperty getInjectAccessWidener();
+
 		SetProperty<String> getAtAccessWideners();
 
 		Property<Boolean> getUseMixinExtension();
@@ -308,7 +326,8 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				tinyRemapper = tinyRemapperService.getTinyRemapperForRemapping();
 
 				remap();
-				remapAccessWidener();
+				if (!injectAccessWidener())
+					remapAccessWidener();
 				addRefmaps();
 				addNestedJars();
 				convertAwToAt();
@@ -336,6 +355,23 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				outputConsumer.addNonClassFiles(inputFile);
 				tinyRemapper.apply(outputConsumer, tinyRemapperService.getOrCreateTag(inputFile));
 			}
+		}
+
+		private boolean injectAccessWidener() throws IOException {
+			if (!getParameters().getInjectAccessWidener().isPresent()) return false;
+
+			Path path = getParameters().getInjectAccessWidener().getAsFile().get().toPath();
+
+			byte[] remapped = remapAccessWidener(Files.readAllBytes(path));
+
+			ZipUtils.replace(outputFile, path.getFileName().toString(), remapped);
+
+			ZipUtils.transformJson(JsonObject.class, outputFile, Map.of("fabric.mod.json", json -> {
+				json.addProperty("accessWidener", path.getFileName().toString());
+				return json;
+			}));
+
+			return true;
 		}
 
 		private void remapAccessWidener() throws IOException {

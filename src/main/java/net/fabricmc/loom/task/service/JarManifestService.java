@@ -95,6 +95,7 @@ public abstract class JarManifestService implements BuildService<JarManifestServ
 
 	private static Optional<String> getLoaderVersion(Project project) {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
+		if (extension.isForge()) return Optional.empty();
 
 		if (extension.getInstallerData() == null) {
 			project.getLogger().warn("Could not determine fabric loader version for jar manifest");
@@ -107,6 +108,8 @@ public abstract class JarManifestService implements BuildService<JarManifestServ
 	private record MixinVersion(String group, String version) implements Serializable { }
 
 	private static Optional<MixinVersion> getMixinVersion(Project project) {
+		if (LoomGradleExtension.get(project).isForge()) return Optional.empty();
+
 		// Not super ideal that this uses the mod compile classpath, should prob look into making this not a thing at somepoint
 		Optional<Dependency> dependency = project.getConfigurations().getByName(Constants.Configurations.LOADER_DEPENDENCIES)
 				.getDependencies()
