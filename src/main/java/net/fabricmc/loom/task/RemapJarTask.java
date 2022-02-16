@@ -326,8 +326,11 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				tinyRemapper = tinyRemapperService.getTinyRemapperForRemapping();
 
 				remap();
-				if (!injectAccessWidener())
+
+				if (!injectAccessWidener()) {
 					remapAccessWidener();
+				}
+
 				addRefmaps();
 				addNestedJars();
 				convertAwToAt();
@@ -364,7 +367,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 			byte[] remapped = remapAccessWidener(Files.readAllBytes(path));
 
-			ZipUtils.replace(outputFile, path.getFileName().toString(), remapped);
+			ZipUtils.add(outputFile, path.getFileName().toString(), remapped);
 
 			ZipUtils.transformJson(JsonObject.class, outputFile, Map.of("fabric.mod.json", json -> {
 				json.addProperty("accessWidener", path.getFileName().toString());
