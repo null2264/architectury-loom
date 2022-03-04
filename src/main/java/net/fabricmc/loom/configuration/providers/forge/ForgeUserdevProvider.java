@@ -77,7 +77,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 
 	@Override
 	public void provide(DependencyInfo dependency) throws Exception {
-		Attribute<Boolean> transformed = Attribute.of("architectury-loom-forge-dependencies-transformed", Boolean.class);
+		Attribute<Boolean> transformed = Attribute.of("architectury-loom-forge-dependencies-transformed-2", Boolean.class);
 
 		getProject().getDependencies().registerTransform(RemoveNameProvider.class, spec -> {
 			spec.getFrom().attribute(transformed, false);
@@ -190,7 +190,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 			try {
 				File input = getInput().get().getAsFile();
 				//architectury-loom-forge-dependencies-transformed
-				File output = outputs.file(input.getName() + "-alfd-transformed.jar");
+				File output = outputs.file("alfd-transformed/" + input.getName());
 				Files.copy(input.toPath(), output.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
 				try (FileSystemUtil.Delegate fs = FileSystemUtil.getJarFileSystem(output, false)) {
