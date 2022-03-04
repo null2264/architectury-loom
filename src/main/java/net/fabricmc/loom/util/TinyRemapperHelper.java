@@ -48,6 +48,7 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.util.srg.InnerClassRemapper;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.tree.MappingTree;
+import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 /**
@@ -159,6 +160,10 @@ public final class TinyRemapperHelper {
 		return (acceptor) -> {
 			final int fromId = mappings.getNamespaceId(from);
 			final int toId = mappings.getNamespaceId(to);
+
+			if (toId == MappingTreeView.NULL_NAMESPACE_ID) {
+				System.out.println("Warning: Trying to remap to unknown namespace: " + to);
+			}
 
 			for (MappingTree.ClassMapping classDef : mappings.getClasses()) {
 				String className = classDef.getName(fromId);
