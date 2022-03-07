@@ -183,7 +183,7 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 
 	private void checkCache() throws IOException {
 		if (isRefreshDeps() || Stream.of(getGlobalCaches()).anyMatch(((Predicate<File>) File::exists).negate())
-		    || !isPatchedJarUpToDate(minecraftMergedPatchedJar)) {
+				|| !isPatchedJarUpToDate(minecraftMergedPatchedJar)) {
 			cleanAllCache();
 		}
 	}
@@ -538,7 +538,7 @@ public class MinecraftPatchedProvider extends MergedMinecraftProvider {
 	private void walkFileSystems(File source, File target, Predicate<Path> filter, Function<FileSystem, Iterable<Path>> toWalk, FsPathConsumer action)
 			throws IOException {
 		try (FileSystemUtil.Delegate sourceFs = FileSystemUtil.getJarFileSystem(source, false);
-		     FileSystemUtil.Delegate targetFs = FileSystemUtil.getJarFileSystem(target, false)) {
+				FileSystemUtil.Delegate targetFs = FileSystemUtil.getJarFileSystem(target, false)) {
 			for (Path sourceDir : toWalk.apply(sourceFs.get())) {
 				Path dir = sourceDir.toAbsolutePath();
 				if (!Files.exists(dir)) continue;
