@@ -233,6 +233,19 @@ public final class CompileConfiguration {
 			}
 
 			configureDecompileTasks(project);
+
+			if (extension.isForge()) {
+				// TODO: Find a better place for this?
+				//   This has to be after dependencyManager.handleDependencies() above
+				//   because of https://github.com/architectury/architectury-loom/issues/72.
+				if (!OperatingSystem.isCIBuild()) {
+					try {
+						ForgeSourcesRemapper.addBaseForgeSources(project);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			}
 		});
 
 		finalizedBy(p, "idea", "genIdeaWorkspace");
@@ -299,15 +312,6 @@ public final class CompileConfiguration {
 			final SrgMinecraftProvider<?> srgMinecraftProvider = jarConfiguration.getSrgMinecraftProviderBiFunction().apply(project, minecraftProvider);
 			extension.setSrgMinecraftProvider(srgMinecraftProvider);
 			srgMinecraftProvider.provide(true);
-
-			// TODO: Find a better place for this?
-			if (!OperatingSystem.isCIBuild()) {
-				try {
-					ForgeSourcesRemapper.addBaseForgeSources(project);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
 		}
 	}
 
