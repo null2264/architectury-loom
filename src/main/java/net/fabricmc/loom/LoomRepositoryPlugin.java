@@ -92,6 +92,8 @@ public class LoomRepositoryPlugin implements Plugin<PluginAware> {
 
 			repo.content(descriptor -> {
 				descriptor.excludeGroupByRegex("org\\.eclipse\\.?.*");
+				// Some of these downloads hang and this is already available from central to begin with.
+				descriptor.excludeGroup("org.ow2.asm");
 			});
 			repo.metadataSources(sources -> {
 				sources.mavenPom();
