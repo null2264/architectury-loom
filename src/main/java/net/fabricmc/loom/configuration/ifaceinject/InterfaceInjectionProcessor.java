@@ -208,8 +208,27 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 					.matching(patternFilterable -> patternFilterable.include("fabric.mod.json"))
 					.getSingleFile();
 		} catch (IllegalStateException e) {
-			// File not found
-			return Collections.emptyList();
+			File archCommonJson;
+
+			try {
+				archCommonJson = sourceSet.getResources()
+						.matching(patternFilterable -> patternFilterable.include("architectury.common.json"))
+						.getSingleFile();
+
+				final String jsonString;
+
+				try {
+					jsonString = Files.readString(archCommonJson.toPath(), StandardCharsets.UTF_8);
+				} catch (IOException e2) {
+					throw new UncheckedIOException("Failed to read architectury.common.json", e2);
+				}
+
+				JsonObject jsonObject = new Gson().fromJson(jsonString, JsonObject.class);
+				return InjectedInterface.fromJsonArch(jsonObject, archCommonJson.getAbsolutePath());
+			} catch (IllegalStateException e2) {
+				// File not found
+				return Collections.emptyList();
+			}
 		}
 
 		final String jsonString;
@@ -222,7 +241,7 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 
 		final JsonObject jsonObject = LoomGradlePlugin.GSON.fromJson(jsonString, JsonObject.class);
 
-		return InjectedInterface.fromJson(jsonObject);
+		return InjectedInterface.fromJson(jsonObject, fabricModJson.getAbsolutePath());
 	}
 
 	@Override
@@ -293,22 +312,7 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 
 				if (commonJsonBytes != null) {
 					JsonObject jsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
-
-					if (jsonObject.has("injected_interfaces")) {
-						JsonObject addedIfaces = jsonObject.getAsJsonObject("injected_interfaces");
-
-						final List<InjectedInterface> result = new ArrayList<>();
-
-						for (String className : addedIfaces.keySet()) {
-							final JsonArray ifaceNames = addedIfaces.getAsJsonArray(className);
-
-							for (JsonElement ifaceName : ifaceNames) {
-								result.add(new InjectedInterface(modJarPath.toString(), className, ifaceName.getAsString()));
-							}
-						}
-
-						return result;
-					}
+					return fromJsonArch(jsonObject, modJarPath.toString());
 				}
 
 				return Collections.emptyList();
@@ -316,10 +320,14 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 
 			final JsonObject jsonObject = LoomGradlePlugin.GSON.fromJson(new String(modJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
 
-			return fromJson(jsonObject);
+			return fromJson(jsonObject, modJarPath.toString());
 		}
 
-		public static List<InjectedInterface> fromJson(JsonObject jsonObject) {
+		public static List<InjectedInterface> fromJson(JsonObject jsonObject, String name) {
+			if (!jsonObject.has("id")) {
+				throw new IllegalArgumentException("Missing id in " + name);
+			}
+
 			final String modId = jsonObject.get("id").getAsString();
 
 			if (!jsonObject.has("custom")) {
@@ -345,6 +353,26 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 			}
 
 			return result;
+		}
+
+		public static List<InjectedInterface> fromJsonArch(JsonObject jsonObject, String modId) {
+			if (jsonObject.has("injected_interfaces")) {
+				JsonObject addedIfaces = jsonObject.getAsJsonObject("injected_interfaces");
+
+				final List<InjectedInterface> result = new ArrayList<>();
+
+				for (String className : addedIfaces.keySet()) {
+					final JsonArray ifaceNames = addedIfaces.getAsJsonArray(className);
+
+					for (JsonElement ifaceName : ifaceNames) {
+						result.add(new InjectedInterface(modId, className, ifaceName.getAsString()));
+					}
+				}
+
+				return result;
+			}
+
+			return Collections.emptyList();
 		}
 	}
 
