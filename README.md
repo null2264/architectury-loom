@@ -1,4 +1,4 @@
-# Forgified Loom
+# Architectury Loom
 
 Talk to us on [Discord](https://discord.gg/C2RdJDpRBP)!
 
@@ -14,7 +14,7 @@ A [Gradle](https://gradle.org/) plugin to setup a deobfuscated development envir
 * ~~Built in support for IntelliJ IDEA, Eclipse and Visual Studio Code to generate run configurations for Minecraft.~~
   - Currently, only IntelliJ IDEA and Visual Studio Code work with Forge Loom.
 * Loom targets the latest version of Gradle 7 or newer 
-* Supports Java 16 upwards
+* Supports Java 17 upwards
 
 ## Usage
 
