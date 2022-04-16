@@ -38,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -93,7 +94,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 	public Path tinyMappings;
 	public final Path tinyMappingsJar;
 	public Path tinyMappingsWithSrg;
-	public final Path mixinTinyMappingsWithSrg; // FORGE: The mixin mappings have srg names in intermediary.
+	public final Map<String, Path> mixinTinyMappings; // The mixin mappings have other names in intermediary.
 	public final Path srgToNamedSrg; // FORGE: srg to named in srg file format
 	private final Path unpickDefinitions;
 
@@ -112,7 +113,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		this.tinyMappingsJar = mappingsWorkingDir.resolve("mappings.jar");
 		this.unpickDefinitions = mappingsWorkingDir.resolve("mappings.unpick");
 		this.tinyMappingsWithSrg = mappingsWorkingDir.resolve("mappings-srg.tiny");
-		this.mixinTinyMappingsWithSrg = mappingsWorkingDir.resolve("mappings-mixin-srg.tiny");
+		this.mixinTinyMappings = new HashMap<>();
 		this.srgToNamedSrg = mappingsWorkingDir.resolve("mappings-srg-named.srg");
 
 		this.intermediaryService = intermediaryService;
@@ -226,13 +227,6 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		if (extension.isForge()) {
 			if (!extension.shouldGenerateSrgTiny()) {
 				throw new IllegalStateException("We have to generate srg tiny in a forge environment!");
-			}
-
-			if (Files.notExists(mixinTinyMappingsWithSrg) || isRefreshDeps()) {
-				List<String> lines = new ArrayList<>(Files.readAllLines(tinyMappingsWithSrg));
-				lines.set(0, lines.get(0).replace("intermediary", "yraidemretni").replace("srg", "intermediary"));
-				Files.deleteIfExists(mixinTinyMappingsWithSrg);
-				Files.write(mixinTinyMappingsWithSrg, lines);
 			}
 
 			if (Files.notExists(srgToNamedSrg) || isRefreshDeps()) {
@@ -509,6 +503,27 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 
 	public String getBuildServiceName(String name, String from, String to) {
 		return "%s:%s:%s>%S".formatted(name, mappingsIdentifier(), from, to);
+	}
+
+	public Path getReplacedTarget(LoomGradleExtension loom, String namespace) {
+		if (namespace.equals("intermediary")) return loom.shouldGenerateSrgTiny() ? tinyMappingsWithSrg : tinyMappings;
+
+		return mixinTinyMappings.computeIfAbsent(namespace, k -> {
+			Path path = mappingsWorkingDir.resolve("mappings-mixin-" + namespace + ".tiny");
+
+			try {
+				if (Files.notExists(path) || isRefreshDeps()) {
+					List<String> lines = new ArrayList<>(Files.readAllLines(loom.shouldGenerateSrgTiny() ? tinyMappingsWithSrg : tinyMappings));
+					lines.set(0, lines.get(0).replace("intermediary", "yraidemretni").replace(namespace, "intermediary"));
+					Files.deleteIfExists(path);
+					Files.write(path, lines);
+				}
+
+				return path;
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
 	}
 
 	public record UnpickMetadata(String unpickGroup, String unpickVersion) {

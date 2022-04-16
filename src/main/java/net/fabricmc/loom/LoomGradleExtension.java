@@ -166,6 +166,7 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 	boolean supportsInclude();
 
 	DependencyProviders getDependencyProviders();
+
 	void setDependencyProviders(DependencyProviders dependencyProviders);
 
 	default SrgProvider getSrgProvider() {

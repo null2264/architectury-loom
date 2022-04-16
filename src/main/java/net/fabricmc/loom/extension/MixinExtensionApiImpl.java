@@ -133,6 +133,11 @@ public abstract class MixinExtensionApiImpl implements MixinExtensionAPI {
 		}
 
 		@Override
+		public Property<String> getLegacyRemapToNamespace() {
+			throw new RuntimeException("Yeah... something is really wrong");
+		}
+
+		@Override
 		protected PatternSet add0(SourceSet sourceSet, Provider<String> refmapName) {
 			throw new RuntimeException("Yeah... something is really wrong");
 		}

@@ -76,7 +76,7 @@ public class TinyRemapperService implements SharedService {
 			mappings.add(MappingsService.createDefault(project, from, to).getMappingsProvider());
 
 			if (legacyMixin) {
-				mappings.add(MixinMappingsService.getService(SharedServiceManager.get(project)).getMappingProvider(from, extension.isForge() && to.equals("srg") ? "intermediary" : to));
+				mappings.add(MixinMappingsService.getService(SharedServiceManager.get(project)).getMappingProvider("named", "intermediary"));
 			}
 
 			return new TinyRemapperService(mappings, !legacyMixin, useKotlinExtension);
