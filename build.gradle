@@ -83,11 +83,11 @@ dependencies {
 	implementation ('com.google.code.gson:gson:2.8.9')
 	implementation ('com.fasterxml.jackson.core:jackson-databind:2.13.0')
 	implementation ('com.google.guava:guava:31.0.1-jre')
-	implementation ('org.ow2.asm:asm:9.2')
-	implementation ('org.ow2.asm:asm-analysis:9.2')
-	implementation ('org.ow2.asm:asm-commons:9.2')
-	implementation ('org.ow2.asm:asm-tree:9.2')
-	implementation ('org.ow2.asm:asm-util:9.2')
+	implementation ('org.ow2.asm:asm:9.3')
+	implementation ('org.ow2.asm:asm-analysis:9.3')
+	implementation ('org.ow2.asm:asm-commons:9.3')
+	implementation ('org.ow2.asm:asm-tree:9.3')
+	implementation ('org.ow2.asm:asm-util:9.3')
 	implementation ('me.tongfei:progressbar:0.9.0')
 
 	// game handling utils
@@ -97,7 +97,7 @@ dependencies {
 	}
 
 	// tinyfile management
-	implementation ('dev.architectury:tiny-remapper:1.6.17')
+	implementation ('dev.architectury:tiny-remapper:1.7.19')
 	implementation 'net.fabricmc:access-widener:2.1.0'
 	implementation 'net.fabricmc:mapping-io:0.2.1'
 
