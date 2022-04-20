@@ -172,6 +172,10 @@ public interface LoomGradleExtensionAPI {
 		return getPlatform().get() == ModPlatform.FORGE;
 	}
 
+	default boolean isQuilt() {
+		return getPlatform().get() == ModPlatform.QUILT;
+	}
+
 	void setGenerateSrgTiny(Boolean generateSrgTiny);
 
 	boolean shouldGenerateSrgTiny();

@@ -32,16 +32,21 @@ public final class ModUtils {
 	private ModUtils() {
 	}
 
-	public static boolean isMod(File input) {
+	public static boolean isMod(File input, ModPlatform platform) {
+		if (platform == ModPlatform.FORGE) {
+			return ZipUtils.contains(input.toPath(), "META-INF/mods.toml");
+		} else if (platform == ModPlatform.QUILT) {
+			return ZipUtils.contains(input.toPath(), "quilt.mod.json");
+		}
+
 		return ZipUtils.contains(input.toPath(), "fabric.mod.json");
 	}
 
-	public static boolean shouldRemapMod(Logger logger, File input, Object id, boolean forge, String config) {
+	public static boolean shouldRemapMod(Logger logger, File input, Object id, ModPlatform platform, String config) {
 		if (ZipUtils.contains(input.toPath(), "architectury.common.marker")) return true;
-		if (forge && ZipUtils.contains(input.toPath(), "META-INF/mods.toml")) return true;
-		if (!forge && isMod(input)) return true;
+		if (isMod(input, platform)) return true;
 
-		if (forge) {
+		if (platform == ModPlatform.FORGE) {
 			logger.lifecycle(":could not find forge mod in " + config + " but forcing: {}", id);
 			return true;
 		}

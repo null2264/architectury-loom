@@ -31,6 +31,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.artifacts.Configuration;
@@ -192,25 +193,43 @@ public class ModDependencyInfo {
 	}
 
 	private static AccessWidenerData tryReadAccessWidenerData(Path inputJar) throws IOException {
+		String fieldName = "accessWidener";
 		byte[] modJsonBytes = ZipUtils.unpackNullable(inputJar, "fabric.mod.json");
 
 		if (modJsonBytes == null) {
 			modJsonBytes = ZipUtils.unpackNullable(inputJar, "architectury.common.json");
 
 			if (modJsonBytes == null) {
-				// No access widener data
-				// We can just ignore in architectury
-				return null;
+				modJsonBytes = ZipUtils.unpackNullable(inputJar, "quilt.mod.json");
+
+				if (modJsonBytes != null) {
+					fieldName = "access_widener";
+				} else {
+					// No access widener data
+					// We can just ignore in architectury
+					return null;
+				}
 			}
 		}
 
 		JsonObject jsonObject = LoomGradlePlugin.GSON.fromJson(new String(modJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
 
-		if (!jsonObject.has("accessWidener")) {
+		if (!jsonObject.has(fieldName)) {
 			return null;
 		}
 
-		String accessWidenerPath = jsonObject.get("accessWidener").getAsString();
+		String accessWidenerPath;
+		
+		if (fieldName.equals("access_widener") && jsonObject.get(fieldName).isJsonArray()) {
+			JsonArray array = jsonObject.get(fieldName).getAsJsonArray();
+			if (array.size() != 1) {
+				throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
+			}
+			accessWidenerPath = array.get(0).getAsString();
+		} else {
+			accessWidenerPath = jsonObject.get(fieldName).getAsString();
+		}
+		
 		byte[] accessWidener = ZipUtils.unpack(inputJar, accessWidenerPath);
 		AccessWidenerReader.Header header = AccessWidenerReader.readHeader(accessWidener);
 

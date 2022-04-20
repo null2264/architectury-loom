@@ -226,7 +226,31 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 				JsonObject jsonObject = new Gson().fromJson(jsonString, JsonObject.class);
 				return InjectedInterface.fromJsonArch(jsonObject, archCommonJson.getAbsolutePath());
 			} catch (IllegalStateException e2) {
-				// File not found
+				File quiltModJson;
+
+				try {
+					quiltModJson = sourceSet.getResources()
+							.matching(patternFilterable -> patternFilterable.include("quilt.mods.json"))
+							.getSingleFile();
+
+					final String jsonString;
+
+					try {
+						jsonString = Files.readString(quiltModJson.toPath(), StandardCharsets.UTF_8);
+					} catch (IOException e3) {
+						throw new UncheckedIOException("Failed to read quilt.mod.json", e3);
+					}
+
+					JsonObject jsonObject = new Gson().fromJson(jsonString, JsonObject.class);
+
+					if (jsonObject.has("quilt_loom")) {
+						// quilt injected interfaces has the same format as architectury.common.json
+						return InjectedInterface.fromJsonArch(jsonObject.getAsJsonObject("quilt_loom"), quiltModJson.getAbsolutePath());
+					}
+				} catch (IllegalStateException e3) {
+					// File not found
+				}
+
 				return Collections.emptyList();
 			}
 		}
@@ -313,6 +337,21 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 				if (commonJsonBytes != null) {
 					JsonObject jsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
 					return fromJsonArch(jsonObject, modJarPath.toString());
+				} else {
+					try {
+						commonJsonBytes = ZipUtils.unpackNullable(modJarPath, "quilt.mod.json");
+					} catch (IOException e) {
+						throw new UncheckedIOException("Failed to read quilt.mod.json file from: " + modJarPath.toAbsolutePath(), e);
+					}
+
+					if (commonJsonBytes != null) {
+						JsonObject jsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
+
+						if (jsonObject.has("quilt_loom")) {
+							// quilt injected interfaces has the same format as architectury.common.json
+							return fromJsonArch(jsonObject.getAsJsonObject("quilt_loom"), modJarPath.toString());
+						}
+					}
 				}
 
 				return Collections.emptyList();

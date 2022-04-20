@@ -61,7 +61,7 @@ public class LoomDependencyManager {
 
 			for (Dependency dependency : configuration.getAllDependencies()) {
 				for (File input : configuration.files(dependency)) {
-					JsonObject jsonObject = readInstallerJson(input);
+					JsonObject jsonObject = readInstallerJson(input, extension.isQuilt());
 
 					if (jsonObject != null) {
 						if (extension.getInstallerData() != null) {
@@ -77,7 +77,11 @@ public class LoomDependencyManager {
 			}
 
 			if (extension.getInstallerData() == null) {
-				project.getLogger().warn("fabric-installer.json not found in classpath!");
+				if (extension.isQuilt()) {
+					project.getLogger().warn("quilt_installer.json not found in classpath!");
+				} else {
+					project.getLogger().warn("fabric-installer.json not found in classpath!");
+				}
 			}
 		}
 
@@ -94,9 +98,13 @@ public class LoomDependencyManager {
 		}
 	}
 
-	public static JsonObject readInstallerJson(File file) {
+	public static JsonObject readInstallerJson(File file, boolean quilt) {
 		try {
-			byte[] bytes = ZipUtils.unpackNullable(file.toPath(), "fabric-installer.json");
+			byte[] bytes = quilt ? null : ZipUtils.unpackNullable(file.toPath(), "fabric-installer.json");
+
+			if (bytes == null && quilt) {
+				bytes = ZipUtils.unpackNullable(file.toPath(), "quilt_installer.json");
+			}
 
 			if (bytes == null) {
 				return null;

@@ -34,8 +34,19 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.LoomGradleExtensionAPI;
 
 public enum ModPlatform {
-	FABRIC,
-	FORGE;
+	FABRIC(false),
+	FORGE(false),
+	QUILT(true);
+	
+	boolean experimental;
+
+	ModPlatform(boolean experimental) {
+		this.experimental = experimental;
+	}
+
+	public boolean isExperimental() {
+		return experimental;
+	}
 
 	public static void assertPlatform(Project project, ModPlatform platform) {
 		assertPlatform(LoomGradleExtension.get(project), platform);

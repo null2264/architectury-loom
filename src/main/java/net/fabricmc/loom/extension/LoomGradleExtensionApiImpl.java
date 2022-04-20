@@ -150,7 +150,13 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 			Object platformProperty = project.findProperty(PLATFORM_PROPERTY);
 
 			if (platformProperty != null) {
-				return ModPlatform.valueOf(Objects.toString(platformProperty).toUpperCase(Locale.ROOT));
+				ModPlatform platform = ModPlatform.valueOf(Objects.toString(platformProperty).toUpperCase(Locale.ROOT));
+
+				if (platform.isExperimental()) {
+					project.getLogger().warn("Project " + project.getPath() + " is using experimental mod platform " + platform.name() + ". Please report any issues!");
+				}
+
+				return platform;
 			}
 
 			Object forgeProperty = project.findProperty(FORGE_PROPERTY);

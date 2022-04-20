@@ -50,8 +50,8 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 		final String nativesPath = getExtension().getFiles().getNativesDirectory(getProject()).getAbsolutePath();
 
 		final LaunchConfig launchConfig = new LaunchConfig()
-				.property("fabric.development", "true")
-				.property("fabric.remapClasspathFile", getExtension().getFiles().getRemapClasspathFile().getAbsolutePath())
+				.property(!getExtension().isQuilt() ? "fabric.development" : "loader.development", "true")
+				.property(!getExtension().isQuilt() ? "fabric.remapClasspathFile" : "loader.remapClasspathFile", getExtension().getFiles().getRemapClasspathFile().getAbsolutePath())
 				.property("log4j.configurationFile", getAllLog4JConfigFiles())
 				.property("log4j2.formatMsgNoLookups", "true")
 
@@ -64,6 +64,12 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.argument("client", getExtension().getMinecraftProvider().getVersionInfo().assetIndex().fabricId(getExtension().getMinecraftProvider().minecraftVersion()))
 					.argument("client", "--assetsDir")
 					.argument("client", new File(getExtension().getFiles().getUserCache(), "assets").getAbsolutePath());
+		}
+		
+		if (getExtension().isQuilt()) {
+			launchConfig
+					.argument("client", "--version")
+					.argument("client", "Architectury Loom");
 		}
 
 		if (getExtension().isForge()) {

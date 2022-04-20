@@ -53,6 +53,7 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.task.RemapTaskConfiguration;
+import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.ModUtils;
 import net.fabricmc.loom.util.ZipUtils;
 
@@ -143,7 +144,7 @@ public final class IncludedJarFactory {
 	}
 
 	private File getNestableJar(final File input, final Metadata metadata) {
-		if (ModUtils.isMod(input)) {
+		if (ModUtils.isMod(input, LoomGradleExtension.get(project).getPlatform().get())) {
 			// Input is a mod, nothing needs to be done.
 			return input;
 		}
@@ -163,6 +164,11 @@ public final class IncludedJarFactory {
 
 		try {
 			FileUtils.copyFile(input, tempFile);
+
+			if (extension.getPlatform().get() == ModPlatform.QUILT) {
+				throw new UnsupportedOperationException("Generating Quilt mods for JiJ is not yet implemented!");
+			}
+
 			ZipUtils.add(tempFile.toPath(), "fabric.mod.json", generateModForDependency(metadata).getBytes(StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			throw new UncheckedIOException("Failed to add dummy mod while including %s".formatted(input), e);

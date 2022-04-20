@@ -237,7 +237,10 @@ public class ZipUtils {
 
 		while (iterator.hasNext()) {
 			Pair<String, UnsafeUnaryOperator<T>> next = iterator.next();
-			map.put(next.left(), next.right());
+
+			if (next != null) {
+				map.put(next.left(), next.right());
+			}
 		}
 
 		return map;
