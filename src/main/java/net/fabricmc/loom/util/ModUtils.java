@@ -51,6 +51,11 @@ public final class ModUtils {
 			return true;
 		}
 
+		if (platform == ModPlatform.QUILT && isMod(input, ModPlatform.FABRIC)) {
+			logger.lifecycle(":found fabric mod on quilt {} in {}", id, config);
+			return true;
+		}
+
 		return false;
 	}
 }
