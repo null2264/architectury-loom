@@ -86,7 +86,7 @@ public class LoomDependencyManager {
 		}
 
 		SourceRemapper sourceRemapper = new SourceRemapper(project, true);
-		String platformSuffix = extension.isForge() ? "_forge" : "";
+		String platformSuffix = extension.isForge() ? "_forge" : extension.isQuilt() ? "_arch_quilt" : "";
 		String mappingsIdentifier = extension.getMappingsProvider().mappingsIdentifier() + platformSuffix;
 
 		ModCompileRemapper.remapDependencies(project, mappingsIdentifier, extension, sourceRemapper);

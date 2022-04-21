@@ -147,12 +147,16 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		});
 
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
-		final String mappingsIdentifier;
+		String mappingsIdentifier;
 
 		if (extension.isForge()) {
 			mappingsIdentifier = FieldMigratedMappingsProvider.createForgeMappingsIdentifier(extension, mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
 		} else {
 			mappingsIdentifier = createMappingsIdentifier(mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
+		}
+
+		if (extension.isQuilt()) {
+			mappingsIdentifier += "-arch-quilt";
 		}
 
 		final Path workingDir = minecraftProvider.dir(mappingsIdentifier).toPath();
