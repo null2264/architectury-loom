@@ -37,7 +37,7 @@ public enum ModPlatform {
 	FABRIC(false),
 	FORGE(false),
 	QUILT(true);
-	
+
 	boolean experimental;
 
 	ModPlatform(boolean experimental) {

@@ -219,17 +219,19 @@ public class ModDependencyInfo {
 		}
 
 		String accessWidenerPath;
-		
+
 		if (fieldName.equals("access_widener") && jsonObject.get(fieldName).isJsonArray()) {
 			JsonArray array = jsonObject.get(fieldName).getAsJsonArray();
+
 			if (array.size() != 1) {
 				throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
 			}
+
 			accessWidenerPath = array.get(0).getAsString();
 		} else {
 			accessWidenerPath = jsonObject.get(fieldName).getAsString();
 		}
-		
+
 		byte[] accessWidener = ZipUtils.unpack(inputJar, accessWidenerPath);
 		AccessWidenerReader.Header header = AccessWidenerReader.readHeader(accessWidener);
 

@@ -109,9 +109,11 @@ public record AccessWidenerFile(
 					if (jsonObject.has("access_widener")) {
 						if (jsonObject.get("access_widener").isJsonArray()) {
 							JsonArray array = jsonObject.get("access_widener").getAsJsonArray();
+
 							if (array.size() != 1) {
 								throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
 							}
+
 							awPath = array.get(0).getAsString();
 						} else {
 							awPath = jsonObject.get("access_widener").getAsString();

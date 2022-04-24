@@ -65,7 +65,7 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.argument("client", "--assetsDir")
 					.argument("client", new File(getExtension().getFiles().getUserCache(), "assets").getAbsolutePath());
 		}
-		
+
 		if (getExtension().isQuilt()) {
 			launchConfig
 					.argument("client", "--version")
