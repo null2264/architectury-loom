@@ -252,7 +252,8 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 			if (allMixinConfigs == null && getReadMixinConfigsFromManifest().get()) {
 				allMixinConfigs = readMixinConfigsFromManifest();
-			} else {
+			}
+			if (allMixinConfigs == null) {
 				if (extension.getPlatform().get() == ModPlatform.QUILT) {
 					getProject().getLogger().warn("Could not find quilt.mod.json file in: " + getInputFile().getAsFile().get().getName());
 					return;
