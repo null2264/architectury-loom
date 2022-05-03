@@ -37,6 +37,7 @@ import org.cadixdev.bombe.type.signature.MethodSignature;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.fabricmc.accesswidener.AccessWidenerVisitor;
@@ -80,22 +81,28 @@ public final class Aw2At {
 		remapJar.getAtAccessWideners().addAll(extension.getForge().getExtraAccessWideners());
 	}
 
+	/**
+	 * Converts an access widener file to an access transform set.
+	 *
+	 * @param reader the reader that is used to read the AW
+	 * @return the access transform set
+	 */
 	public static AccessTransformSet toAccessTransformSet(BufferedReader reader) throws IOException {
 		AccessTransformSet atSet = AccessTransformSet.create();
 
 		new AccessWidenerReader(new AccessWidenerVisitor() {
 			@Override
-				public void visitClass(String name, AccessWidenerReader.AccessType access, boolean transitive) {
+			public void visitClass(String name, AccessWidenerReader.AccessType access, boolean transitive) {
 				atSet.getOrCreateClass(name).merge(toAt(access));
 			}
 
 			@Override
-				public void visitMethod(String owner, String name, String descriptor, AccessWidenerReader.AccessType access, boolean transitive) {
+			public void visitMethod(String owner, String name, String descriptor, AccessWidenerReader.AccessType access, boolean transitive) {
 				atSet.getOrCreateClass(owner).mergeMethod(MethodSignature.of(name, descriptor), toAt(access));
 			}
 
 			@Override
-				public void visitField(String owner, String name, String descriptor, AccessWidenerReader.AccessType access, boolean transitive) {
+			public void visitField(String owner, String name, String descriptor, AccessWidenerReader.AccessType access, boolean transitive) {
 				atSet.getOrCreateClass(owner).mergeField(name, toAt(access));
 			}
 		}).read(reader);
@@ -103,16 +110,17 @@ public final class Aw2At {
 		return atSet;
 	}
 
-	private static AccessTransform toAt(AccessWidenerReader.AccessType access) {
+	@VisibleForTesting
+	public static AccessTransform toAt(AccessWidenerReader.AccessType access) {
 		return switch (access) {
-		// FIXME: This behaviour doesn't match what the actual AW does for methods.
+		// This behaviour doesn't match what the actual AW does for methods.
 		//   - accessible makes the method final if it was private
 		//   - extendable makes the method protected if it was (package-)private
-		//   Neither of these can be achieved with Forge ATs without using bytecode analysis.
-		//   However, this might be good enough for us. (The effects only apply in prod.)
+		// It also ignores that mutable doesn't change the visibility (but AT disallows bare "-f" modifier).
+		// None of these can be achieved with Forge ATs without using bytecode analysis.
+		// However, this is good enough for us. (The "unwanted" effects to visibility only apply in prod.)
 		case ACCESSIBLE -> AccessTransform.of(AccessChange.PUBLIC);
-		case EXTENDABLE -> AccessTransform.of(AccessChange.PUBLIC, ModifierChange.REMOVE);
-		case MUTABLE -> AccessTransform.of(ModifierChange.REMOVE);
+		case EXTENDABLE, MUTABLE -> AccessTransform.of(AccessChange.PUBLIC, ModifierChange.REMOVE);
 		};
 	}
 }
