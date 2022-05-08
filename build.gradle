@@ -335,6 +335,9 @@ task writeActionsTestMatrix() {
 				// Disabled for CI, as it fails too much.
 				if (className.endsWith("DecompileTest")) return
 
+				// Disabled for CI as it hangs.
+				if (className.endsWith("FabricAPITest")) return
+
 				testMatrix.add("net.fabricmc.loom.test.integration.${className}")
 			}
 		}
