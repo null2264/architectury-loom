@@ -24,6 +24,8 @@
 
 package net.fabricmc.loom.configuration.mods;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.Manifest;
 
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonObject;
@@ -51,11 +54,13 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.RemappedConfigurationEntry;
 import net.fabricmc.loom.configuration.processors.dependency.ModDependencyInfo;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
-import net.fabricmc.loom.kotlin.remapping.KotlinMetadataTinyRemapperExtension;
+import net.fabricmc.loom.task.RemapJarTask;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.LoggerFilter;
 import net.fabricmc.loom.util.TinyRemapperHelper;
 import net.fabricmc.loom.util.ZipUtils;
+import net.fabricmc.loom.util.kotlin.KotlinClasspathService;
+import net.fabricmc.loom.util.kotlin.KotlinRemapperClassloader;
 import net.fabricmc.loom.util.srg.AtRemapper;
 import net.fabricmc.loom.util.srg.CoreModClassRemapper;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
@@ -159,10 +164,8 @@ public class ModProcessor {
 	private void remapJars(List<ModDependencyInfo> remapList) throws IOException {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
 		final MappingsProviderImpl mappingsProvider = extension.getMappingsProvider();
-		final boolean useKotlinExtension = project.getPluginManager().hasPlugin("org.jetbrains.kotlin.jvm");
 		String fromM = extension.isForge() ? MappingsNamespace.SRG.toString() : MappingsNamespace.INTERMEDIARY.toString();
 		String toM = MappingsNamespace.NAMED.toString();
-
 		Path[] mcDeps = project.getConfigurations().getByName(Constants.Configurations.LOADER_DEPENDENCIES).getFiles()
 				.stream().map(File::toPath).toArray(Path[]::new);
 
@@ -177,8 +180,12 @@ public class ModProcessor {
 				.withMappings(TinyRemapperHelper.create(mappings, fromM, toM, false))
 				.renameInvalidLocals(false);
 
-		if (useKotlinExtension) {
-			builder.extension(KotlinMetadataTinyRemapperExtension.INSTANCE);
+		final KotlinClasspathService kotlinClasspathService = KotlinClasspathService.getOrCreateIfRequired(project);
+		KotlinRemapperClassloader kotlinRemapperClassloader = null;
+
+		if (kotlinClasspathService != null) {
+			kotlinRemapperClassloader = KotlinRemapperClassloader.create(kotlinClasspathService);
+			builder.extension(kotlinRemapperClassloader.getTinyRemapperExtension());
 		}
 
 		final TinyRemapper remapper = builder.build();
@@ -236,6 +243,10 @@ public class ModProcessor {
 			}
 		} finally {
 			remapper.finish();
+
+			if (kotlinRemapperClassloader != null) {
+				kotlinRemapperClassloader.close();
+			}
 		}
 
 		project.getLogger().lifecycle(":remapped " + remapList.size() + " mods (TinyRemapper, " + fromM + " -> " + toM + ") in " + stopwatch.stop());
@@ -250,6 +261,7 @@ public class ModProcessor {
 			}
 
 			stripNestedJars(info.getRemappedOutput());
+			remapJarManifestEntries(info.getRemappedOutput().toPath());
 
 			if (extension.isForge()) {
 				AtRemapper.remap(project.getLogger(), info.getRemappedOutput().toPath(), mappings);
@@ -258,5 +270,17 @@ public class ModProcessor {
 
 			info.finaliseRemapping();
 		}
+	}
+
+	private void remapJarManifestEntries(Path jar) throws IOException {
+		ZipUtils.transform(jar, Map.of(RemapJarTask.MANIFEST_PATH, bytes -> {
+			var manifest = new Manifest(new ByteArrayInputStream(bytes));
+
+			manifest.getMainAttributes().putValue(RemapJarTask.MANIFEST_NAMESPACE_KEY, toM);
+
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			manifest.write(out);
+			return out.toByteArray();
+		}));
 	}
 }

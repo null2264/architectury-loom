@@ -39,11 +39,13 @@ import org.gradle.api.publish.maven.MavenPublication;
 import org.jetbrains.annotations.ApiStatus;
 
 import net.fabricmc.loom.api.decompilers.DecompilerOptions;
+import net.fabricmc.loom.api.mappings.intermediate.IntermediateMappingsProvider;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.ide.RunConfig;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
+import net.fabricmc.loom.configuration.providers.mappings.NoOpIntermediateMappingsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
 import net.fabricmc.loom.util.DeprecationHelper;
 import net.fabricmc.loom.util.ModPlatform;
@@ -75,9 +77,7 @@ public interface LoomGradleExtensionAPI {
 
 	ConfigurableFileCollection getLog4jConfigs();
 
-	default Dependency officialMojangMappings() {
-		return layered(LayeredMappingSpecBuilder::officialMojangMappings);
-	}
+	Dependency officialMojangMappings();
 
 	Dependency layered(Action<LayeredMappingSpecBuilder> action);
 
@@ -88,6 +88,16 @@ public interface LoomGradleExtensionAPI {
 	NamedDomainObjectContainer<RunConfigSettings> getRunConfigs();
 
 	void mixin(Action<MixinExtensionAPI> action);
+
+	/**
+	 * Optionally register and configure a {@link ModSettings} object. The name should match the modid.
+	 * This is generally only required when the mod spans across multiple classpath directories, such as when using split sourcesets.
+	 */
+	@ApiStatus.Experimental
+	void mods(Action<NamedDomainObjectContainer<ModSettings>> action);
+
+	@ApiStatus.Experimental
+	NamedDomainObjectContainer<ModSettings> getMods();
 
 	@ApiStatus.Experimental
 	// TODO: move this from LoomGradleExtensionAPI to LoomGradleExtension once getRefmapName & setRefmapName is removed.
@@ -138,6 +148,30 @@ public interface LoomGradleExtensionAPI {
 	Property<Boolean> getEnableTransitiveAccessWideners();
 
 	/**
+	 * When true loom will apply mod provided javadoc from dependencies.
+	 *
+	 * @return the property controlling the mod provided javadoc
+	 */
+	Property<Boolean> getEnableModProvidedJavadoc();
+
+	@ApiStatus.Experimental
+	IntermediateMappingsProvider getIntermediateMappingsProvider();
+
+	@ApiStatus.Experimental
+	void setIntermediateMappingsProvider(IntermediateMappingsProvider intermediateMappingsProvider);
+
+	@ApiStatus.Experimental
+	<T extends IntermediateMappingsProvider> void setIntermediateMappingsProvider(Class<T> clazz, Action<T> action);
+
+	/**
+	 * An Experimental option to provide empty intermediate mappings, to be used for game versions without any intermediate mappings.
+	 */
+	@ApiStatus.Experimental
+	default void noIntermediateMappings() {
+		setIntermediateMappingsProvider(NoOpIntermediateMappingsProvider.class, p -> { });
+	}
+
+	/**
 	 * Use "%1$s" as a placeholder for the minecraft version.
 	 *
 	 * @return the intermediary url template
@@ -153,9 +187,20 @@ public interface LoomGradleExtensionAPI {
 	}
 
 	@ApiStatus.Experimental
+	default void clientOnlyMinecraftJar() {
+		getMinecraftJarConfiguration().set(MinecraftJarConfiguration.CLIENT_ONLY);
+	}
+
+	@ApiStatus.Experimental
 	default void splitMinecraftJar() {
 		getMinecraftJarConfiguration().set(MinecraftJarConfiguration.SPLIT);
 	}
+
+	@ApiStatus.Experimental
+	void splitEnvironmentSourceSets();
+
+	@ApiStatus.Experimental
+	boolean areEnvironmentSourceSetsSplit();
 
 	Property<Boolean> getRuntimeOnlyLog4j();
 

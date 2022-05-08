@@ -9,16 +9,18 @@ plugins {
 	id 'jacoco'
 	id 'codenarc'
 	id "org.jetbrains.kotlin.jvm" version "1.5.31" // Must match the version included with gradle.
-	id "com.diffplug.spotless" version "5.14.1"
+	id "com.diffplug.spotless" version "6.3.0"
 	id 'me.shedaniel.java-version-bridge' version '1.0-SNAPSHOT'
 }
 
-sourceCompatibility = 17
-targetCompatibility = 17
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.encoding = "UTF-8"
-	it.options.release = 17
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -29,7 +31,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 
 group = "dev.architectury"
 archivesBaseName = project.name
-def baseVersion = '0.11.0'
+def baseVersion = '0.12.0'
 def runNumber = System.getenv("GITHUB_RUN_NUMBER") ?: "9999"
 
 def isSnapshot = System.getenv("PR_NUM") != null
@@ -80,9 +82,9 @@ dependencies {
 
 	// libraries
 	implementation ('commons-io:commons-io:2.11.0')
-	implementation ('com.google.code.gson:gson:2.8.9')
-	implementation ('com.fasterxml.jackson.core:jackson-databind:2.13.0')
-	implementation ('com.google.guava:guava:31.0.1-jre')
+	implementation ('com.google.code.gson:gson:2.9.0')
+	implementation ('com.fasterxml.jackson.core:jackson-databind:2.13.2.2')
+	implementation ('com.google.guava:guava:31.1-jre')
 	implementation ('org.ow2.asm:asm:9.3')
 	implementation ('org.ow2.asm:asm-analysis:9.3')
 	implementation ('org.ow2.asm:asm-commons:9.3')
@@ -98,6 +100,7 @@ dependencies {
 
 	// tinyfile management
 	implementation ('dev.architectury:tiny-remapper:1.7.19')
+	// TODO: need TR update: implementation ('net.fabricmc:tiny-remapper:0.8.2')
 	implementation 'net.fabricmc:access-widener:2.1.0'
 	implementation 'net.fabricmc:mapping-io:0.2.1'
 
@@ -107,20 +110,20 @@ dependencies {
 	implementation "dev.architectury:refmap-remapper:1.0.5"
 
 	// decompilers
-	implementation ('net.fabricmc:fabric-fernflower:1.4.1')
-	implementation ('net.fabricmc:cfr:0.0.9')
+	implementation ('net.fabricmc:fabric-fernflower:1.5.0')
+	implementation ('net.fabricmc:cfr:0.1.1')
 
 	// source code remapping
 	implementation ('dev.architectury:mercury:0.1.1.11')
 
 
 	// Kotlin
-	implementation("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.4.1") {
+	implementation('org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.4.2') {
 		transitive = false
 	}
 
 	// Kapt integration
-	compileOnly('org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.0')
+	compileOnly('org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.31') // Must match the version included with gradle.
 
 	// Forge patches
 	implementation ('net.minecraftforge:installertools:1.2.0')
@@ -132,16 +135,18 @@ dependencies {
 
 	// Testing
 	testImplementation(gradleTestKit())
-	testImplementation('org.spockframework:spock-core:2.0-groovy-3.0') {
+	testImplementation('org.spockframework:spock-core:2.1-groovy-3.0') {
 		exclude module: 'groovy-all'
 	}
-	testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-	testImplementation ('io.javalin:javalin:3.13.11') {
+	testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+	testImplementation ('io.javalin:javalin:4.4.0') {
 		exclude group: 'org.jetbrains.kotlin'
 	}
 	testImplementation 'net.fabricmc:fabric-installer:0.9.0'
+	testImplementation 'org.mockito:mockito-core:4.4.0'
 
 	compileOnly 'org.jetbrains:annotations:23.0.0'
+	testCompileOnly 'org.jetbrains:annotations:23.0.0'
 }
 
 jar {
@@ -191,7 +196,7 @@ spotless {
 
 checkstyle {
 	configFile = file('checkstyle.xml')
-	toolVersion = '9.2'
+	toolVersion = '9.3'
 }
 
 codenarc {
@@ -327,6 +332,10 @@ task writeActionsTestMatrix() {
 
 				def className = it.path.toString().replace(".groovy", "")
 				className = className.substring(className.lastIndexOf("integration/") + "integration/".length()).replace('/', '.')
+
+				// Disabled for CI, as it fails too much.
+				if (className.endsWith("DecompileTest")) return
+
 				testMatrix.add("net.fabricmc.loom.test.integration.${className}")
 			}
 		}

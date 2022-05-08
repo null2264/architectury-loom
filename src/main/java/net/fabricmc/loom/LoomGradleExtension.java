@@ -129,10 +129,6 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 
 	boolean isRootProject();
 
-	default String getIntermediaryUrl(String minecraftVersion) {
-		return String.format(this.getIntermediaryUrl().get(), minecraftVersion);
-	}
-
 	@Override
 	MixinExtension getMixin();
 

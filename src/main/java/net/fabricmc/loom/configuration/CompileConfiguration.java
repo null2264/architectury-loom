@@ -27,6 +27,7 @@ package net.fabricmc.loom.configuration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Set;
 
 import org.gradle.api.NamedDomainObjectProvider;
@@ -48,6 +49,7 @@ import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarPro
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.accesswidener.TransitiveAccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import net.fabricmc.loom.configuration.mods.ModJavadocProcessor;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
 import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
 import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
@@ -60,6 +62,7 @@ import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.IntermediaryMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.SrgMinecraftProvider;
@@ -89,7 +92,6 @@ public final class CompileConfiguration {
 
 		extension.createLazyConfiguration(Constants.Configurations.MOD_COMPILE_CLASSPATH, configuration -> configuration.setTransitive(true));
 		extension.createLazyConfiguration(Constants.Configurations.MOD_COMPILE_CLASSPATH_MAPPED, configuration -> configuration.setTransitive(false));
-		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_NAMED, configuration -> configuration.setTransitive(false)); // The launchers do not recurse dependencies
 		NamedDomainObjectProvider<Configuration> serverDeps = extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_SERVER_DEPENDENCIES, configuration -> configuration.setTransitive(false));
 		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_RUNTIME_DEPENDENCIES, configuration -> configuration.setTransitive(false));
 		extension.createLazyConfiguration(Constants.Configurations.MINECRAFT_DEPENDENCIES, configuration -> {
@@ -177,13 +179,7 @@ public final class CompileConfiguration {
 			}
 		}
 
-		extendsFrom(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.MINECRAFT_NAMED, project);
-		extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.MINECRAFT_NAMED, project);
-		extendsFrom(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.MINECRAFT_NAMED, project);
-		extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.MINECRAFT_NAMED, project);
-
 		extendsFrom(Constants.Configurations.LOADER_DEPENDENCIES, Constants.Configurations.MINECRAFT_DEPENDENCIES, project);
-		extendsFrom(Constants.Configurations.MINECRAFT_NAMED, Constants.Configurations.LOADER_DEPENDENCIES, project);
 
 		extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.MAPPINGS_FINAL, project);
 		extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.MAPPINGS_FINAL, project);
@@ -215,6 +211,8 @@ public final class CompileConfiguration {
 		});
 
 		p.afterEvaluate(project -> {
+			MinecraftSourceSets.get(project).afterEvaluate(project);
+
 			try {
 				setupMinecraft(project);
 			} catch (Exception e) {
@@ -339,6 +337,15 @@ public final class CompileConfiguration {
 			}
 		}
 
+		if (extension.getEnableModProvidedJavadoc().get()) {
+			// This doesn't do any processing on the compiled jar, but it does have an effect on the generated sources.
+			final ModJavadocProcessor javadocProcessor = ModJavadocProcessor.create(project);
+
+			if (javadocProcessor != null) {
+				extension.getGameJarProcessors().add(javadocProcessor);
+			}
+		}
+
 		if (extension.isForge()) {
 			Set<File> atFiles = AccessTransformerJarProcessor.getAccessTransformerFiles(project);
 
@@ -389,7 +396,13 @@ public final class CompileConfiguration {
 				.apply(project, extension.getNamedMinecraftProvider()).afterEvaluation();
 	}
 
-	private static void extendsFrom(String a, String b, Project project) {
+	public static void extendsFrom(List<String> parents, String b, Project project) {
+		for (String parent : parents) {
+			extendsFrom(parent, b, project);
+		}
+	}
+
+	public static void extendsFrom(String a, String b, Project project) {
 		project.getConfigurations().getByName(a, configuration -> configuration.extendsFrom(project.getConfigurations().getByName(b)));
 	}
 

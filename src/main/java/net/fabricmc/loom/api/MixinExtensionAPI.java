@@ -36,6 +36,8 @@ public interface MixinExtensionAPI {
 
 	Property<String> getDefaultRefmapName();
 
+	Property<String> getRefmapTargetNamespace();
+
 	Property<String> getLegacyRemapToNamespace();
 
 	/**

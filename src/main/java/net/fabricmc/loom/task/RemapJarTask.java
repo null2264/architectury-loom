@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 FabricMC
+ * Copyright (c) 2021-2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,17 +39,20 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.inject.Inject;
@@ -69,6 +72,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
 import org.gradle.api.tasks.Input;
@@ -89,6 +93,7 @@ import net.fabricmc.loom.build.MixinRefmapHelper;
 import net.fabricmc.loom.build.nesting.IncludedJarFactory;
 import net.fabricmc.loom.build.nesting.JarNester;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerFile;
+import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.extension.MixinExtension;
 import net.fabricmc.loom.task.service.JarManifestService;
 import net.fabricmc.loom.task.service.MappingsService;
@@ -97,13 +102,16 @@ import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.LfWriter;
 import net.fabricmc.loom.util.ModPlatform;
+import net.fabricmc.loom.util.Pair;
+import net.fabricmc.loom.util.SidedClassVisitor;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.aw2at.Aw2At;
 import net.fabricmc.loom.util.service.UnsafeWorkQueueHelper;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
 
 public abstract class RemapJarTask extends AbstractRemapJarTask {
-	private static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
+	public static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
+	public static final String MANIFEST_NAMESPACE_KEY = "Fabric-Mapping-Namespace";
 
 	@InputFiles
 	public abstract ConfigurableFileCollection getNestedJars();
@@ -212,6 +220,16 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			if (!getAtAccessWideners().get().isEmpty()) {
 				params.getMappingBuildServiceUuid().set(UnsafeWorkQueueHelper.create(getProject(), MappingsService.createDefault(getProject(), getSourceNamespace().get(), getTargetNamespace().get())));
 			}
+
+			if (extension.areEnvironmentSourceSetsSplit()) {
+				final List<String> clientOnlyJarEntries = getClientOnlyJarEntries();
+				params.getManifestAttributes().set(Map.of(
+						"Fabric-Loom-Split-Environment", "true",
+						"Fabric-Loom-Client-Only-Entries", String.join(";", clientOnlyJarEntries)
+				));
+
+				params.getClientOnlyClasses().set(clientOnlyJarEntries.stream().filter(s -> s.endsWith(".class")).toList());
+			}
 		});
 	}
 
@@ -272,34 +290,14 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 					MixinExtension.getMixinInformationContainer(sourceSet)
 			);
 
-			String[] rootPaths = sourceSet.getResources().getSrcDirs().stream()
-					.map(root -> {
-						String rootPath = root.getAbsolutePath().replace("\\", "/");
-
-						if (rootPath.charAt(rootPath.length() - 1) != '/') {
-							rootPath += '/';
-						}
-
-						return rootPath;
-					})
-					.toArray(String[]::new);
+			final List<String> rootPaths = getRootPaths(sourceSet.getResources().getSrcDirs());
 
 			final String refmapName = container.refmapNameProvider().get();
 			final List<String> mixinConfigs = container.sourceSet().getResources()
 					.matching(container.mixinConfigPattern())
 					.getFiles()
 					.stream()
-					.map(file -> {
-						String s = file.getAbsolutePath().replace("\\", "/");
-
-						for (String rootPath : rootPaths) {
-							if (s.startsWith(rootPath)) {
-								s = s.substring(rootPath.length());
-							}
-						}
-
-						return s;
-					})
+					.map(relativePath(rootPaths))
 					.filter(allMixinConfigs::contains)
 					.toList();
 
@@ -346,6 +344,9 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		Property<JarManifestService> getJarManifestService();
 		Property<String> getTinyRemapperBuildServiceUuid();
 		Property<String> getMappingBuildServiceUuid();
+
+		MapProperty<String, String> getManifestAttributes();
+		ListProperty<String> getClientOnlyClasses();
 	}
 
 	public abstract static class RemapAction extends AbstractRemapAction<RemapParams> {
@@ -366,6 +367,10 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				tinyRemapper = tinyRemapperService.getTinyRemapperForRemapping();
 
 				remap();
+
+				if (getParameters().getClientOnlyClasses().isPresent()) {
+					markClientOnlyClasses();
+				}
 
 				if (!injectAccessWidener()) {
 					remapAccessWidener();
@@ -398,6 +403,15 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				outputConsumer.addNonClassFiles(inputFile);
 				tinyRemapper.apply(outputConsumer, tinyRemapperService.getOrCreateTag(inputFile));
 			}
+		}
+
+		private void markClientOnlyClasses() throws IOException {
+			final Stream<Pair<String, ZipUtils.UnsafeUnaryOperator<byte[]>>> tranformers = getParameters().getClientOnlyClasses().get().stream()
+					.map(s -> new Pair<>(s,
+							(ZipUtils.AsmClassOperator) classVisitor -> SidedClassVisitor.CLIENT.insertApplyVisitor(null, classVisitor)
+					));
+
+			ZipUtils.transform(outputFile, tranformers);
 		}
 
 		private boolean injectAccessWidener() throws IOException {
@@ -518,8 +532,8 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			int count = ZipUtils.transform(outputFile, Map.of(MANIFEST_PATH, bytes -> {
 				var manifest = new Manifest(new ByteArrayInputStream(bytes));
 
-				getParameters().getJarManifestService().get().apply(manifest);
-				manifest.getMainAttributes().putValue("Fabric-Mapping-Namespace", getParameters().getTargetNamespace().get());
+				getParameters().getJarManifestService().get().apply(manifest, getParameters().getManifestAttributes().get());
+				manifest.getMainAttributes().putValue(MANIFEST_NAMESPACE_KEY, getParameters().getTargetNamespace().get());
 
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
 				manifest.write(out);
@@ -544,6 +558,50 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				})));
 			}
 		}
+	}
+
+	private List<String> getClientOnlyJarEntries() {
+		final SourceSet clientSourceSet = MinecraftSourceSets.Split.getClientSourceSet(getProject());
+
+		final ConfigurableFileCollection output = getProject().getObjects().fileCollection();
+		output.from(clientSourceSet.getOutput().getClassesDirs());
+		output.from(clientSourceSet.getOutput().getResourcesDir());
+
+		final List<String> rootPaths = new ArrayList<>();
+
+		rootPaths.addAll(getRootPaths(clientSourceSet.getOutput().getClassesDirs().getFiles()));
+		rootPaths.addAll(getRootPaths(Set.of(Objects.requireNonNull(clientSourceSet.getOutput().getResourcesDir()))));
+
+		return output.getAsFileTree().getFiles().stream()
+				.map(relativePath(rootPaths))
+				.toList();
+	}
+
+	private static List<String> getRootPaths(Set<File> files) {
+		return files.stream()
+			.map(root -> {
+				String rootPath = root.getAbsolutePath().replace("\\", "/");
+
+				if (rootPath.charAt(rootPath.length() - 1) != '/') {
+					rootPath += '/';
+				}
+
+				return rootPath;
+			}).toList();
+	}
+
+	private static Function<File, String> relativePath(List<String> rootPaths) {
+		return file -> {
+			String s = file.getAbsolutePath().replace("\\", "/");
+
+			for (String rootPath : rootPaths) {
+				if (s.startsWith(rootPath)) {
+					s = s.substring(rootPath.length());
+				}
+			}
+
+			return s;
+		};
 	}
 
 	@Internal
