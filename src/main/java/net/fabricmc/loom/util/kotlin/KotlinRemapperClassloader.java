@@ -39,7 +39,7 @@ import net.fabricmc.loom.kotlin.remapping.KotlinMetadataTinyRemapperExtensionImp
 public class KotlinRemapperClassloader extends URLClassLoader {
 	// Packages that should be loaded from the gradle plugin classloader.
 	private static final List<String> PARENT_PACKAGES = List.of(
-			"net.fabricmc.tinyremapper",
+			"dev.architectury.tinyremapper",
 			"net.fabricmc.loom.util.kotlin",
 			"org.objectweb.asm",
 			"org.slf4j"
