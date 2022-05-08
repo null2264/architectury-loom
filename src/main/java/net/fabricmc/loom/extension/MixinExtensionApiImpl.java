@@ -36,7 +36,7 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.util.PatternSet;
 
 import net.fabricmc.loom.api.MixinExtensionAPI;
-import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.util.SourceRemapper;
 
 public abstract class MixinExtensionApiImpl implements MixinExtensionAPI {
 	protected final Project project;
@@ -50,7 +50,7 @@ public abstract class MixinExtensionApiImpl implements MixinExtensionAPI {
 				.convention(true);
 
 		this.refmapTargetNamespace = project.getObjects().property(String.class)
-				.convention(MappingsNamespace.INTERMEDIARY.toString());
+				.convention(project.provider(() -> SourceRemapper.intermediary(project)));
 		this.refmapTargetNamespace.finalizeValueOnRead();
 	}
 
@@ -142,11 +142,6 @@ public abstract class MixinExtensionApiImpl implements MixinExtensionAPI {
 
 		@Override
 		public Property<String> getDefaultRefmapName() {
-			throw new RuntimeException("Yeah... something is really wrong");
-		}
-
-		@Override
-		public Property<String> getLegacyRemapToNamespace() {
 			throw new RuntimeException("Yeah... something is really wrong");
 		}
 

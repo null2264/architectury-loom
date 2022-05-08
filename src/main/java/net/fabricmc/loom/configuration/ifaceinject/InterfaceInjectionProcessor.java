@@ -330,8 +330,8 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 				}
 
 				if (commonJsonBytes != null) {
-					JsonObject jsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
-					return fromJsonArch(jsonObject, modJarPath.toString());
+					JsonObject commonJsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
+					return fromJsonArch(commonJsonObject, modJarPath.toString());
 				} else {
 					try {
 						commonJsonBytes = ZipUtils.unpackNullable(modJarPath, "quilt.mod.json");
@@ -340,14 +340,15 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 					}
 
 					if (commonJsonBytes != null) {
-						JsonObject jsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
+						JsonObject commonJsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
 
-						if (jsonObject.has("quilt_loom")) {
+						if (commonJsonObject.has("quilt_loom")) {
 							// quilt injected interfaces has the same format as architectury.common.json
-							return fromJsonArch(jsonObject.getAsJsonObject("quilt_loom"), modJarPath.toString());
+							return fromJsonArch(commonJsonObject.getAsJsonObject("quilt_loom"), modJarPath.toString());
 						}
 					}
 				}
+
 				return Collections.emptyList();
 			}
 

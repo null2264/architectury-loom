@@ -55,7 +55,7 @@ public enum MinecraftJarConfiguration {
 		SingleJarMinecraftProvider::server,
 		IntermediaryMinecraftProvider.SingleJarImpl::server,
 		NamedMinecraftProvider.SingleJarImpl::server,
-		SrgMinecraftProvider.ServerOnlyImpl::new,
+		SrgMinecraftProvider.SingleJarImpl::server,
 		ProcessedNamedMinecraftProvider.SingleJarImpl::server,
 		SingleJarDecompileConfiguration::new,
 		List.of("server")
@@ -64,6 +64,7 @@ public enum MinecraftJarConfiguration {
 		SingleJarMinecraftProvider::client,
 		IntermediaryMinecraftProvider.SingleJarImpl::client,
 		NamedMinecraftProvider.SingleJarImpl::client,
+		SrgMinecraftProvider.SingleJarImpl::client,
 		ProcessedNamedMinecraftProvider.SingleJarImpl::client,
 		SingleJarDecompileConfiguration::new,
 		List.of("client")

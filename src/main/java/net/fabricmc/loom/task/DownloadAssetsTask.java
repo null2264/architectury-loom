@@ -57,6 +57,7 @@ import net.fabricmc.loom.util.HashedDownloadUtil;
 import net.fabricmc.loom.util.MirrorUtil;
 import net.fabricmc.loom.util.gradle.ProgressLoggerHelper;
 
+// TODO: Reintroduce the progress bar.
 public abstract class DownloadAssetsTask extends AbstractLoomTask {
 	@Input
 	public abstract Property<String> getAssetsHash();
@@ -133,7 +134,7 @@ public abstract class DownloadAssetsTask extends AbstractLoomTask {
 				final ProgressLoggerHelper logger = getOrCreateLogger.get();
 
 				try {
-					HashedDownloadUtil.downloadIfInvalid(new URL(MirrorUtil.getResourcesBase(project) + sha1.substring(0, 2) + "/" + sha1), file, sha1, project.getLogger(), true, () -> {
+					HashedDownloadUtil.downloadIfInvalid(new URL(MirrorUtil.getResourcesBase(project) + sha1.substring(0, 2) + "/" + sha1), file, sha1, project.getLogger(), true, false, () -> {
 						project.getLogger().debug("downloading asset " + object.name());
 						logger.progress(String.format("%-30.30s", object.name()) + " - " + sha1);
 					});

@@ -38,8 +38,6 @@ public interface MixinExtensionAPI {
 
 	Property<String> getRefmapTargetNamespace();
 
-	Property<String> getLegacyRemapToNamespace();
-
 	/**
 	 * Apply Mixin AP to sourceSet.
 	 * @param sourceSet the sourceSet that applies Mixin AP.

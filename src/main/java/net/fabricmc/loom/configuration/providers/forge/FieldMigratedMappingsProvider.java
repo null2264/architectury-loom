@@ -56,7 +56,7 @@ import org.objectweb.asm.Opcodes;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.configuration.providers.mappings.IntermediaryService;
+import net.fabricmc.loom.configuration.providers.mappings.IntermediateMappingsService;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.FileSystemUtil;
@@ -74,7 +74,7 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 	public Path rawTinyMappings;
 	public Path rawTinyMappingsWithSrg;
 
-	public FieldMigratedMappingsProvider(String mappingsIdentifier, Path mappingsWorkingDir, Supplier<IntermediaryService> intermediaryService) {
+	public FieldMigratedMappingsProvider(String mappingsIdentifier, Path mappingsWorkingDir, Supplier<IntermediateMappingsService> intermediaryService) {
 		super(mappingsIdentifier, mappingsWorkingDir, intermediaryService);
 	}
 

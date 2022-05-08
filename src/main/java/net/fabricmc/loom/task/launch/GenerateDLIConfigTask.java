@@ -68,7 +68,7 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 				.property("client", "java.library.path", nativesPath)
 				.property("client", "org.lwjgl.librarypath", nativesPath);
 
-		if (!getExtension().isForge())
+		if (!getExtension().isForge()) {
 			launchConfig
 					.argument("client", "--assetIndex")
 					.argument("client", getExtension().getMinecraftProvider().getVersionInfo().assetIndex().fabricId(getExtension().getMinecraftProvider().minecraftVersion()))

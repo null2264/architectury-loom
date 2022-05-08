@@ -33,11 +33,11 @@ import org.gradle.api.Project;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.providers.minecraft.MergedMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
-import net.fabricmc.loom.configuration.providers.minecraft.ServerOnlyMinecraftProvider;
+import net.fabricmc.loom.configuration.providers.minecraft.SingleJarMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.SplitMinecraftProvider;
 import net.fabricmc.loom.util.SidedClassVisitor;
 
-public abstract sealed class SrgMinecraftProvider<M extends MinecraftProvider> extends AbstractMappedMinecraftProvider<M> permits SrgMinecraftProvider.MergedImpl, SrgMinecraftProvider.ServerOnlyImpl, SrgMinecraftProvider.SplitImpl {
+public abstract sealed class SrgMinecraftProvider<M extends MinecraftProvider> extends AbstractMappedMinecraftProvider<M> permits SrgMinecraftProvider.MergedImpl, SrgMinecraftProvider.SingleJarImpl, SrgMinecraftProvider.SplitImpl {
 	public SrgMinecraftProvider(Project project, M minecraftProvider) {
 		super(project, minecraftProvider);
 	}
@@ -86,16 +86,32 @@ public abstract sealed class SrgMinecraftProvider<M extends MinecraftProvider> e
 		}
 	}
 
-	public static final class ServerOnlyImpl extends SrgMinecraftProvider<ServerOnlyMinecraftProvider> implements ServerOnly {
-		public ServerOnlyImpl(Project project, ServerOnlyMinecraftProvider minecraftProvider) {
+	public static final class SingleJarImpl extends SrgMinecraftProvider<SingleJarMinecraftProvider> implements SingleJar {
+		private final String env;
+
+		private SingleJarImpl(Project project, SingleJarMinecraftProvider minecraftProvider, String env) {
 			super(project, minecraftProvider);
+			this.env = env;
+		}
+
+		public static SingleJarImpl server(Project project, SingleJarMinecraftProvider minecraftProvider) {
+			return new SingleJarImpl(project, minecraftProvider, "server");
+		}
+
+		public static SingleJarImpl client(Project project, SingleJarMinecraftProvider minecraftProvider) {
+			return new SingleJarImpl(project, minecraftProvider, "client");
 		}
 
 		@Override
 		public List<RemappedJars> getRemappedJars() {
 			return List.of(
-				new RemappedJars(minecraftProvider.getMinecraftServerOnlyJar(), getServerOnlyJar(), MappingsNamespace.OFFICIAL)
+				new RemappedJars(minecraftProvider.getMinecraftEnvOnlyJar(), getEnvOnlyJar(), MappingsNamespace.OFFICIAL)
 			);
+		}
+
+		@Override
+		public String env() {
+			return env;
 		}
 	}
 }

@@ -73,7 +73,7 @@ public final class ModJavadocProcessor implements JarProcessor, GenerateSourcesT
 					.resolve();
 
 			for (File artifact : artifacts) {
-				if (!ModUtils.isMod(artifact.toPath())) {
+				if (!ModUtils.isMod(artifact.toPath(), extension.getPlatform().get())) {
 					continue;
 				}
 

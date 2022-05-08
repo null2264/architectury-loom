@@ -86,7 +86,7 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 		try {
 			LoomGradleExtension loom = LoomGradleExtension.get(project);
 			String refmapName = Objects.requireNonNull(MixinExtension.getMixinInformationContainer(sourceSet)).refmapNameProvider().get();
-			Path mappings = loom.getMappingsProvider().getReplacedTarget(loom, loom.getMixin().getLegacyRemapToNamespace().get());
+			Path mappings = loom.getMappingsProvider().getReplacedTarget(loom, loom.getMixin().getRefmapTargetNamespace().get());
 			Map<String, String> args = new HashMap<>() {{
 					put(Constants.MixinArguments.IN_MAP_FILE_NAMED_INTERMEDIARY, mappings.toFile().getCanonicalPath());
 					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, MixinMappingsService.getMixinMappingFile(project, sourceSet).getCanonicalPath());

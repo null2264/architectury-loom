@@ -41,14 +41,14 @@ public final class ModUtils {
 	}
 
 	public static boolean isMod(File file, ModPlatform platform) {
-		return isMod(file.toPath());
+		return isMod(file.toPath(), platform);
 	}
 
 	public static boolean isMod(Path input, ModPlatform platform) {
 		if (platform == ModPlatform.FORGE) {
-			return ZipUtils.contains(input.toPath(), "META-INF/mods.toml");
+			return ZipUtils.contains(input, "META-INF/mods.toml");
 		} else if (platform == ModPlatform.QUILT) {
-			return ZipUtils.contains(input.toPath(), "quilt.mod.json");
+			return ZipUtils.contains(input, "quilt.mod.json");
 		}
 
 		return ZipUtils.contains(input, "fabric.mod.json");
