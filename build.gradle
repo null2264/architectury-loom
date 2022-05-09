@@ -10,7 +10,6 @@ plugins {
 	id 'codenarc'
 	id "org.jetbrains.kotlin.jvm" version "1.5.31" // Must match the version included with gradle.
 	id "com.diffplug.spotless" version "6.3.0"
-	id 'me.shedaniel.java-version-bridge' version '1.0-SNAPSHOT'
 }
 
 java {
@@ -149,26 +148,11 @@ dependencies {
 }
 
 jar {
-	classifier 'jar'
-}
-
-task mainJar(type: Jar, dependsOn: jar) {
-	from zipTree(jar.archiveFile)
-	archiveClassifier = "main"
-
-	from configurations.bootstrap.collect { it.isDirectory() ? it : zipTree(it) }
-}
-
-task downgradeJava(type: BridgeTransformingTask, dependsOn: mainJar) {
-	from zipTree(mainJar.archiveFile)
-	fromVersion = JavaVersion.VERSION_16
-	toVersion = JavaVersion.VERSION_11
-	classpath.from configurations.compileClasspath
-	flags.add "insertRecordConstructorProperties"
-
 	manifest {
 		attributes 'Implementation-Version': project.version
 	}
+
+	from configurations.bootstrap.collect { it.isDirectory() ? it : zipTree(it) }
 }
 
 java {
@@ -212,8 +196,6 @@ gradlePlugin {
 	}
 }
 
-build.dependsOn downgradeJava
-
 jacoco {
 	toolVersion = "0.8.7"
 }
@@ -234,7 +216,6 @@ test {
 	maxParallelForks = Runtime.runtime.availableProcessors() ?: 1
 }
 
-import me.shedaniel.javaversionbridge.BridgeTransformingTask
 import org.gradle.util.GradleVersion
 import org.w3c.dom.Document
 import org.w3c.dom.Element
@@ -242,20 +223,12 @@ import org.w3c.dom.Node
 
 publishing {
 	publications {
-		plugin(MavenPublication) {
-			groupId 'dev.architectury.loom'
-			artifactId 'dev.architectury.loom.gradle.plugin'
-
-			from components.java
-			artifact downgradeJava
-		}
-
-		maven(MavenPublication) { publication ->
+		plugin(MavenPublication) { publication ->
 			groupId project.group
 			artifactId project.archivesBaseName
+			version project.version
 
 			from components.java
-			artifact downgradeJava
 		}
 
 		if (isSnapshot) return
@@ -266,7 +239,6 @@ publishing {
 			version baseVersion + '-SNAPSHOT'
 
 			from components.java
-			artifact downgradeJava
 		}
 
 		pluginSnapshot(MavenPublication) {
