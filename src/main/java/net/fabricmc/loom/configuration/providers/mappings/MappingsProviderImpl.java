@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.function.Supplier;
 
 import com.google.common.base.Stopwatch;
@@ -119,8 +120,17 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		this.intermediaryService = intermediaryService;
 	}
 
-	public static synchronized MappingsProviderImpl getInstance(Project project, DependencyInfo dependency, MinecraftProvider minecraftProvider) {
-		return SharedServiceManager.get(project).getOrCreateService("MappingsProvider:%s:%s".formatted(dependency.getDepString(), minecraftProvider.minecraftVersion()), () -> {
+	public static synchronized MappingsProviderImpl getInstance(Project project, LoomGradleExtension extension, DependencyInfo dependency, MinecraftProvider minecraftProvider) {
+		StringJoiner id = new StringJoiner(":").add("MappingsProvider");
+		id.add(dependency.getDepString());
+		id.add(minecraftProvider.minecraftVersion());
+
+		// Arch: we add :forge since Forge support uses a different MappingsProvider.
+		if (extension.isForge()) {
+			id.add("forge");
+		}
+
+		return SharedServiceManager.get(project).getOrCreateService(id.toString(), () -> {
 			Supplier<IntermediateMappingsService> intermediaryService = Suppliers.memoize(() -> IntermediateMappingsService.getInstance(project, minecraftProvider));
 			return create(project, dependency, minecraftProvider, intermediaryService);
 		});

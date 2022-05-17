@@ -72,6 +72,10 @@ public class TinyRemapperService implements SharedService {
 			joiner.add(project.getPath());
 		}
 
+		if (extension.isForge()) {
+			joiner.add("forge");
+		}
+
 		final String id = joiner.toString();
 
 		TinyRemapperService service = sharedServiceManager.getOrCreateService(id, () -> {

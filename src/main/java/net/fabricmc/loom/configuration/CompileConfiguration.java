@@ -284,7 +284,7 @@ public final class CompileConfiguration {
 		minecraftProvider.provide();
 
 		final DependencyInfo mappingsDep = DependencyInfo.create(project, Constants.Configurations.MAPPINGS);
-		final MappingsProviderImpl mappingsProvider = MappingsProviderImpl.getInstance(project, mappingsDep, minecraftProvider);
+		final MappingsProviderImpl mappingsProvider = MappingsProviderImpl.getInstance(project, extension, mappingsDep, minecraftProvider);
 		extension.setMappingsProvider(mappingsProvider);
 		mappingsProvider.applyToProject(project, mappingsDep);
 
