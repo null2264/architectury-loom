@@ -155,7 +155,10 @@ public final class TinyRemapperHelper {
 			final int toId = mappings.getNamespaceId(to);
 
 			if (toId == MappingTreeView.NULL_NAMESPACE_ID) {
-				System.out.println("Warning: Trying to remap to unknown namespace: " + to);
+				throw new MappingException(
+						"Trying to remap from '%s' (id: %d) to unknown namespace '%s'. Available namespaces: [%s -> %s]"
+								.formatted(from, fromId, to, mappings.getSrcNamespace(), String.join(", ", mappings.getDstNamespaces()))
+				);
 			}
 
 			for (MappingTree.ClassMapping classDef : mappings.getClasses()) {

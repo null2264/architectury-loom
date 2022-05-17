@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.util.srg;
+package net.fabricmc.loom.util;
 
 /**
  * An exception that occurs when processing obfuscation mappings.

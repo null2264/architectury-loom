@@ -42,6 +42,7 @@ import com.google.common.collect.ListMultimap;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.util.MappingException;
 import net.fabricmc.loom.util.function.CollectionUtil;
 import net.fabricmc.mappingio.FlatMappingVisitor;
 import net.fabricmc.mappingio.MappingReader;
