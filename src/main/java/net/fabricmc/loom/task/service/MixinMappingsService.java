@@ -32,6 +32,7 @@ import org.gradle.api.Project;
 import org.gradle.api.tasks.SourceSet;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.util.service.SharedService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
@@ -57,12 +58,13 @@ public final class MixinMappingsService implements SharedService {
 		return sharedServiceManager.getOrCreateService("MixinMappings-" + mappingsProvider.mappingsIdentifier(), () -> new MixinMappingsService(sharedServiceManager));
 	}
 
-	IMappingProvider getMappingProvider(String from, String to) {
+	IMappingProvider getMappingProvider(Project project, String from, String to) {
 		return out -> {
 			for (File mixinMapping : mixinMappings) {
 				if (!mixinMapping.exists()) continue;
 
-				MappingsService service = MappingsService.create(sharedServiceManager, mixinMapping.getAbsolutePath(), mixinMapping.toPath(), from, to, false);
+				String newTo = IntermediaryNamespaces.replaceMixinIntermediaryNamespace(project, to);
+				MappingsService service = MappingsService.create(sharedServiceManager, mixinMapping.getAbsolutePath(), mixinMapping.toPath(), from, newTo, false);
 				service.getMappingsProvider().load(out);
 			}
 		};

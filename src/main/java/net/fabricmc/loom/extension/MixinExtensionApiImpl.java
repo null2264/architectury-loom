@@ -36,7 +36,7 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.util.PatternSet;
 
 import net.fabricmc.loom.api.MixinExtensionAPI;
-import net.fabricmc.loom.util.SourceRemapper;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 
 public abstract class MixinExtensionApiImpl implements MixinExtensionAPI {
 	protected final Project project;
@@ -50,7 +50,7 @@ public abstract class MixinExtensionApiImpl implements MixinExtensionAPI {
 				.convention(true);
 
 		this.refmapTargetNamespace = project.getObjects().property(String.class)
-				.convention(project.provider(() -> SourceRemapper.intermediary(project)));
+				.convention(project.provider(() -> IntermediaryNamespaces.intermediary(project)));
 		this.refmapTargetNamespace.finalizeValueOnRead();
 	}
 

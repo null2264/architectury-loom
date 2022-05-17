@@ -41,6 +41,7 @@ import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.tasks.SourceSet;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.ide.idea.IdeaUtils;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.extension.MixinExtension;
@@ -91,7 +92,7 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 					put(Constants.MixinArguments.IN_MAP_FILE_NAMED_INTERMEDIARY, mappings.toFile().getCanonicalPath());
 					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, MixinMappingsService.getMixinMappingFile(project, sourceSet).getCanonicalPath());
 					put(Constants.MixinArguments.OUT_REFMAP_FILE, getRefmapDestination(task, refmapName));
-					put(Constants.MixinArguments.DEFAULT_OBFUSCATION_ENV, "named:" + loom.getMixin().getRefmapTargetNamespace().get());
+					put(Constants.MixinArguments.DEFAULT_OBFUSCATION_ENV, "named:" + IntermediaryNamespaces.replaceMixinIntermediaryNamespace(project, loom.getMixin().getRefmapTargetNamespace().get()));
 					put(Constants.MixinArguments.QUIET, "true");
 				}};
 

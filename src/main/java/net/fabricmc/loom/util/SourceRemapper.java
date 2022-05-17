@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.RemappedConfigurationEntry;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.util.gradle.ProgressLoggerHelper;
@@ -56,12 +57,7 @@ public class SourceRemapper {
 	private Mercury mercury;
 
 	public SourceRemapper(Project project, boolean named) {
-		this(project, named ? intermediary(project) : "named", !named ? intermediary(project) : "named");
-	}
-
-	public static String intermediary(Project project) {
-		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		return extension.isForge() ? "srg" : "intermediary";
+		this(project, named ? IntermediaryNamespaces.intermediary(project) : "named", !named ? IntermediaryNamespaces.intermediary(project) : "named");
 	}
 
 	public SourceRemapper(Project project, String from, String to) {
