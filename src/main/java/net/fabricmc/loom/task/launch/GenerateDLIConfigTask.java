@@ -50,8 +50,6 @@ import net.fabricmc.loom.util.gradle.SourceSetHelper;
 public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 	@TaskAction
 	public void run() throws IOException {
-		final String nativesPath = getExtension().getFiles().getNativesDirectory(getProject()).getAbsolutePath();
-
 		final MinecraftVersionMeta versionInfo = getExtension().getMinecraftProvider().getVersionInfo();
 		File assetsDirectory = new File(getExtension().getFiles().getUserCache(), "assets");
 
@@ -63,10 +61,15 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 				.property(!getExtension().isQuilt() ? "fabric.development" : "loader.development", "true")
 				.property(!getExtension().isQuilt() ? "fabric.remapClasspathFile" : "loader.remapClasspathFile", getExtension().getFiles().getRemapClasspathFile().getAbsolutePath())
 				.property("log4j.configurationFile", getAllLog4JConfigFiles())
-				.property("log4j2.formatMsgNoLookups", "true")
+				.property("log4j2.formatMsgNoLookups", "true");
 
-				.property("client", "java.library.path", nativesPath)
-				.property("client", "org.lwjgl.librarypath", nativesPath);
+		if (versionInfo.hasNativesToExtract()) {
+			String nativesPath = getExtension().getFiles().getNativesDirectory(getProject()).getAbsolutePath();
+
+			launchConfig
+					.property("client", "java.library.path", nativesPath)
+					.property("client", "org.lwjgl.librarypath", nativesPath);
+		}
 
 		if (!getExtension().isForge()) {
 			launchConfig
