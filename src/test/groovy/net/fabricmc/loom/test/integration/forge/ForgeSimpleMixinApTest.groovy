@@ -51,7 +51,7 @@ class ForgeSimpleMixinApTest extends Specification implements GradleProjectTestT
 
 			// verify the refmap is correctly generated
 			def refmap = gradle.getOutputZipEntry("fabric-example-mod-1.0.0.jar", "fabric-example-mod-refmap.json")
-			refmap == new File(gradle.projectDir, "expected_refmap.json").text
+			refmap == expected(gradle)
 			// verify that the refmap is in the mixin json
 			def mixinJsonString = gradle.getOutputZipEntry("fabric-example-mod-1.0.0.jar", "my_mixins.json")
 			def mixinJson = new Gson().fromJson(mixinJsonString, JsonObject)
@@ -63,5 +63,9 @@ class ForgeSimpleMixinApTest extends Specification implements GradleProjectTestT
 
 		where:
 			version << STANDARD_TEST_VERSIONS
+	}
+
+	private String expected(GradleProject gradle) {
+		new File(gradle.projectDir, "expected_refmap.json").text.replaceAll('\r', '')
 	}
 }
