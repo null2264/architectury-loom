@@ -56,6 +56,7 @@ import net.fabricmc.loom.configuration.ide.idea.IdeaSyncTask;
 import net.fabricmc.loom.configuration.ide.idea.IdeaUtils;
 import net.fabricmc.loom.configuration.providers.BundleMetadata;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.gradle.SourceSetReference;
 
 public class RunConfig {
 	public String configName;
@@ -174,7 +175,7 @@ public class RunConfig {
 		runConfig.envVariables.putAll(settings.envVariables);
 		runConfig.configName = configName;
 		populate(project, extension, runConfig, environment);
-		runConfig.ideaModuleName = IdeaUtils.getIdeaModuleName(project, sourceSet);
+		runConfig.ideaModuleName = IdeaUtils.getIdeaModuleName(new SourceSetReference(sourceSet, project));
 		runConfig.runDirIdeaUrl = "file://$PROJECT_DIR$/" + runDir;
 		runConfig.runDir = runDir;
 		runConfig.sourceSet = sourceSet;
