@@ -148,7 +148,7 @@ public class Constants {
 			public static final String FORGE_RUNTIME = "1.1.3";
 			public static final String ACCESS_TRANSFORMERS = "3.0.1";
 			public static final String ACCESS_TRANSFORMERS_NEW = "8.0.5";
-			public static final String UNPROTECT = "1.0.0";
+			public static final String UNPROTECT = "1.2.0";
 			public static final String ASM = "9.3";
 
 			private Versions() {

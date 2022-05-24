@@ -44,6 +44,7 @@ import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftVersionMeta;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.MappedMinecraftProvider;
 import net.fabricmc.loom.task.AbstractLoomTask;
+import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.PropertyUtil;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
@@ -95,9 +96,19 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 		}
 
 		if (getExtension().isForge()) {
+			// Find the mapping files for Unprotect to use for figuring out
+			// which classes are from Minecraft.
+			String unprotectMappings = getProject().getConfigurations()
+					.getByName(Constants.Configurations.MAPPINGS_FINAL)
+					.resolve()
+					.stream()
+					.map(File::getAbsolutePath)
+					.collect(Collectors.joining(File.pathSeparator));
+
 			launchConfig
 					// Should match YarnNamingService.PATH_TO_MAPPINGS in forge-runtime
 					.property("fabric.yarnWithSrg.path", getExtension().getMappingsProvider().tinyMappingsWithSrg.toAbsolutePath().toString())
+					.property("unprotect.mappings", unprotectMappings)
 
 					.argument("data", "--all")
 					.argument("data", "--mod")
