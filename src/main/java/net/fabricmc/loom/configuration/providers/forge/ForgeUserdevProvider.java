@@ -60,6 +60,7 @@ import org.gradle.api.provider.Provider;
 
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.api.ForgeLocalMod;
+import net.fabricmc.loom.api.ModSettings;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
@@ -68,6 +69,7 @@ import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.PropertyUtil;
 import net.fabricmc.loom.util.ZipUtils;
+import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public class ForgeUserdevProvider extends DependencyProvider {
 	private File userdevJar;
@@ -259,6 +261,15 @@ public class ForgeUserdevProvider extends DependencyProvider {
 				string = getExtension().getFiles().getNativesDirectory(getProject()).getAbsolutePath();
 			} else if (key.equals("source_roots")) {
 				List<String> modClasses = new ArrayList<>();
+
+				for (ModSettings mod : getExtension().getMods()) {
+					String name = mod.getName();
+					SourceSetHelper.getClasspath(mod, getProject()).stream()
+							.map(File::getAbsolutePath)
+							.distinct()
+							.map(s -> name + "%%" + s)
+							.forEach(modClasses::add);
+				}
 
 				for (ForgeLocalMod localMod : getExtension().getForge().getLocalMods()) {
 					String sourceSetName = localMod.getName();
