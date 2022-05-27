@@ -43,7 +43,8 @@ public class Constants {
 	public static final String FABRIC_REPOSITORY = "https://maven.fabricmc.net/";
 
 	public static final int ASM_VERSION = Opcodes.ASM9;
-	public static final String MERCURY_SOURCE_VERSION = JavaCore.VERSION_17;
+	public static final String MERCURY_SOURCE_VERSION = JavaCore.VERSION_15;
+	// TODO: once we update Mercury: public static final String MERCURY_SOURCE_VERSION = JavaCore.VERSION_17;
 
 	public static final List<RemappedConfigurationEntry> MOD_COMPILE_ENTRIES = ImmutableList.of(
 			new RemappedConfigurationEntry("modApi", JavaPlugin.API_CONFIGURATION_NAME, true, true, PublishingMode.COMPILE_AND_RUNTIME),
