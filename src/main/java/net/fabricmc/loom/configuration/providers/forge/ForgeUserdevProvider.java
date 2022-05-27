@@ -34,7 +34,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +42,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -260,15 +261,15 @@ public class ForgeUserdevProvider extends DependencyProvider {
 			} else if (key.equals("natives")) {
 				string = getExtension().getFiles().getNativesDirectory(getProject()).getAbsolutePath();
 			} else if (key.equals("source_roots")) {
-				List<String> modClasses = new ArrayList<>();
+				// Use a set-valued multimap for deduplicating paths.
+				// It could be done using Stream.distinct before but that doesn't work if
+				// you have *both* a ModSettings and a ForgeLocalMod with the same name.
+				Multimap<String, String> modClasses = MultimapBuilder.hashKeys().linkedHashSetValues().build();
 
 				for (ModSettings mod : getExtension().getMods()) {
-					String name = mod.getName();
-					SourceSetHelper.getClasspath(mod, getProject()).stream()
-							.map(File::getAbsolutePath)
-							.distinct()
-							.map(s -> name + "%%" + s)
-							.forEach(modClasses::add);
+					for (File file : SourceSetHelper.getClasspath(mod, getProject())) {
+						modClasses.put(mod.getName(), file.getAbsolutePath());
+					}
 				}
 
 				for (ForgeLocalMod localMod : getExtension().getForge().getLocalMods()) {
@@ -277,10 +278,12 @@ public class ForgeUserdevProvider extends DependencyProvider {
 					localMod.getSourceSets().flatMap(sourceSet -> Stream.concat(
 							Stream.of(sourceSet.getOutput().getResourcesDir()),
 							sourceSet.getOutput().getClassesDirs().getFiles().stream())
-					).map(File::getAbsolutePath).distinct().map(s -> sourceSetName + "%%" + s).collect(Collectors.toCollection(() -> modClasses));
+					).map(File::getAbsolutePath).forEach(path -> modClasses.put(sourceSetName, path));
 				}
 
-				string = String.join(File.pathSeparator, modClasses);
+				string = modClasses.entries().stream()
+						.map(entry -> entry.getKey() + "%%" + entry.getValue())
+						.collect(Collectors.joining(File.pathSeparator));
 			} else if (key.equals("mcp_mappings")) {
 				string = "loom.stub";
 			} else if (json.has(key)) {
