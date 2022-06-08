@@ -77,8 +77,6 @@ public class ForgeUserdevProvider extends DependencyProvider {
 		addDependency(json.get("mcp").getAsString(), Constants.Configurations.SRG);
 		addDependency(json.get("universal").getAsString(), Constants.Configurations.FORGE_UNIVERSAL);
 
-		// addDependency(new SelfBreakingDependency(), Constants.Configurations.FORGE_DEPENDENCIES);
-
 		if (Files.notExists(joinedPatches)) {
 			Files.write(joinedPatches, ZipUtils.unpack(userdevJar.toPath(), json.get("binpatches").getAsString()));
 		}

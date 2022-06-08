@@ -73,7 +73,6 @@ public class ForgeRunsProvider {
 
 			if (launchSettings != null) {
 				launchSettings.evaluateLater(() -> {
-
 					if (value.has("args")) {
 						launchSettings.arg(StreamSupport.stream(value.getAsJsonArray("args").spliterator(), false)
 								.map(JsonElement::getAsString)

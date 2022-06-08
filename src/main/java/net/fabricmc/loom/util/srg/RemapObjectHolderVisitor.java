@@ -67,6 +67,7 @@ public class RemapObjectHolderVisitor extends ClassVisitor {
 	@Override
 	public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
 		MethodVisitor methodVisitor = super.visitMethod(access, name, descriptor, signature, exceptions);
+
 		if ("<clinit>".equals(name) && "()V".equals(descriptor) && from != MappingTree.NULL_NAMESPACE_ID && to != MappingTree.NULL_NAMESPACE_ID) {
 			return new MethodVisitor(api, methodVisitor) {
 				@Override
@@ -75,10 +76,12 @@ public class RemapObjectHolderVisitor extends ClassVisitor {
 						value = mappings.mapClassName(str.replace('.', '/'), from, to)
 								.replace('/', '.');
 					}
+
 					super.visitLdcInsn(value);
 				}
 			};
 		}
+
 		return methodVisitor;
 	}
 }

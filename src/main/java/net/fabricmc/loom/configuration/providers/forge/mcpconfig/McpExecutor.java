@@ -49,7 +49,6 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.Constants;
-import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.ForgeToolExecutor;
 import net.fabricmc.loom.util.function.CollectionUtil;
 

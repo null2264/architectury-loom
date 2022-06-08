@@ -72,7 +72,7 @@ public final class SrgMerger {
 	private final @Nullable MemoryMappingTree extra;
 	private final ListMultimap<SrgMethodKey, MethodData> methodsBySrgName;
 
-	public SrgMerger(Path srg, Path tiny, @Nullable ExtraMappings extraMappings, boolean lenient) throws IOException {
+	private SrgMerger(Path srg, Path tiny, @Nullable ExtraMappings extraMappings, boolean lenient) throws IOException {
 		this.srg = readSrg(srg);
 		this.src = new MemoryMappingTree();
 		this.output = new MemoryMappingTree();
