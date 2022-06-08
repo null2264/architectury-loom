@@ -84,7 +84,7 @@ public abstract class MinecraftProvider {
 		return true;
 	}
 
-	public void provide() throws Exception {
+	public void provideFirst() throws Exception {
 		final DependencyInfo dependency = DependencyInfo.create(getProject(), Constants.Configurations.MINECRAFT);
 		minecraftVersion = dependency.getDependency().getVersion();
 
@@ -126,14 +126,16 @@ public abstract class MinecraftProvider {
 			serverBundleMetadata = BundleMetadata.fromJar(minecraftServerJar.toPath());
 		}
 
-		libraryProvider = new MinecraftLibraryProvider();
-		libraryProvider.provide(this, getProject());
-
 		// TODO: Find a better place for this. This needs to run after MinecraftProvider.initFiles
 		//   but before MinecraftPatchedProvider.provide, so it's a bit tough.
 		//   Honestly, the ForgeProvider stuff that uses the results of initFiles could be moved to
 		//   MinecraftPatchedProvider.
 		CompileConfiguration.setupDependencyProviders(getProject(), getExtension());
+	}
+
+	public void provide() throws Exception {
+		libraryProvider = new MinecraftLibraryProvider();
+		libraryProvider.provide(this, getProject());
 	}
 
 	protected void initFiles() {

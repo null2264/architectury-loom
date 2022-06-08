@@ -52,7 +52,9 @@ import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 import net.fabricmc.loom.configuration.mods.ModJavadocProcessor;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
 import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
+import net.fabricmc.loom.configuration.providers.forge.ForgeLibrariesProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
+import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUniversalProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.PatchProvider;
@@ -281,12 +283,24 @@ public final class CompileConfiguration {
 		}
 
 		extension.setMinecraftProvider(minecraftProvider);
-		minecraftProvider.provide();
+		minecraftProvider.provideFirst();
 
 		final DependencyInfo mappingsDep = DependencyInfo.create(project, Constants.Configurations.MAPPINGS);
 		final MappingsProviderImpl mappingsProvider = MappingsProviderImpl.getInstance(project, extension, mappingsDep, minecraftProvider);
 		extension.setMappingsProvider(mappingsProvider);
+
+		if (extension.isForge()) {
+			ForgeLibrariesProvider.provide(mappingsProvider, project);
+		}
+
+		minecraftProvider.provide();
+
+		mappingsProvider.setupPost(project);
 		mappingsProvider.applyToProject(project, mappingsDep);
+
+		if (extension.isForge()) {
+			ForgeRunsProvider.provide(project);
+		}
 
 		if (minecraftProvider instanceof ForgeMinecraftProvider patched) {
 			patched.getPatchedProvider().remapJar();

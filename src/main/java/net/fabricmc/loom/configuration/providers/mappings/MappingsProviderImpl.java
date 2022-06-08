@@ -208,6 +208,9 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		}
 
 		mappingTree = Suppliers.memoize(() -> readMappings(tinyMappings));
+	}
+
+	public void setupPost(Project project) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		manipulateMappings(project, tinyMappingsJar);
 
@@ -251,7 +254,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		project.getDependencies().add(Constants.Configurations.MAPPINGS_FINAL, project.getDependencies().module("loom.resolved:mappings:" + extension.getMinecraftProvider().minecraftVersion() + "/" + mappingsIdentifier()));
 	}
 
-	protected Path getRawSrgFile(Project project) throws IOException {
+	public static Path getRawSrgFile(Project project) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 
 		if (extension.getSrgProvider().isTsrgV2()) {
@@ -261,7 +264,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		return extension.getSrgProvider().getSrg();
 	}
 
-	public Path getMojmapSrgFileIfPossible(Project project) {
+	public static Path getMojmapSrgFileIfPossible(Project project) {
 		try {
 			LoomGradleExtension extension = LoomGradleExtension.get(project);
 			return SrgProvider.getMojmapTsrg2(project, extension);
