@@ -172,6 +172,7 @@ public interface StepLogic {
 		@Override
 		public void execute(ExecutionContext context) throws IOException {
 			context.logger().lifecycle(":downloading minecraft libraries, this may take a while...");
+
 			try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(context.setOutput("libraries.txt")))) {
 				for (File lib : context.getMinecraftLibraries()) {
 					writer.println("-e=" + lib.getAbsolutePath());
