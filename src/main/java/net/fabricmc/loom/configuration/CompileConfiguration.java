@@ -261,6 +261,14 @@ public final class CompileConfiguration {
 		p.getTasks().withType(AbstractCopyTask.class).configureEach(abstractCopyTask -> abstractCopyTask.setFilteringCharset(StandardCharsets.UTF_8.name()));
 		p.getTasks().withType(JavaCompile.class).configureEach(javaCompile -> javaCompile.getOptions().setEncoding(StandardCharsets.UTF_8.name()));
 
+		if (extension.isForge()) {
+			// Create default mod from main source set
+			extension.mods(mods -> {
+				final SourceSet main = javaPluginExtension.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+				mods.create("main").sourceSet(main);
+			});
+		}
+
 		if (p.getPluginManager().hasPlugin("org.jetbrains.kotlin.kapt")) {
 			// If loom is applied after kapt, then kapt will use the AP arguments too early for loom to pass the arguments we need for mixin.
 			throw new IllegalArgumentException("fabric-loom must be applied BEFORE kapt in the plugins { } block.");

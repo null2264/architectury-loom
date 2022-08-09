@@ -27,7 +27,6 @@ package net.fabricmc.loom.api;
 import java.util.List;
 
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.SetProperty;
@@ -133,25 +132,4 @@ public interface ForgeExtensionAPI {
 		 */
 		void mod(String... modIds);
 	}
-
-	/**
-	 * Configures local mods.
-	 *
-	 * @param action the configuration action
-	 * @deprecated Replaced with {@link LoomGradleExtensionAPI#mods(Action)}
-	 */
-	@Deprecated(forRemoval = true, since = "0.12.0")
-	@ApiStatus.ScheduledForRemoval(inVersion = "1.0")
-	void localMods(Action<NamedDomainObjectContainer<ForgeLocalMod>> action);
-
-	/**
-	 * The container of local mods applied to run configs.
-	 *
-	 * @return the container
-	 * @see ForgeLocalMod
-	 * @deprecated Replaced with {@link LoomGradleExtensionAPI#getMods()}
-	 */
-	@Deprecated(forRemoval = true, since = "0.12.0")
-	@ApiStatus.ScheduledForRemoval(inVersion = "1.0")
-	NamedDomainObjectContainer<ForgeLocalMod> getLocalMods();
 }

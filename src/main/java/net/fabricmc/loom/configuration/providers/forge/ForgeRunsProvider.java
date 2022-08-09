@@ -42,7 +42,6 @@ import com.google.gson.JsonObject;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.api.ForgeLocalMod;
 import net.fabricmc.loom.api.ModSettings;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
@@ -160,23 +159,12 @@ public class ForgeRunsProvider {
 				string = extension.getFiles().getNativesDirectory(project).getAbsolutePath();
 			} else if (key.equals("source_roots")) {
 				// Use a set-valued multimap for deduplicating paths.
-				// It could be done using Stream.distinct before but that doesn't work if
-				// you have *both* a ModSettings and a ForgeLocalMod with the same name.
 				Multimap<String, String> modClasses = MultimapBuilder.hashKeys().linkedHashSetValues().build();
 
 				for (ModSettings mod : extension.getMods()) {
 					for (File file : SourceSetHelper.getClasspath(mod, project)) {
 						modClasses.put(mod.getName(), file.getAbsolutePath());
 					}
-				}
-
-				for (ForgeLocalMod localMod : extension.getForge().getLocalMods()) {
-					String sourceSetName = localMod.getName();
-
-					localMod.getSourceSets().flatMap(sourceSet -> Stream.concat(
-							Stream.of(sourceSet.getOutput().getResourcesDir()),
-							sourceSet.getOutput().getClassesDirs().getFiles().stream())
-					).map(File::getAbsolutePath).forEach(path -> modClasses.put(sourceSetName, path));
 				}
 
 				string = modClasses.entries().stream()
