@@ -83,12 +83,6 @@ public interface LoomGradleExtensionAPI {
 
 	Dependency layered(Action<LayeredMappingSpecBuilder> action);
 
-	/**
-	 * @deprecated Broken due to be evaluated too early. Replaced with "fabric.loom.dontRemap" gradle property.
-	 */
-	@Deprecated(forRemoval = true)
-	Property<Boolean> getRemapArchives();
-
 	void runs(Action<NamedDomainObjectContainer<RunConfigSettings>> action);
 
 	NamedDomainObjectContainer<RunConfigSettings> getRunConfigs();
@@ -132,12 +126,6 @@ public interface LoomGradleExtensionAPI {
 	InterfaceInjectionExtensionAPI getInterfaceInjection();
 
 	Property<String> getCustomMinecraftManifest();
-
-	/**
-	 * @deprecated Broken due to be evaluated too early. Replaced with "fabric.loom.disableRemappedVariants" gradle property.
-	 */
-	@Deprecated(forRemoval = true)
-	Property<Boolean> getSetupRemappedVariants();
 
 	/**
 	 * Disables the deprecated POM generation for a publication.

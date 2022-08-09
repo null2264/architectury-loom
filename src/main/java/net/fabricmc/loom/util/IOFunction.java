@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 FabricMC
+ * Copyright (c) 2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,9 @@
 
 package net.fabricmc.loom.util;
 
-public record Architecture(String name) {
-	public static final Architecture CURRENT = new Architecture(System.getProperty("os.arch"));
+import java.io.IOException;
 
-	public boolean is64Bit() {
-		return name.contains("64") || name.startsWith("armv8");
-	}
-
-	public boolean isArm() {
-		return name.startsWith("arm") || name.startsWith("aarch64");
-	}
+@FunctionalInterface
+public interface IOFunction<T, R> {
+	R apply(T t) throws IOException;
 }

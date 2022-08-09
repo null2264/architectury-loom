@@ -82,9 +82,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	protected final ConfigurableFileCollection log4jConfigs;
 	protected final RegularFileProperty accessWidener;
 	protected final Property<Boolean> shareCaches;
-	protected final Property<Boolean> remapArchives;
 	protected final Property<String> customManifest;
-	protected final Property<Boolean> setupRemappedVariants;
 	protected final Property<Boolean> transitiveAccessWideners;
 	protected final Property<Boolean> modProvidedJavadoc;
 	protected final Property<String> intermediary;
@@ -121,11 +119,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 		this.accessWidener = project.getObjects().fileProperty();
 		this.shareCaches = project.getObjects().property(Boolean.class)
 				.convention(false);
-		this.remapArchives = project.getObjects().property(Boolean.class)
-				.convention(true);
 		this.customManifest = project.getObjects().property(String.class);
-		this.setupRemappedVariants = project.getObjects().property(Boolean.class)
-				.convention(true);
 		this.transitiveAccessWideners = project.getObjects().property(Boolean.class)
 				.convention(true);
 		this.transitiveAccessWideners.finalizeValueOnRead();
@@ -250,11 +244,6 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	protected abstract String getMinecraftVersion();
 
 	@Override
-	public Property<Boolean> getRemapArchives() {
-		return remapArchives;
-	}
-
-	@Override
 	public void runs(Action<NamedDomainObjectContainer<RunConfigSettings>> action) {
 		action.execute(runConfigs);
 	}
@@ -277,11 +266,6 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	@Override
 	public Property<String> getCustomMinecraftManifest() {
 		return customManifest;
-	}
-
-	@Override
-	public Property<Boolean> getSetupRemappedVariants() {
-		return setupRemappedVariants;
 	}
 
 	@Override

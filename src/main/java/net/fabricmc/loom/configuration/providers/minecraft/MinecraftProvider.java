@@ -134,8 +134,8 @@ public abstract class MinecraftProvider {
 	}
 
 	public void provide() throws Exception {
-		libraryProvider = new MinecraftLibraryProvider();
-		libraryProvider.provide(this, getProject());
+		libraryProvider = new MinecraftLibraryProvider(this, project);
+		libraryProvider.provide();
 	}
 
 	protected void initFiles() {
