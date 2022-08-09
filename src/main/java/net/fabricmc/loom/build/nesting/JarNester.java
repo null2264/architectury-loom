@@ -149,7 +149,6 @@ public class JarNester {
 			IncludedJarFactory.Metadata metadata = nestedFile.metadata();
 			File file = nestedFile.file();
 			String nestedJarPath = "META-INF/jars/" + file.getName();
-			Preconditions.checkArgument(ModUtils.isMod(file, ModPlatform.FORGE), "Cannot nest none mod jar: " + file.getName());
 
 			for (JsonElement nestedJar : nestedJars) {
 				JsonObject jsonObject = nestedJar.getAsJsonObject();
