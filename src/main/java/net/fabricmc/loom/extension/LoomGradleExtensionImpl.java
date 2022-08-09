@@ -24,6 +24,7 @@
 
 package net.fabricmc.loom.extension;
 
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +54,8 @@ import net.fabricmc.loom.configuration.providers.minecraft.mapped.IntermediaryMi
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.SrgMinecraftProvider;
 import net.fabricmc.loom.util.ModPlatform;
+import net.fabricmc.loom.util.download.Download;
+import net.fabricmc.loom.util.download.DownloadBuilder;
 
 public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implements LoomGradleExtension {
 	private final Project project;
@@ -73,6 +76,7 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	private IntermediaryMinecraftProvider<?> intermediaryMinecraftProvider;
 	private SrgMinecraftProvider<?> srgMinecraftProvider;
 	private InstallerData installerData;
+	private boolean refreshDeps;
 
 	// +-------------------+
 	// | Architectury Loom |
@@ -93,7 +97,15 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 			provider.getIntermediaryUrl()
 					.convention(getIntermediaryUrl())
 					.finalizeValueOnRead();
+
+			provider.getRefreshDeps().set(project.provider(() -> LoomGradleExtension.get(project).refreshDeps()));
 		});
+
+		refreshDeps = project.getGradle().getStartParameter().isRefreshDependencies() || Boolean.getBoolean("loom.refresh");
+
+		if (refreshDeps) {
+			project.getLogger().lifecycle("Refresh dependencies is in use, loom will be significantly slower.");
+		}
 	}
 
 	@Override
@@ -232,9 +244,43 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	}
 
 	@Override
+	public DownloadBuilder download(String url) {
+		DownloadBuilder builder;
+
+		try {
+			builder = Download.create(url);
+		} catch (URISyntaxException e) {
+			throw new RuntimeException("Failed to create downloader for: " + e);
+		}
+
+		if (project.getGradle().getStartParameter().isOffline()) {
+			builder.offline();
+		}
+
+		if (project.getGradle().getStartParameter().isRefreshDependencies() || Boolean.getBoolean("loom.refresh")) {
+			builder.forceDownload();
+		}
+
+		return builder;
+	}
+
+	@Override
+	public boolean refreshDeps() {
+		return refreshDeps;
+	}
+
+	@Override
+	public void setRefreshDeps(boolean refreshDeps) {
+		this.refreshDeps = refreshDeps;
+	}
+
+	@Override
 	protected <T extends IntermediateMappingsProvider> void configureIntermediateMappingsProviderInternal(T provider) {
 		provider.getMinecraftVersion().set(getProject().provider(() -> getMinecraftProvider().minecraftVersion()));
 		provider.getMinecraftVersion().disallowChanges();
+
+		provider.getDownloader().set(this::download);
+		provider.getDownloader().disallowChanges();
 	}
 
 	@Override

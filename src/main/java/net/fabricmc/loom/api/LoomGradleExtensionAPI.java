@@ -61,12 +61,6 @@ public interface LoomGradleExtensionAPI {
 
 	RegularFileProperty getAccessWidenerPath();
 
-	Property<Boolean> getShareRemapCaches();
-
-	default void shareCaches() {
-		getShareRemapCaches().set(true);
-	}
-
 	NamedDomainObjectContainer<DecompilerOptions> getDecompilerOptions();
 
 	void decompilers(Action<NamedDomainObjectContainer<DecompilerOptions>> action);
