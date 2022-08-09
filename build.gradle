@@ -210,7 +210,7 @@ jacocoTestReport {
 }
 
 test {
-	maxHeapSize = "1536m"
+	maxHeapSize = "2560m"
 	useJUnitPlatform()
 	maxParallelForks = Runtime.runtime.availableProcessors() ?: 1
 

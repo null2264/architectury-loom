@@ -52,8 +52,8 @@ import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarPro
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.accesswidener.TransitiveAccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
-import net.fabricmc.loom.configuration.mods.ModJavadocProcessor;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
+import net.fabricmc.loom.configuration.processors.ModJavadocProcessor;
 import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
 import net.fabricmc.loom.configuration.providers.forge.ForgeLibrariesProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
@@ -76,6 +76,7 @@ import net.fabricmc.loom.extension.MixinExtension;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ExceptionUtil;
 import net.fabricmc.loom.util.OperatingSystem;
+import net.fabricmc.loom.util.gradle.GradleUtils;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public final class CompileConfiguration {
@@ -182,15 +183,15 @@ public final class CompileConfiguration {
 		}
 	}
 
-	public static void configureCompile(Project p) {
-		LoomGradleExtension extension = LoomGradleExtension.get(p);
+	public static void configureCompile(Project project) {
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
 
-		p.getTasks().named(JavaPlugin.JAVADOC_TASK_NAME, Javadoc.class).configure(javadoc -> {
-			final SourceSet main = SourceSetHelper.getMainSourceSet(p);
+		project.getTasks().named(JavaPlugin.JAVADOC_TASK_NAME, Javadoc.class).configure(javadoc -> {
+			final SourceSet main = SourceSetHelper.getMainSourceSet(project);
 			javadoc.setClasspath(main.getOutput().plus(main.getCompileClasspath()));
 		});
 
-		p.afterEvaluate(project -> {
+		GradleUtils.afterSuccessfulEvaluation(project, () -> {
 			MinecraftSourceSets.get(project).afterEvaluate(project);
 
 			final boolean previousRefreshDeps = extension.refreshDeps();
@@ -238,18 +239,18 @@ public final class CompileConfiguration {
 			}
 		});
 
-		finalizedBy(p, "idea", "genIdeaWorkspace");
-		finalizedBy(p, "eclipse", "genEclipseRuns");
-		finalizedBy(p, "cleanEclipse", "cleanEclipseRuns");
+		finalizedBy(project, "idea", "genIdeaWorkspace");
+		finalizedBy(project, "eclipse", "genEclipseRuns");
+		finalizedBy(project, "cleanEclipse", "cleanEclipseRuns");
 
 		// Add the "dev" jar to the "namedElements" configuration
-		p.artifacts(artifactHandler -> artifactHandler.add(Constants.Configurations.NAMED_ELEMENTS, p.getTasks().named("jar")));
+		project.artifacts(artifactHandler -> artifactHandler.add(Constants.Configurations.NAMED_ELEMENTS, project.getTasks().named("jar")));
 
 		// Ensure that the encoding is set to UTF-8, no matter what the system default is
 		// this fixes some edge cases with special characters not displaying correctly
 		// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-		p.getTasks().withType(AbstractCopyTask.class).configureEach(abstractCopyTask -> abstractCopyTask.setFilteringCharset(StandardCharsets.UTF_8.name()));
-		p.getTasks().withType(JavaCompile.class).configureEach(javaCompile -> javaCompile.getOptions().setEncoding(StandardCharsets.UTF_8.name()));
+		project.getTasks().withType(AbstractCopyTask.class).configureEach(abstractCopyTask -> abstractCopyTask.setFilteringCharset(StandardCharsets.UTF_8.name()));
+		project.getTasks().withType(JavaCompile.class).configureEach(javaCompile -> javaCompile.getOptions().setEncoding(StandardCharsets.UTF_8.name()));
 
 		if (extension.isForge()) {
 			// Create default mod from main source set
@@ -259,7 +260,7 @@ public final class CompileConfiguration {
 			});
 		}
 
-		if (p.getPluginManager().hasPlugin("org.jetbrains.kotlin.kapt")) {
+		if (project.getPluginManager().hasPlugin("org.jetbrains.kotlin.kapt")) {
 			// If loom is applied after kapt, then kapt will use the AP arguments too early for loom to pass the arguments we need for mixin.
 			throw new IllegalArgumentException("fabric-loom must be applied BEFORE kapt in the plugins { } block.");
 		}

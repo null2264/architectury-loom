@@ -83,6 +83,7 @@ public class SourceRemapper {
 
 				// Set the remapped sources creation date to match the sources if we're likely succeeded in making it
 				destination.setLastModified(source.lastModified());
+				completionCallback.run();
 			} catch (Exception e) {
 				// Failed to remap, lets clean up to ensure we try again next time
 				destination.delete();
