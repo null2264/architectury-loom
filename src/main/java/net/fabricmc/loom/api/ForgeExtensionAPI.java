@@ -138,7 +138,10 @@ public interface ForgeExtensionAPI {
 	 * Configures local mods.
 	 *
 	 * @param action the configuration action
+	 * @deprecated Replaced with {@link LoomGradleExtensionAPI#mods(Action)}
 	 */
+	@Deprecated(forRemoval = true, since = "0.12.0")
+	@ApiStatus.ScheduledForRemoval(inVersion = "1.0")
 	void localMods(Action<NamedDomainObjectContainer<ForgeLocalMod>> action);
 
 	/**
@@ -146,6 +149,9 @@ public interface ForgeExtensionAPI {
 	 *
 	 * @return the container
 	 * @see ForgeLocalMod
+	 * @deprecated Replaced with {@link LoomGradleExtensionAPI#getMods()}
 	 */
+	@Deprecated(forRemoval = true, since = "0.12.0")
+	@ApiStatus.ScheduledForRemoval(inVersion = "1.0")
 	NamedDomainObjectContainer<ForgeLocalMod> getLocalMods();
 }

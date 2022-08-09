@@ -126,11 +126,13 @@ public class ForgeExtensionImpl implements ForgeExtensionAPI {
 
 	@Override
 	public void localMods(Action<NamedDomainObjectContainer<ForgeLocalMod>> action) {
+		extension.getDeprecationHelper().toBeRemovedIn("loom.forge.localMods", "loom.mods", "1.0");
 		action.execute(localMods);
 	}
 
 	@Override
 	public NamedDomainObjectContainer<ForgeLocalMod> getLocalMods() {
+		extension.getDeprecationHelper().toBeRemovedIn("loom.forge.localMods", "loom.mods", "1.0");
 		return localMods;
 	}
 }
