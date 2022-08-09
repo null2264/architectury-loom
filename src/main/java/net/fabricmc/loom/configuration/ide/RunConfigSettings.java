@@ -97,6 +97,8 @@ public final class RunConfigSettings implements Named {
 	 */
 	private boolean ideConfigGenerated;
 
+	private final Map<String, Object> environmentVariables = new HashMap<>();
+
 	private final Project project;
 	private final LoomGradleExtension extension;
 	public final Map<String, String> envVariables = new HashMap<>();
@@ -257,6 +259,14 @@ public final class RunConfigSettings implements Named {
 
 	public void ideConfigGenerated(boolean ideConfigGenerated) {
 		this.ideConfigGenerated = ideConfigGenerated;
+	}
+
+	public Map<String, Object> getEnvironmentVariables() {
+		return environmentVariables;
+	}
+
+	public void environmentVariable(String name, Object value) {
+		environmentVariables.put(name, value);
 	}
 
 	/**

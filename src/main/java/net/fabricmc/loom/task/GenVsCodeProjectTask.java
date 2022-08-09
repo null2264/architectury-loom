@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -187,10 +188,10 @@ public class GenVsCodeProjectTask extends AbstractLoomTask {
 		public String mainClass;
 		public String vmArgs;
 		public String args;
-		public Map<String, String> env = new LinkedHashMap<>();
+		public Map<String, Object> env;
+		public String projectName;
 		public transient List<String> tasksBeforeRun = new ArrayList<>();
 		public String preLaunchTask = null;
-		public String projectName = null;
 
 		VsCodeConfiguration(Project project, RunConfig runConfig) {
 			this.name = runConfig.configName;
@@ -198,8 +199,8 @@ public class GenVsCodeProjectTask extends AbstractLoomTask {
 			this.vmArgs = RunConfig.joinArguments(runConfig.vmArgs);
 			this.args = RunConfig.joinArguments(runConfig.programArgs);
 			this.cwd = "${workspaceFolder}/" + runConfig.runDir;
-			this.projectName = runConfig.vscodeProjectName;
-			this.env.putAll(runConfig.envVariables);
+			this.env = new HashMap<>(runConfig.environmentVariables);
+			this.projectName = runConfig.projectName;
 			this.tasksBeforeRun.addAll(runConfig.vscodeBeforeRun);
 
 			if (project.getRootProject() != project) {
