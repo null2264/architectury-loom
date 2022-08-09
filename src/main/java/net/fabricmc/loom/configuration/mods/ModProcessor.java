@@ -44,14 +44,15 @@ import dev.architectury.tinyremapper.NonClassCopyMode;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
 import org.objectweb.asm.commons.Remapper;
 
 import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.fabricmc.accesswidener.AccessWidenerRemapper;
 import net.fabricmc.accesswidener.AccessWidenerWriter;
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.RemapConfigurationSettings;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.configuration.RemappedConfigurationEntry;
 import net.fabricmc.loom.configuration.processors.dependency.ModDependencyInfo;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.task.RemapJarTask;
@@ -70,9 +71,11 @@ public class ModProcessor {
 	private static final String toM = MappingsNamespace.NAMED.toString();
 
 	private final Project project;
+	private final Configuration sourceConfiguration;
 
-	public ModProcessor(Project project) {
+	public ModProcessor(Project project, Configuration sourceConfiguration) {
 		this.project = project;
+		this.sourceConfiguration = sourceConfiguration;
 	}
 
 	public void processMods(List<ModDependencyInfo> processList) throws IOException {
@@ -93,6 +96,7 @@ public class ModProcessor {
 		}
 
 		try {
+			project.getLogger().lifecycle(":remapping %d mods from %s".formatted(remapList.size(), sourceConfiguration.getName()));
 			remapJars(remapList);
 		} catch (Exception e) {
 			project.getLogger().error("Failed to remap %d mods".formatted(remapList.size()), e);
@@ -170,7 +174,6 @@ public class ModProcessor {
 				.stream().map(File::toPath).toArray(Path[]::new);
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
-		project.getLogger().lifecycle(":remapping " + remapList.size() + " mods (TinyRemapper, " + fromM + " -> " + toM + ")");
 
 		MemoryMappingTree mappings = (fromM.equals("srg") || toM.equals("srg")) && extension.isForge() ? mappingsProvider.getMappingsWithSrg() : mappingsProvider.getMappings();
 		LoggerFilter.replaceSystemOut();
@@ -200,8 +203,8 @@ public class ModProcessor {
 		final Map<ModDependencyInfo, OutputConsumerPath> outputConsumerMap = new HashMap<>();
 		final Map<ModDependencyInfo, byte[]> accessWidenerMap = new HashMap<>();
 
-		for (RemappedConfigurationEntry entry : Constants.MOD_COMPILE_ENTRIES) {
-			for (File inputFile : project.getConfigurations().getByName(entry.sourceConfiguration()).getFiles()) {
+		for (RemapConfigurationSettings entry : extension.getRemapConfigurations()) {
+			for (File inputFile : entry.getSourceConfiguration().get().getFiles()) {
 				if (remapList.stream().noneMatch(info -> info.getInputFile().equals(inputFile))) {
 					project.getLogger().debug("Adding " + inputFile + " onto the remap classpath");
 

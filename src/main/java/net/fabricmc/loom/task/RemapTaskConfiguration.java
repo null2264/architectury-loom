@@ -33,8 +33,6 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginExtension;
-import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
@@ -44,6 +42,7 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.PropertyUtil;
 import net.fabricmc.loom.util.aw2at.Aw2At;
+import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public class RemapTaskConfiguration {
 	public static final String REMAP_JAR_TASK_NAME = "remapJar";
@@ -123,8 +122,7 @@ public class RemapTaskConfiguration {
 	private static void trySetupSourceRemapping(Project project) {
 		final TaskContainer tasks = project.getTasks();
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
-		final JavaPluginExtension javaExtension = project.getExtensions().getByType(JavaPluginExtension.class);
-		final String sourcesJarTaskName = javaExtension.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME).getSourcesJarTaskName();
+		final String sourcesJarTaskName = SourceSetHelper.getMainSourceSet(project).getSourcesJarTaskName();
 
 		TaskProvider<RemapSourcesJarTask> remapSourcesTask = tasks.register(REMAP_SOURCES_JAR_TASK_NAME, RemapSourcesJarTask.class, task -> {
 			task.setDescription("Remaps the default sources jar to intermediary mappings.");

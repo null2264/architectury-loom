@@ -41,7 +41,7 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.LoomRepositoryPlugin;
-import net.fabricmc.loom.build.ModCompileRemapper;
+import net.fabricmc.loom.configuration.mods.ModConfigurationRemapper;
 import net.fabricmc.loom.configuration.ide.idea.IdeaUtils;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.SourceRemapper;
@@ -89,7 +89,7 @@ public class LoomDependencyManager {
 		String platformSuffix = extension.isForge() ? "_forge" : extension.isQuilt() ? "_arch_quilt" : "";
 		String mappingsIdentifier = extension.getMappingsProvider().mappingsIdentifier() + platformSuffix;
 
-		ModCompileRemapper.remapDependencies(project, mappingsIdentifier, extension, sourceRemapper);
+		ModConfigurationRemapper.supplyModConfigurations(project, mappingsIdentifier, extension, sourceRemapper);
 
 		sourceRemapper.remapAll();
 

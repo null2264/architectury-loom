@@ -57,8 +57,8 @@ import org.objectweb.asm.commons.Remapper;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.api.InterfaceInjectionExtensionAPI;
+import net.fabricmc.loom.api.RemapConfigurationSettings;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.configuration.RemappedConfigurationEntry;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
 import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.Checksum;
@@ -183,16 +183,9 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 	private List<InjectedInterface> getDependencyInjectedInterfaces() {
 		List<InjectedInterface> result = new ArrayList<>();
 
-		for (RemappedConfigurationEntry entry : Constants.MOD_COMPILE_ENTRIES) {
-			// Only apply injected interfaces from mods that are part of the compile and runtime classpath.
-			// Runtime is also required to ensure that the interface and it's impl is present when running the mc jar.
-			if (!(entry.compileClasspath() && entry.runtimeClasspath())) {
-				continue;
-			}
-
-			Set<File> artifacts = extension.getLazyConfigurationProvider(entry.sourceConfiguration())
-					.get()
-					.resolve();
+		// Only apply injected interfaces from mods that are part of the compile classpath
+		for (RemapConfigurationSettings entry : extension.getCompileRemapConfigurations()) {
+			final Set<File> artifacts = entry.getSourceConfiguration().get().resolve();
 
 			for (File artifact : artifacts) {
 				result.addAll(InjectedInterface.fromModJar(artifact.toPath()));
