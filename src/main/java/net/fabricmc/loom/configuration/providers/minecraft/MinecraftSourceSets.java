@@ -209,12 +209,14 @@ public abstract sealed class MinecraftSourceSets permits MinecraftSourceSets.Sin
 				);
 			});
 
-			if (project.getTasks().findByName(mainSourceSet.getSourcesJarTaskName()) == null) {
-				// No sources.
-				return;
-			}
+			// The sources task can be registered at a later time.
+			project.getTasks().configureEach(task -> {
+				if (!mainSourceSet.getSourcesJarTaskName().equals(task.getName()) || !(task instanceof Jar jar)) {
+					// Not the sources task we are looking for.
+					return;
+				}
 
-			project.getTasks().named(mainSourceSet.getSourcesJarTaskName(), Jar.class).configure(jar -> {
+				// The client only sources to the combined sources jar.
 				jar.from(clientOnlySourceSet.getAllSource());
 			});
 		}
@@ -224,7 +226,7 @@ public abstract sealed class MinecraftSourceSets permits MinecraftSourceSets.Sin
 		}
 
 		public static SourceSet getClientSourceSet(Project project) {
-			Preconditions.checkArgument(LoomGradleExtension.get(project).areEnvironmentSourceSetsSplit());
+			Preconditions.checkArgument(LoomGradleExtension.get(project).areEnvironmentSourceSetsSplit(), "Cannot get client only sourceset as project is not split");
 
 			final JavaPluginExtension javaExtension = project.getExtensions().getByType(JavaPluginExtension.class);
 			return javaExtension.getSourceSets().getByName(CLIENT_ONLY_SOURCE_SET_NAME);
