@@ -85,11 +85,11 @@ public class ModProcessor {
 	}
 
 	private void stripNestedJars(Path path) {
-		if (!ZipUtils.contains(file.toPath(), "fabric.mod.json")) {
-			if (ZipUtils.contains(file.toPath(), "quilt.mod.json")) {
+		if (!ZipUtils.contains(path, "fabric.mod.json")) {
+			if (ZipUtils.contains(path, "quilt.mod.json")) {
 				// Strip out all contained jar info as we dont want loader to try and load the jars contained in dev.
 				try {
-					ZipUtils.transformJson(JsonObject.class, file.toPath(), Map.of("quilt.mod.json", json -> {
+					ZipUtils.transformJson(JsonObject.class, path, Map.of("quilt.mod.json", json -> {
 						if (json.has("quilt_loader")) {
 							json.getAsJsonObject("quilt_loader").remove("jars");
 						}
@@ -97,7 +97,7 @@ public class ModProcessor {
 						return json;
 					}));
 				} catch (IOException e) {
-					throw new UncheckedIOException("Failed to strip nested jars from %s".formatted(file), e);
+					throw new UncheckedIOException("Failed to strip nested jars from %s".formatted(path), e);
 				}
 			}
 

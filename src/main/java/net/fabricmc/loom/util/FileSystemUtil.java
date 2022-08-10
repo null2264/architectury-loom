@@ -35,7 +35,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 
-import net.fabricmc.tinyremapper.FileSystemReference;
+import dev.architectury.tinyremapper.FileSystemReference;
 
 public final class FileSystemUtil {
 	public record Delegate(FileSystemReference reference) implements AutoCloseable, Supplier<FileSystem> {

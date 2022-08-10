@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import dev.architectury.tinyremapper.extension.mixin.common.data.Constant;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.provider.Property;
@@ -58,7 +59,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loom.util.Constants;
-import net.fabricmc.tinyremapper.extension.mixin.common.data.Constant;
 
 /**
  * Task to validate mixin names.

@@ -38,6 +38,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.AbstractCopyTask;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -89,7 +90,7 @@ public final class CompileConfiguration {
 
 		project.afterEvaluate(project1 -> {
 			if (extension.shouldGenerateSrgTiny()) {
-				extension.createLazyConfiguration(Constants.Configurations.SRG).configure(configuration -> configuration.setTransitive(false));
+				configurations.register(Constants.Configurations.SRG, configuration -> configuration.setTransitive(false));
 			}
 
 			if (extension.isDataGenEnabled()) {
@@ -255,7 +256,7 @@ public final class CompileConfiguration {
 		if (extension.isForge()) {
 			// Create default mod from main source set
 			extension.mods(mods -> {
-				final SourceSet main = javaPluginExtension.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+				final SourceSet main = project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
 				mods.create("main").sourceSet(main);
 			});
 		}
