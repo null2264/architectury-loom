@@ -50,6 +50,7 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ForgeToolExecutor;
+import net.fabricmc.loom.util.download.DownloadBuilder;
 import net.fabricmc.loom.util.function.CollectionUtil;
 
 public final class McpExecutor {
@@ -195,6 +196,11 @@ public final class McpExecutor {
 			Path path = getDownloadCache().resolve(Hashing.sha256().hashString(url, StandardCharsets.UTF_8).toString().substring(0, 24));
 			redirectAwareDownload(url, path);
 			return path;
+		}
+
+		@Override
+		public DownloadBuilder downloadBuilder(String url) {
+			return LoomGradleExtension.get(project).download(url);
 		}
 
 		// Some of these files linked to the old Forge maven, let's follow the redirects to the new one.

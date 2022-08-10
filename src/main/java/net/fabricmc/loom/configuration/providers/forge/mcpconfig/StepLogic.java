@@ -27,7 +27,6 @@ package net.fabricmc.loom.configuration.providers.forge.mcpconfig;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,8 +44,8 @@ import org.gradle.process.JavaExecSpec;
 
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftVersionMeta;
 import net.fabricmc.loom.util.FileSystemUtil;
-import net.fabricmc.loom.util.HashedDownloadUtil;
 import net.fabricmc.loom.util.ThreadingUtils;
+import net.fabricmc.loom.util.download.DownloadBuilder;
 import net.fabricmc.loom.util.function.CollectionUtil;
 
 /**
@@ -67,6 +66,7 @@ public interface StepLogic {
 		Path mappings();
 		String resolve(ConfigValue value);
 		Path download(String url) throws IOException;
+		DownloadBuilder downloadBuilder(String url);
 		void javaexec(Action<? super JavaExecSpec> configurator);
 		Set<File> getMinecraftLibraries();
 
@@ -193,7 +193,9 @@ public interface StepLogic {
 
 		@Override
 		public void execute(ExecutionContext context) throws IOException {
-			HashedDownloadUtil.downloadIfInvalid(new URL(download.url()), context.setOutput("output").toFile(), download.sha1(), context.logger(), false);
+			context.downloadBuilder(download.url())
+					.sha1(download.sha1())
+					.downloadPath(context.setOutput("output"));
 		}
 	}
 

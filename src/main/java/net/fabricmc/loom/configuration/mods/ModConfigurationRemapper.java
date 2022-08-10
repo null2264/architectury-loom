@@ -88,7 +88,7 @@ public class ModConfigurationRemapper {
 				final List<ModDependency> modDependencies = new ArrayList<>();
 
 				for (ArtifactRef artifact : resolveArtifacts(project, sourceConfig)) {
-					if (!ModUtils.isMod(artifact.path())) {
+					if (!ModUtils.isMod(artifact.path(), extension.getPlatform().get())) {
 						artifact.applyToConfiguration(project, targetConfig);
 						continue;
 					}

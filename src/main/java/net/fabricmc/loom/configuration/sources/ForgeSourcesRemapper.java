@@ -49,7 +49,7 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.build.ModCompileRemapper;
+import net.fabricmc.loom.configuration.mods.ModConfigurationRemapper;
 import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DeletingFileVisitor;
@@ -111,10 +111,10 @@ public class ForgeSourcesRemapper {
 		List<Path> forgeInstallerSources = new ArrayList<>();
 
 		for (ResolvedArtifact artifact : project.getConfigurations().getByName(Constants.Configurations.FORGE_INSTALLER).getResolvedConfiguration().getResolvedArtifacts()) {
-			File forgeInstallerSource = ModCompileRemapper.findSources(project.getDependencies(), artifact);
+			Path forgeInstallerSource = ModConfigurationRemapper.findSources(project, artifact);
 
 			if (forgeInstallerSource != null) {
-				forgeInstallerSources.add(forgeInstallerSource.toPath());
+				forgeInstallerSources.add(forgeInstallerSource);
 			}
 		}
 
