@@ -63,7 +63,6 @@ import net.fabricmc.loom.configuration.providers.forge.FieldMigratedMappingsProv
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
 import net.fabricmc.loom.configuration.providers.mappings.tiny.MappingsMerger;
 import net.fabricmc.loom.configuration.providers.mappings.tiny.TinyJarInfo;
-import net.fabricmc.loom.configuration.providers.minecraft.MergedMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DeletingFileVisitor;
@@ -314,14 +313,16 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 			// These are unmerged v2 mappings
 			MappingsMerger.mergeAndSaveMappings(baseTinyMappings, tinyMappings, intermediaryService.get());
 		} else {
-			if (minecraftProvider instanceof MergedMinecraftProvider mergedMinecraftProvider) {
-				// These are merged v1 mappings
-				Files.deleteIfExists(tinyMappings);
-				LOGGER.info(":populating field names");
-				suggestFieldNames(mergedMinecraftProvider, baseTinyMappings, tinyMappings);
-			} else {
-				throw new UnsupportedOperationException("V1 mappings only support merged minecraft");
+			final List<Path> minecraftJars = minecraftProvider.getMinecraftJars();
+
+			if (minecraftJars.size() != 1) {
+				throw new UnsupportedOperationException("V1 mappings only support single jar minecraft providers");
 			}
+
+			// These are merged v1 mappings
+			Files.deleteIfExists(tinyMappings);
+			LOGGER.info(":populating field names");
+			suggestFieldNames(minecraftJars.get(0), baseTinyMappings, tinyMappings);
 		}
 	}
 
@@ -459,9 +460,9 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		}
 	}
 
-	private void suggestFieldNames(MergedMinecraftProvider minecraftProvider, Path oldMappings, Path newMappings) {
+	private void suggestFieldNames(Path inputJar, Path oldMappings, Path newMappings) {
 		Command command = new CommandProposeFieldNames();
-		runCommand(command, minecraftProvider.getMergedJar().toFile().getAbsolutePath(),
+		runCommand(command, inputJar.toFile().getAbsolutePath(),
 						oldMappings.toAbsolutePath().toString(),
 						newMappings.toAbsolutePath().toString());
 	}

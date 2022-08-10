@@ -24,6 +24,7 @@
 
 package net.fabricmc.loom.api;
 
+import java.io.File;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -49,6 +50,7 @@ import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
 import net.fabricmc.loom.configuration.providers.mappings.NoOpIntermediateMappingsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
+import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.DeprecationHelper;
 import net.fabricmc.loom.util.ModPlatform;
 
@@ -166,6 +168,17 @@ public interface LoomGradleExtensionAPI {
 	default void noIntermediateMappings() {
 		setIntermediateMappingsProvider(NoOpIntermediateMappingsProvider.class, p -> { });
 	}
+
+	/**
+	 * Returns the tiny mappings file used to remap the game and mods.
+	 */
+	File getMappingsFile();
+
+	/**
+	 * Returns the {@link GenerateSourcesTask} for the given {@link DecompilerOptions}.
+	 * When env source sets are split and the client param is true the decompile task for the client jar will be returned.
+	 */
+	GenerateSourcesTask getDecompileTask(DecompilerOptions options, boolean client);
 
 	/**
 	 * Use "%1$s" as a placeholder for the minecraft version.

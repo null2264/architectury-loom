@@ -103,6 +103,7 @@ public class ModProcessor {
 
 			return;
 		}
+
 		// Strip out all contained jar info as we dont want loader to try and load the jars contained in dev.
 		try {
 			ZipUtils.transformJson(JsonObject.class, path, Map.of("fabric.mod.json", json -> {

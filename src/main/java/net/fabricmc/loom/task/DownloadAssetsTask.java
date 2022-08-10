@@ -75,6 +75,8 @@ public abstract class DownloadAssetsTask extends AbstractLoomTask {
 		getMinecraftVersion().set(versionInfo.id());
 		getMinecraftVersion().finalizeValue();
 		getDownloadThreads().convention(Runtime.getRuntime().availableProcessors());
+		getMinecraftVersion().set(versionInfo.id());
+		getMinecraftVersion().finalizeValue();
 
 		if (versionInfo.assets().equals("legacy")) {
 			getLegacyResourcesDirectory().set(new File(assetsDir, "/legacy/" + versionInfo.id()));

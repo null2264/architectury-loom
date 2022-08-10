@@ -70,7 +70,8 @@ public class SourceRemapper {
 
 	public static void remapSources(Project project, File input, File output, String from, String to, boolean reproducibleFileOrder, boolean preserveFileTimestamps) {
 		SourceRemapper sourceRemapper = new SourceRemapper(project, from, to);
-		sourceRemapper.scheduleRemapSources(input, output, reproducibleFileOrder, preserveFileTimestamps, () -> {});
+		sourceRemapper.scheduleRemapSources(input, output, reproducibleFileOrder, preserveFileTimestamps, () -> {
+		});
 		sourceRemapper.remapAll();
 	}
 

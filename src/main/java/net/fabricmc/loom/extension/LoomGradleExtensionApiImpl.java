@@ -24,6 +24,7 @@
 
 package net.fabricmc.loom.extension;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,6 +46,7 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.SourceSet;
 
+import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.ForgeExtensionAPI;
 import net.fabricmc.loom.api.InterfaceInjectionExtensionAPI;
 import net.fabricmc.loom.api.LoomGradleExtensionAPI;
@@ -65,6 +67,7 @@ import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpecBuil
 import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingsDependency;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
+import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.DeprecationHelper;
 import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
@@ -303,6 +306,25 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 		configureIntermediateMappingsProviderInternal(provider);
 		action.execute(provider);
 		intermediateMappingsProvider.set(provider);
+	}
+
+	@Override
+	public File getMappingsFile() {
+		return LoomGradleExtension.get(getProject()).getMappingsProvider().tinyMappings.toFile();
+	}
+
+	@Override
+	public GenerateSourcesTask getDecompileTask(DecompilerOptions options, boolean client) {
+		final String decompilerName = options.getFormattedName();
+		final String taskName;
+
+		if (areEnvironmentSourceSetsSplit()) {
+			taskName = "gen%sSourcesWith%s".formatted(client ? "ClientOnly" : "Common", decompilerName);
+		} else {
+			taskName = "genSourcesWith" + decompilerName;
+		}
+
+		return (GenerateSourcesTask) getProject().getTasks().getByName(taskName);
 	}
 
 	protected abstract <T extends IntermediateMappingsProvider> void configureIntermediateMappingsProviderInternal(T provider);
