@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.objectweb.asm.commons.Remapper;
 
@@ -58,14 +59,41 @@ public class AccessWidenerUtils {
 	}
 
 	public static AccessWidenerData readAccessWidenerData(Path inputJar) throws IOException {
-		byte[] modJsonBytes = ZipUtils.unpack(inputJar, "fabric.mod.json");
-		JsonObject jsonObject = LoomGradlePlugin.GSON.fromJson(new String(modJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
+		String fieldName = "accessWidener";
+		byte[] modJsonBytes = ZipUtils.unpackNullable(inputJar, "fabric.mod.json");
 
-		if (!jsonObject.has("accessWidener")) {
-			return null;
+		if (modJsonBytes == null) {
+			modJsonBytes = ZipUtils.unpackNullable(inputJar, "architectury.common.json");
+
+			if (modJsonBytes == null) {
+				modJsonBytes = ZipUtils.unpackNullable(inputJar, "quilt.mod.json");
+
+				if (modJsonBytes != null) {
+					fieldName = "access_widener";
+				} else {
+					// No access widener data
+					// We can just ignore in architectury
+					return null;
+				}
+			}
 		}
 
-		String accessWidenerPath = jsonObject.get("accessWidener").getAsString();
+		JsonObject jsonObject = LoomGradlePlugin.GSON.fromJson(new String(modJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
+
+		String accessWidenerPath;
+
+		if (fieldName.equals("access_widener") && jsonObject.get(fieldName).isJsonArray()) {
+			JsonArray array = jsonObject.get(fieldName).getAsJsonArray();
+
+			if (array.size() != 1) {
+				throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
+			}
+
+			accessWidenerPath = array.get(0).getAsString();
+		} else {
+			accessWidenerPath = jsonObject.get(fieldName).getAsString();
+		}
+
 		byte[] accessWidener = ZipUtils.unpack(inputJar, accessWidenerPath);
 		AccessWidenerReader.Header header = AccessWidenerReader.readHeader(accessWidener);
 
