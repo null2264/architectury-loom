@@ -60,7 +60,7 @@ public class ForgeUserdevProvider extends DependencyProvider {
 		joinedPatches = getExtension().getForgeProvider().getGlobalCache().toPath().resolve("patches-joined.lzma");
 		Path configJson = getExtension().getForgeProvider().getGlobalCache().toPath().resolve("forge-config.json");
 
-		if (!userdevJar.exists() || Files.notExists(configJson) || isRefreshDeps()) {
+		if (!userdevJar.exists() || Files.notExists(configJson) || refreshDeps()) {
 			File resolved = dependency.resolveFile().orElseThrow(() -> new RuntimeException("Could not resolve Forge userdev"));
 			Files.copy(resolved.toPath(), userdevJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
 

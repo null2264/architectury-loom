@@ -72,7 +72,7 @@ public final class MavenPublication {
 				PublishingExtension mavenPublish = project.getExtensions().findByType(PublishingExtension.class);
 
 				if (mavenPublish != null) {
-					p.getLogger().info("Processing maven publication for project [" + p.getName() + "] of " + configurationName);
+					project.getLogger().info("Processing maven publication for project [" + project.getName() + "] of " + configurationName);
 					processEntry(project, scope, config, mavenPublish, reportedDeprecation);
 				}
 			});

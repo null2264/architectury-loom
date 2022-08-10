@@ -52,7 +52,7 @@ public class PatchProvider extends DependencyProvider {
 	public void provide(DependencyInfo dependency) throws Exception {
 		init(dependency.getDependency().getVersion());
 
-		if (Files.notExists(clientPatches) || Files.notExists(serverPatches) || isRefreshDeps()) {
+		if (Files.notExists(clientPatches) || Files.notExists(serverPatches) || refreshDeps()) {
 			getProject().getLogger().info(":extracting forge patches");
 
 			Path installerJar = dependency.resolveFile().orElseThrow(() -> new RuntimeException("Could not resolve Forge installer")).toPath();

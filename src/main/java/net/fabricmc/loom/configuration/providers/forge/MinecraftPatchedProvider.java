@@ -72,7 +72,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarProcessor;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpConfigData;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpConfigStep;
@@ -167,7 +166,7 @@ public class MinecraftPatchedProvider {
 	}
 
 	private void checkCache() throws IOException {
-		if (LoomGradlePlugin.refreshDeps || Stream.of(getGlobalCaches()).anyMatch(Files::notExists)
+		if (getExtension().refreshDeps() || Stream.of(getGlobalCaches()).anyMatch(Files::notExists)
 				|| !isPatchedJarUpToDate(minecraftPatchedJar)) {
 			cleanAllCache();
 		}

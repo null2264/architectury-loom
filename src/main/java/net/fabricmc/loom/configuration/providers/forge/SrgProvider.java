@@ -50,7 +50,6 @@ import org.gradle.api.Project;
 import org.gradle.api.logging.LogLevel;
 
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
@@ -82,7 +81,7 @@ public class SrgProvider extends DependencyProvider {
 	public void provide(DependencyInfo dependency) throws Exception {
 		init(dependency.getDependency().getVersion());
 
-		if (!Files.exists(srg) || isRefreshDeps()) {
+		if (!Files.exists(srg) || refreshDeps()) {
 			Path srgZip = dependency.resolveFile().orElseThrow(() -> new RuntimeException("Could not resolve srg")).toPath();
 
 			try (FileSystem fs = FileSystems.newFileSystem(new URI("jar:" + srgZip.toUri()), ImmutableMap.of("create", false))) {
@@ -95,7 +94,7 @@ public class SrgProvider extends DependencyProvider {
 		}
 
 		if (isTsrgV2) {
-			if (!Files.exists(mergedMojangRaw) || !Files.exists(mergedMojang) || !Files.exists(mergedMojangTrimmed) || isRefreshDeps()) {
+			if (!Files.exists(mergedMojangRaw) || !Files.exists(mergedMojang) || !Files.exists(mergedMojangTrimmed) || refreshDeps()) {
 				Stopwatch stopwatch = Stopwatch.createStarted();
 				getProject().getLogger().lifecycle(":merging mappings (InstallerTools, srg + mojmap)");
 				PrintStream out = System.out;
@@ -222,7 +221,7 @@ public class SrgProvider extends DependencyProvider {
 
 		Path mojmapTsrg = extension.getMinecraftProvider().dir("forge").toPath().resolve("mojmap.tsrg");
 
-		if (Files.notExists(mojmapTsrg) || LoomGradlePlugin.refreshDeps) {
+		if (Files.notExists(mojmapTsrg) || extension.refreshDeps()) {
 			try (BufferedWriter writer = Files.newBufferedWriter(mojmapTsrg, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
 				Tsrg2Utils.writeTsrg(visitor -> visitMojmap(visitor, project),
 						MappingsNamespace.NAMED.toString(), false, writer);
@@ -239,7 +238,7 @@ public class SrgProvider extends DependencyProvider {
 
 		Path mojmapTsrg2 = extension.getMinecraftProvider().dir("forge").toPath().resolve("mojmap.tsrg2");
 
-		if (Files.notExists(mojmapTsrg2) || LoomGradlePlugin.refreshDeps) {
+		if (Files.notExists(mojmapTsrg2) || extension.refreshDeps()) {
 			try (BufferedWriter writer = Files.newBufferedWriter(mojmapTsrg2, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
 				MemoryMappingTree tree = new MemoryMappingTree();
 				visitMojmap(tree, project);

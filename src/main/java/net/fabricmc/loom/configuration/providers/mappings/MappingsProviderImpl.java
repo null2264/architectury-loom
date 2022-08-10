@@ -216,7 +216,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 		manipulateMappings(project, tinyMappingsJar);
 
 		if (extension.shouldGenerateSrgTiny()) {
-			if (Files.notExists(tinyMappingsWithSrg) || isRefreshDeps()) {
+			if (Files.notExists(tinyMappingsWithSrg) || extension.refreshDeps()) {
 				// Merge tiny mappings with srg
 				Stopwatch stopwatch = Stopwatch.createStarted();
 				SrgMerger.ExtraMappings extraMappings = SrgMerger.ExtraMappings.ofMojmapTsrg(getMojmapSrgFileIfPossible(project));
@@ -247,7 +247,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 				throw new IllegalStateException("We have to generate srg tiny in a forge environment!");
 			}
 
-			if (Files.notExists(srgToNamedSrg) || isRefreshDeps()) {
+			if (Files.notExists(srgToNamedSrg) || extension.refreshDeps()) {
 				SrgNamedWriter.writeTo(project.getLogger(), srgToNamedSrg, getMappingsWithSrg(), "srg", "named");
 			}
 		}
@@ -530,7 +530,7 @@ public class MappingsProviderImpl implements MappingsProvider, SharedService {
 			Path path = mappingsWorkingDir.resolve("mappings-mixin-" + namespace + ".tiny");
 
 			try {
-				if (Files.notExists(path) || isRefreshDeps()) {
+				if (Files.notExists(path) || loom.refreshDeps()) {
 					List<String> lines = new ArrayList<>(Files.readAllLines(loom.shouldGenerateSrgTiny() ? tinyMappingsWithSrg : tinyMappings));
 					lines.set(0, lines.get(0).replace("intermediary", "yraidemretni").replace(namespace, "intermediary"));
 					Files.deleteIfExists(path);

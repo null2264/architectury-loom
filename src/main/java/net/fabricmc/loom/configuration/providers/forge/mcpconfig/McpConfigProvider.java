@@ -56,7 +56,7 @@ public class McpConfigProvider extends DependencyProvider {
 
 		Path mcpZip = dependency.resolveFile().orElseThrow(() -> new RuntimeException("Could not resolve MCPConfig")).toPath();
 
-		if (!Files.exists(mcp) || !Files.exists(configJson) || isRefreshDeps()) {
+		if (!Files.exists(mcp) || !Files.exists(configJson) || refreshDeps()) {
 			Files.copy(mcpZip, mcp, StandardCopyOption.REPLACE_EXISTING);
 			Files.write(configJson, ZipUtils.unpack(mcp, "config.json"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 		}
@@ -76,7 +76,7 @@ public class McpConfigProvider extends DependencyProvider {
 		configJson = dir.resolve("mcp-config.json");
 		mappings = dir.resolve("mcp-config-mappings.txt");
 
-		if (isRefreshDeps()) {
+		if (refreshDeps()) {
 			Files.deleteIfExists(mappings);
 		}
 	}
