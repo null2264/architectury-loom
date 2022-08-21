@@ -51,7 +51,7 @@ public class ForgeExtensionImpl implements ForgeExtensionAPI {
 	private final SetProperty<String> mixinConfigs;
 	private final Property<Boolean> useCustomMixin;
 	private final List<String> dataGenMods = new ArrayList<>(); // not a property because it has custom adding logic
-	private final NamedDomainObjectContainer<ForgeLocalMod> localMods;
+	public final NamedDomainObjectContainer<ForgeLocalMod> localMods; // public to avoid deprecation warnings for internal calls
 
 	@Inject
 	public ForgeExtensionImpl(Project project, LoomGradleExtension extension) {

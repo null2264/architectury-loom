@@ -46,6 +46,7 @@ import net.fabricmc.loom.api.ForgeLocalMod;
 import net.fabricmc.loom.api.ModSettings;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
+import net.fabricmc.loom.extension.ForgeExtensionImpl;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
@@ -170,7 +171,7 @@ public class ForgeRunsProvider {
 					}
 				}
 
-				for (ForgeLocalMod localMod : extension.getForge().getLocalMods()) {
+				for (ForgeLocalMod localMod : ((ForgeExtensionImpl) extension.getForge()).localMods) {
 					String sourceSetName = localMod.getName();
 
 					localMod.getSourceSets().flatMap(sourceSet -> Stream.concat(
