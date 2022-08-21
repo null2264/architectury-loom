@@ -65,7 +65,7 @@ public class ForgeExtensionImpl implements ForgeExtensionAPI {
 				baseName -> new ForgeLocalMod(project, baseName, new ArrayList<>()));
 
 		// Create default mod from main source set
-		localMods(mod -> mod.create("main").add("main"));
+		localMods.create("main").add("main");
 	}
 
 	@Override
