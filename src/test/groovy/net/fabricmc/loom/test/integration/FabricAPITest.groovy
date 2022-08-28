@@ -44,7 +44,7 @@ class FabricAPITest extends Specification implements GradleProjectTestTrait {
 		setup:
 			def gradle = gradleProject(
 					repo: "https://github.com/FabricMC/fabric.git",
-					commit: "417b986df14c7cdd5f16b0a340d28645910f8aa6",
+					commit: "5f243a8b7849eac4b30cd876a22a127797a1c406",
 					version: version,
 					patch: "fabric_api"
 			)
@@ -54,7 +54,7 @@ class FabricAPITest extends Specification implements GradleProjectTestTrait {
 										.replace('id "fabric-loom" version "0.9.50"', 'id "dev.architectury.loom"')
 										.replace('"fabric-loom"', '"dev.architectury.loom"')
 
-			def server = ServerRunner.create(gradle.projectDir, "1.19.1")
+			def server = ServerRunner.create(gradle.projectDir, "1.19.2")
 										.withMod(gradle.getOutputFile("fabric-api-${API_VERSION}.jar"))
 		when:
 			def result = gradle.run(tasks: ["build", "publishToMavenLocal"], args: ["--parallel", "-x", "check", "-x", "runDatagen", "-x", "runGametest"]) // Note: checkstyle does not appear to like being ran in a test runner
@@ -64,11 +64,11 @@ class FabricAPITest extends Specification implements GradleProjectTestTrait {
 		then:
 			result.task(":build").outcome == SUCCESS
 
-			new File(gradle.mavenLocalDir, "net/fabricmc/fabric-api/fabric-biome-api-v1/9.0.15/fabric-biome-api-v1-9.0.15.jar").exists()
-			new File(gradle.mavenLocalDir, "net/fabricmc/fabric-api/fabric-biome-api-v1/9.0.15/fabric-biome-api-v1-9.0.15-sources.jar").exists()
+			new File(gradle.mavenLocalDir, "net/fabricmc/fabric-api/fabric-biome-api-v1/9.0.17/fabric-biome-api-v1-9.0.17.jar").exists()
+			new File(gradle.mavenLocalDir, "net/fabricmc/fabric-api/fabric-biome-api-v1/9.0.17/fabric-biome-api-v1-9.0.17-sources.jar").exists()
 
 			serverResult.successful()
-			serverResult.output.contains("- fabric $API_VERSION")
+			serverResult.output.contains("- fabric-api $API_VERSION")
 		where:
 			version << STANDARD_TEST_VERSIONS
 	}

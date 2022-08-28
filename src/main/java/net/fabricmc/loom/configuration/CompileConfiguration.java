@@ -74,6 +74,7 @@ import net.fabricmc.loom.configuration.providers.minecraft.mapped.NamedMinecraft
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.SrgMinecraftProvider;
 import net.fabricmc.loom.configuration.sources.ForgeSourcesRemapper;
 import net.fabricmc.loom.extension.MixinExtension;
+import net.fabricmc.loom.util.Checksum;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ExceptionUtil;
 import net.fabricmc.loom.util.OperatingSystem;
@@ -411,8 +412,9 @@ public final class CompileConfiguration {
 
 	private static Path getLockFile(Project project) {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
-		final Path cacheDirectory = extension.getFiles().getProjectPersistentCache().toPath();
-		return cacheDirectory.resolve("configuration.lock");
+		final Path cacheDirectory = extension.getFiles().getUserCache().toPath();
+		final String pathHash = Checksum.toHex(project.getProjectDir().getAbsolutePath().getBytes(StandardCharsets.UTF_8)).substring(0, 16);
+		return cacheDirectory.resolve("." + pathHash + ".lock");
 	}
 
 	private static boolean getAndLock(Project project) {
@@ -434,10 +436,23 @@ public final class CompileConfiguration {
 	private static void releaseLock(Project project) {
 		final Path lock = getLockFile(project);
 
+		if (!Files.exists(lock)) {
+			return;
+		}
+
 		try {
-			Files.deleteIfExists(lock);
-		} catch (IOException e) {
-			throw new UncheckedIOException("Failed to release project configuration lock", e);
+			Files.delete(lock);
+		} catch (IOException e1) {
+			try {
+				// If we failed to delete the lock file, moving it before trying to delete it may help.
+				final Path del = lock.resolveSibling(lock.getFileName() + ".del");
+				Files.move(lock, del);
+				Files.delete(del);
+			} catch (IOException e2) {
+				var exception = new UncheckedIOException("Failed to release project configuration lock", e2);
+				exception.addSuppressed(e1);
+				throw exception;
+			}
 		}
 	}
 
