@@ -30,9 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -54,7 +52,6 @@ import java.util.stream.Stream;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import de.oceanlabs.mcp.mcinjector.adaptors.ParameterAnnotationFixer;
 import dev.architectury.tinyremapper.InputTag;
 import dev.architectury.tinyremapper.NonClassCopyMode;
@@ -241,7 +238,7 @@ public class MinecraftPatchedProvider {
 		logger.info(":fixing parameter annotations for " + jarFile.toAbsolutePath());
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		try (FileSystem fs = FileSystems.newFileSystem(new URI("jar:" + jarFile.toUri()), ImmutableMap.of("create", false))) {
+		try (FileSystemUtil.Delegate fs = FileSystemUtil.getJarFileSystem(jarFile, false)) {
 			ThreadingUtils.TaskCompleter completer = ThreadingUtils.taskCompleter();
 
 			for (Path file : (Iterable<? extends Path>) Files.walk(fs.getPath("/"))::iterator) {
@@ -275,7 +272,7 @@ public class MinecraftPatchedProvider {
 		logger.info(":deleting parameter names for " + jarFile.toAbsolutePath());
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		try (FileSystem fs = FileSystems.newFileSystem(new URI("jar:" + jarFile.toUri()), ImmutableMap.of("create", false))) {
+		try (FileSystemUtil.Delegate fs = FileSystemUtil.getJarFileSystem(jarFile, false)) {
 			ThreadingUtils.TaskCompleter completer = ThreadingUtils.taskCompleter();
 			Pattern vignetteParameters = Pattern.compile("p_[0-9a-zA-Z]+_(?:[0-9a-zA-Z]+_)?");
 
