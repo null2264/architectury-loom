@@ -47,6 +47,13 @@ import org.gradle.process.JavaExecSpec;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.ConstantLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.DownloadManifestFileLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.FunctionLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.ListLibrariesLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.NoOpLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.StepLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.StripLogic;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ForgeToolExecutor;
@@ -140,16 +147,16 @@ public final class McpExecutor {
 
 	private StepLogic getStepLogic(String type) {
 		return switch (type) {
-		case "downloadManifest", "downloadJson" -> new StepLogic.NoOp();
-		case "downloadClient" -> new StepLogic.NoOpWithFile(() -> minecraftProvider.getMinecraftClientJar().toPath());
-		case "downloadServer" -> new StepLogic.NoOpWithFile(() -> minecraftProvider.getMinecraftServerJar().toPath());
-		case "strip" -> new StepLogic.Strip();
-		case "listLibraries" -> new StepLogic.ListLibraries();
-		case "downloadClientMappings" -> new StepLogic.DownloadManifestFile(minecraftProvider.getVersionInfo().download("client_mappings"));
-		case "downloadServerMappings" -> new StepLogic.DownloadManifestFile(minecraftProvider.getVersionInfo().download("server_mappings"));
+		case "downloadManifest", "downloadJson" -> new NoOpLogic();
+		case "downloadClient" -> new ConstantLogic(() -> minecraftProvider.getMinecraftClientJar().toPath());
+		case "downloadServer" -> new ConstantLogic(() -> minecraftProvider.getMinecraftServerJar().toPath());
+		case "strip" -> new StripLogic();
+		case "listLibraries" -> new ListLibrariesLogic();
+		case "downloadClientMappings" -> new DownloadManifestFileLogic(minecraftProvider.getVersionInfo().download("client_mappings"));
+		case "downloadServerMappings" -> new DownloadManifestFileLogic(minecraftProvider.getVersionInfo().download("server_mappings"));
 		default -> {
 			if (functions.containsKey(type)) {
-				yield new StepLogic.OfFunction(functions.get(type));
+				yield new FunctionLogic(functions.get(type));
 			}
 
 			throw new UnsupportedOperationException("MCP config step type: " + type);
