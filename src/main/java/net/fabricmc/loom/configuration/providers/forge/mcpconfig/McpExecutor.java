@@ -102,6 +102,8 @@ public final class McpExecutor {
 				return LoomGradleExtension.get(project).getSrgProvider().getSrg().toAbsolutePath().toString();
 			} else if (extraConfig.containsKey(name)) {
 				return extraConfig.get(name);
+			} else if (name.equals(ConfigValue.LOG)) {
+				return cache.resolve("log.log").toAbsolutePath().toString();
 			}
 
 			throw new IllegalArgumentException("Unknown MCP config variable: " + name);

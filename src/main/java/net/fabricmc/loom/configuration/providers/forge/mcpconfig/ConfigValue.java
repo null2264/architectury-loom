@@ -39,6 +39,10 @@ public sealed interface ConfigValue {
 	String OUTPUT = "output";
 	String PREVIOUS_OUTPUT_SUFFIX = "Output";
 	String SRG_MAPPINGS_NAME = "mappings";
+	/**
+	 * A special config value that is the path to a log file if absent.
+	 */
+	String LOG = "log";
 
 	<R> R fold(Function<? super Constant, ? extends R> constant, Function<? super Variable, ? extends R> variable);
 
