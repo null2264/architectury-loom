@@ -64,5 +64,4 @@ public interface StepLogic {
 			return CollectionUtil.map(configValues, this::resolve);
 		}
 	}
-
 }
