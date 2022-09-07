@@ -24,55 +24,37 @@
 
 package net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 
-import org.gradle.api.Action;
-import org.gradle.api.logging.Logger;
-import org.gradle.process.JavaExecSpec;
+import codechicken.diffpatch.cli.CliOperation;
+import codechicken.diffpatch.cli.PatchOperation;
+import codechicken.diffpatch.util.LoggingOutputStream;
+import codechicken.diffpatch.util.PatchMode;
+import org.gradle.api.logging.LogLevel;
 
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue;
-import net.fabricmc.loom.util.download.DownloadBuilder;
-import net.fabricmc.loom.util.function.CollectionUtil;
 
-/**
- * The logic for executing a step. This corresponds to the {@code type} key in the step JSON format.
- */
-public interface StepLogic {
-	void execute(ExecutionContext context) throws IOException;
+public final class PatchLogic implements StepLogic {
+	@Override
+	public void execute(ExecutionContext context) throws IOException {
+		Path input = Path.of(context.resolve(new ConfigValue.Variable("input")));
+		Path patches = Path.of(context.resolve(new ConfigValue.Variable("patches")));
+		Path output = context.setOutput("output.jar");
+		Path rejects = context.cache().resolve("rejects");
 
-	default String getDisplayName(String stepName) {
-		return stepName;
-	}
+		CliOperation.Result<PatchOperation.PatchesSummary> result = PatchOperation.builder()
+				.logTo(new LoggingOutputStream(context.logger(), LogLevel.INFO))
+				.basePath(input)
+				.patchesPath(patches)
+				.outputPath(output)
+				.mode(PatchMode.OFFSET)
+				.rejectsPath(rejects)
+				.build()
+				.operate();
 
-	default boolean hasNoContext() {
-		return false;
-	}
-
-	interface ExecutionContext {
-		Logger logger();
-		Path setOutput(String fileName) throws IOException;
-		Path setOutput(Path output);
-		Path cache() throws IOException;
-		/** Mappings extracted from {@code data.mappings} in the MCPConfig JSON. */
-		Path mappings();
-		String resolve(ConfigValue value);
-		Path download(String url) throws IOException;
-		DownloadBuilder downloadBuilder(String url);
-		void javaexec(Action<? super JavaExecSpec> configurator);
-		Set<File> getMinecraftLibraries();
-
-		default List<String> resolve(List<ConfigValue> configValues) {
-			return CollectionUtil.map(configValues, this::resolve);
+		if (result.exit != 0) {
+			throw new RuntimeException("Could not patch " + input + "; rejects saved to " + rejects.toAbsolutePath());
 		}
-	}
-
-	@FunctionalInterface
-	interface Provider {
-		Optional<StepLogic> getStepLogic(String name, String type);
 	}
 }

@@ -24,55 +24,39 @@
 
 package net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import org.gradle.api.Action;
-import org.gradle.api.logging.Logger;
-import org.gradle.process.JavaExecSpec;
+import java.nio.file.StandardCopyOption;
+import java.util.Iterator;
+import java.util.stream.Stream;
 
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue;
-import net.fabricmc.loom.util.download.DownloadBuilder;
-import net.fabricmc.loom.util.function.CollectionUtil;
+import net.fabricmc.loom.util.FileSystemUtil;
 
-/**
- * The logic for executing a step. This corresponds to the {@code type} key in the step JSON format.
- */
-public interface StepLogic {
-	void execute(ExecutionContext context) throws IOException;
+public final class InjectLogic implements StepLogic {
+	@Override
+	public void execute(ExecutionContext context) throws IOException {
+		Path injectedFiles = Path.of(context.resolve(new ConfigValue.Variable("inject")));
+		Path input = Path.of(context.resolve(new ConfigValue.Variable("input")));
+		Path output = context.setOutput("output.jar");
+		Files.copy(input, output, StandardCopyOption.REPLACE_EXISTING);
 
-	default String getDisplayName(String stepName) {
-		return stepName;
-	}
+		try (FileSystemUtil.Delegate targetFs = FileSystemUtil.getJarFileSystem(output, false)) {
+			FileSystem fs = targetFs.get();
 
-	default boolean hasNoContext() {
-		return false;
-	}
+			try (Stream<Path> paths = Files.walk(injectedFiles)) {
+				Iterator<Path> iter = paths.filter(Files::isRegularFile).iterator();
 
-	interface ExecutionContext {
-		Logger logger();
-		Path setOutput(String fileName) throws IOException;
-		Path setOutput(Path output);
-		Path cache() throws IOException;
-		/** Mappings extracted from {@code data.mappings} in the MCPConfig JSON. */
-		Path mappings();
-		String resolve(ConfigValue value);
-		Path download(String url) throws IOException;
-		DownloadBuilder downloadBuilder(String url);
-		void javaexec(Action<? super JavaExecSpec> configurator);
-		Set<File> getMinecraftLibraries();
-
-		default List<String> resolve(List<ConfigValue> configValues) {
-			return CollectionUtil.map(configValues, this::resolve);
+				while (iter.hasNext()) {
+					Path from = iter.next();
+					Path relative = injectedFiles.relativize(from);
+					Path to = fs.getPath(relative.toString().replace(relative.getFileSystem().getSeparator(), "/"));
+					Files.createDirectories(to.getParent());
+					Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
+				}
+			}
 		}
-	}
-
-	@FunctionalInterface
-	interface Provider {
-		Optional<StepLogic> getStepLogic(String name, String type);
 	}
 }

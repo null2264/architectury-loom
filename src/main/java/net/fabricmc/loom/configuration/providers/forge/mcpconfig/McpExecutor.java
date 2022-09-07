@@ -32,13 +32,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.SortedSet;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.hash.Hashing;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.logging.LogLevel;
@@ -50,8 +55,10 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.ConstantLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.DownloadManifestFileLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.FunctionLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.InjectLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.ListLibrariesLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.NoOpLogic;
+import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.PatchLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.StepLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.StripLogic;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
@@ -66,15 +73,55 @@ public final class McpExecutor {
 	private final MinecraftProvider minecraftProvider;
 	private final Path cache;
 	private final List<McpConfigStep> steps;
+	private final DependencySet dependencySet;
 	private final Map<String, McpConfigFunction> functions;
+	private final Map<String, String> config = new HashMap<>();
 	private final Map<String, String> extraConfig = new HashMap<>();
+	private @Nullable StepLogic.Provider stepLogicProvider = null;
 
-	public McpExecutor(Project project, MinecraftProvider minecraftProvider, Path cache, List<McpConfigStep> steps, Map<String, McpConfigFunction> functions) {
+	public McpExecutor(Project project, MinecraftProvider minecraftProvider, Path cache, McpConfigProvider provider, String environment) {
 		this.project = project;
 		this.minecraftProvider = minecraftProvider;
 		this.cache = cache;
-		this.steps = steps;
-		this.functions = functions;
+		this.steps = provider.getData().steps().get(environment);
+		this.functions = provider.getData().functions();
+		this.dependencySet = new DependencySet(this.steps);
+		this.dependencySet.skip(step -> getStepLogic(step.name(), step.type()) instanceof NoOpLogic);
+		this.dependencySet.setIgnoreDependenciesFilter(step -> getStepLogic(step.name(), step.type()).hasNoContext());
+
+		addDefaultFiles(provider, environment);
+	}
+
+	private void addDefaultFiles(McpConfigProvider provider, String environment) {
+		for (Map.Entry<String, JsonElement> entry : provider.getData().data().entrySet()) {
+			if (entry.getValue().isJsonPrimitive()) {
+				addDefaultFile(provider, entry.getKey(), entry.getValue().getAsString());
+			} else if (entry.getValue().isJsonObject()) {
+				JsonObject json = entry.getValue().getAsJsonObject();
+
+				if (json.has(environment) && json.get(environment).isJsonPrimitive()) {
+					addDefaultFile(provider, entry.getKey(), json.getAsJsonPrimitive(environment).getAsString());
+				}
+			}
+		}
+	}
+
+	private void addDefaultFile(McpConfigProvider provider, String key, String value) {
+		Path path = provider.getUnpackedZip().resolve(value).toAbsolutePath();
+
+		if (!path.startsWith(provider.getUnpackedZip().toAbsolutePath())) {
+			// This is probably not what we're looking for since it falls outside the directory.
+			return;
+		} else if (Files.notExists(path)) {
+			// Not a real file, let's continue.
+			return;
+		}
+
+		addConfig(key, path.toString());
+	}
+
+	public void addConfig(String key, String value) {
+		config.put(key, value);
 	}
 
 	private Path getDownloadCache() throws IOException {
@@ -105,8 +152,8 @@ public final class McpExecutor {
 				return resolve(step, valueFromStep);
 			}
 
-			if (name.equals(ConfigValue.SRG_MAPPINGS_NAME)) {
-				return LoomGradleExtension.get(project).getSrgProvider().getSrg().toAbsolutePath().toString();
+			if (config.containsKey(name)) {
+				return config.get(name);
 			} else if (extraConfig.containsKey(name)) {
 				return extraConfig.get(name);
 			} else if (name.equals(ConfigValue.LOG)) {
@@ -117,35 +164,78 @@ public final class McpExecutor {
 		});
 	}
 
-	public Path executeUpTo(String step) throws IOException {
+	/**
+	 * Enqueues a step and its dependencies to be executed.
+	 *
+	 * @param step the name of the step
+	 * @return this executor
+	 */
+	public McpExecutor enqueue(String step) {
+		dependencySet.add(step);
+		return this;
+	}
+
+	/**
+	 * Executes all queued steps and their dependencies.
+	 *
+	 * @return the output file of the last executed step
+	 */
+	public Path execute() throws IOException {
+		SortedSet<String> stepNames = dependencySet.buildExecutionSet();
+		dependencySet.clear();
+		List<McpConfigStep> toExecute = new ArrayList<>();
+
+		for (String stepName : stepNames) {
+			McpConfigStep step = CollectionUtil.find(steps, s -> s.name().equals(stepName))
+					.orElseThrow(() -> new NoSuchElementException("Step '" + stepName + "' not found in MCP config"));
+			toExecute.add(step);
+		}
+
+		return executeSteps(toExecute);
+	}
+
+	/**
+	 * Executes the specified steps.
+	 *
+	 * @param steps the steps to execute
+	 * @return the output file of the last executed step
+	 */
+	public Path executeSteps(List<McpConfigStep> steps) throws IOException {
 		extraConfig.clear();
 
-		// Find the total number of steps we need to execute.
-		int totalSteps = CollectionUtil.find(steps, s -> s.name().equals(step))
-				.map(s -> steps.indexOf(s) + 1)
-				.orElse(steps.size());
+		int totalSteps = steps.size();
 		int currentStepIndex = 0;
 
 		project.getLogger().log(STEP_LOG_LEVEL, ":executing {} MCP steps", totalSteps);
 
 		for (McpConfigStep currentStep : steps) {
 			currentStepIndex++;
-			StepLogic stepLogic = getStepLogic(currentStep.type());
+			StepLogic stepLogic = getStepLogic(currentStep.name(), currentStep.type());
 			project.getLogger().log(STEP_LOG_LEVEL, ":step {}/{} - {}", currentStepIndex, totalSteps, stepLogic.getDisplayName(currentStep.name()));
 
 			Stopwatch stopwatch = Stopwatch.createStarted();
 			stepLogic.execute(new ExecutionContextImpl(currentStep));
 			project.getLogger().log(STEP_LOG_LEVEL, ":{} done in {}", currentStep.name(), stopwatch.stop());
-
-			if (currentStep.name().equals(step)) {
-				break;
-			}
 		}
 
 		return Path.of(extraConfig.get(ConfigValue.OUTPUT));
 	}
 
-	private StepLogic getStepLogic(String type) {
+	/**
+	 * Sets the custom step logic provider of this executor.
+	 *
+	 * @param stepLogicProvider the provider, or null to disable
+	 */
+	public void setStepLogicProvider(@Nullable StepLogic.Provider stepLogicProvider) {
+		this.stepLogicProvider = stepLogicProvider;
+	}
+
+	private StepLogic getStepLogic(String name, String type) {
+		if (stepLogicProvider != null) {
+			final @Nullable StepLogic custom = stepLogicProvider.getStepLogic(name, type).orElse(null);
+			if (custom != null) return custom;
+		}
+
 		return switch (type) {
 		case "downloadManifest", "downloadJson" -> new NoOpLogic();
 		case "downloadClient" -> new ConstantLogic(() -> minecraftProvider.getMinecraftClientJar().toPath());
@@ -154,6 +244,8 @@ public final class McpExecutor {
 		case "listLibraries" -> new ListLibrariesLogic();
 		case "downloadClientMappings" -> new DownloadManifestFileLogic(minecraftProvider.getVersionInfo().download("client_mappings"));
 		case "downloadServerMappings" -> new DownloadManifestFileLogic(minecraftProvider.getVersionInfo().download("server_mappings"));
+		case "inject" -> new InjectLogic();
+		case "patch" -> new PatchLogic();
 		default -> {
 			if (functions.containsKey(type)) {
 				yield new FunctionLogic(functions.get(type));
@@ -178,8 +270,7 @@ public final class McpExecutor {
 
 		@Override
 		public Path setOutput(String fileName) throws IOException {
-			createStepCache(step.name());
-			return setOutput(getStepCache(step.name()).resolve(fileName));
+			return setOutput(cache().resolve(fileName));
 		}
 
 		@Override
@@ -188,6 +279,11 @@ public final class McpExecutor {
 			extraConfig.put(ConfigValue.OUTPUT, absolutePath);
 			extraConfig.put(step.name() + ConfigValue.PREVIOUS_OUTPUT_SUFFIX, absolutePath);
 			return output;
+		}
+
+		@Override
+		public Path cache() throws IOException {
+			return createStepCache(step.name());
 		}
 
 		@Override
