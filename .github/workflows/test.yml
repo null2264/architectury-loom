@@ -60,9 +60,15 @@ jobs:
         env:
           TEST_WARNING_MODE: fail
         id: test
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
+        with:
+          name: Raw Test Results
+          path: build/test-results/**/*.xml
+          retention-days: 1
 
       - uses: actions/upload-artifact@v2
-        if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
+        if: ${{ failure() }}
         with:
           name: ${{ steps.test.outputs.test }} Results
           path: build/reports/
@@ -88,9 +94,15 @@ jobs:
         env:
           TEST_WARNING_MODE: fail
         id: test
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
+        with:
+          name: Raw Test Results
+          path: build/test-results/**/*.xml
+          retention-days: 1
 
       - uses: actions/upload-artifact@v2
-        if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
+        if: ${{ failure() }}
         with:
           name: ${{ steps.test.outputs.test }} (${{ matrix.java }}) Results (Windows)
           path: build/reports/
@@ -113,9 +125,15 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - run: ./gradlew test --tests *ReproducibleBuildTest --stacktrace --warning-mode fail
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
+        with:
+          name: Raw Test Results
+          path: build/test-results/**/*.xml
+          retention-days: 1
 
       - uses: actions/upload-artifact@v2
-        if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
+        if: ${{ failure() }}
         with:
           name: Reproducible Build ${{ matrix.os }} (${{ matrix.java }}) Results
           path: build/reports/
@@ -123,7 +141,7 @@ jobs:
   test_report:
     runs-on: ubuntu-latest
     needs: [run_tests, run_tests_windows, reproducible_build_test]
-    if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
+    if: ${{ failure() || success() }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v2
