@@ -60,7 +60,14 @@ jobs:
         env:
           TEST_WARNING_MODE: fail
         id: test
-      - uses: actions/upload-artifact@v2
+      - name: Publish test checks
+        uses: mikepenz/action-junit-report@v3
+        if: ${{ failure() || success() }}
+        with:
+          report_paths: build/test-results/**/*.xml
+          annotate_only: true
+      - name: Publish test results for report
+        uses: actions/upload-artifact@v2
         if: ${{ failure() || success() }}
         with:
           name: Raw Test Results
@@ -94,7 +101,14 @@ jobs:
         env:
           TEST_WARNING_MODE: fail
         id: test
-      - uses: actions/upload-artifact@v2
+      - name: Publish test checks
+        uses: mikepenz/action-junit-report@v3
+        if: ${{ failure() || success() }}
+        with:
+          report_paths: build/test-results/**/*.xml
+          annotate_only: true
+      - name: Publish test results for report
+        uses: actions/upload-artifact@v2
         if: ${{ failure() || success() }}
         with:
           name: Raw Test Results
@@ -125,7 +139,14 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - run: ./gradlew test --tests *ReproducibleBuildTest --stacktrace --warning-mode fail
-      - uses: actions/upload-artifact@v2
+      - name: Publish test checks
+        uses: mikepenz/action-junit-report@v3
+        if: ${{ failure() || success() }}
+        with:
+          report_paths: build/test-results/**/*.xml
+          annotate_only: true
+      - name: Publish test results for report
+        uses: actions/upload-artifact@v2
         if: ${{ failure() || success() }}
         with:
           name: Raw Test Results
@@ -151,7 +172,3 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           junit_files: "artifacts/**/*.xml"
-      - name: Publish test checks
-        uses: mikepenz/action-junit-report@v3
-        with:
-          report_paths: "artifacts/**/*.xml"
