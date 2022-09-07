@@ -62,7 +62,7 @@ jobs:
         id: test
 
       - uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
+        if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
         with:
           name: ${{ steps.test.outputs.test }} Results
           path: build/reports/
@@ -90,7 +90,7 @@ jobs:
         id: test
 
       - uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
+        if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
         with:
           name: ${{ steps.test.outputs.test }} (${{ matrix.java }}) Results (Windows)
           path: build/reports/
@@ -115,7 +115,21 @@ jobs:
       - run: ./gradlew test --tests *ReproducibleBuildTest --stacktrace --warning-mode fail
 
       - uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
+        if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
         with:
           name: Reproducible Build ${{ matrix.os }} (${{ matrix.java }}) Results
           path: build/reports/
+
+  test_report:
+    runs-on: ubuntu-latest
+    needs: [run_tests, run_tests_windows, reproducible_build_test]
+    if: ${{ failure() || (success() && github.event_name == 'pull-request') }}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - name: Publish test report
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          junit_files: "artifacts/**/*.xml"
