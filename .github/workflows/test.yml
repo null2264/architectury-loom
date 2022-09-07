@@ -151,3 +151,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           junit_files: "artifacts/**/*.xml"
+      - name: Publish test checks
+        uses: mikepenz/action-junit-report@v3
+        with:
+          report_paths: "artifacts/**/*.xml"
