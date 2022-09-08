@@ -56,14 +56,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: gradle test --tests ${{ matrix.test }} --stacktrace --warning-mode fail
+      - run: gradle printActionsTestName --name="${{ matrix.test }}" test --tests ${{ matrix.test }} --stacktrace --warning-mode fail
         env:
           TEST_WARNING_MODE: fail
+        id: test
+      - name: Publish test results for report
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
+        with:
+          name: Raw Test Results
+          path: build/test-results/**/*.xml
+          retention-days: 1
 
       - uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: ${{ matrix.test }} (${{ matrix.java }}) Results
+          name: ${{ steps.test.outputs.test }} Results
           path: build/reports/
 
   run_tests_windows:
@@ -83,14 +91,22 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-      - run: ./gradlew test --tests ${{ matrix.test }} --stacktrace --warning-mode fail
+      - run: ./gradlew printActionsTestName --name="${{ matrix.test }}" test --tests ${{ matrix.test }} --stacktrace --warning-mode fail
         env:
           TEST_WARNING_MODE: fail
+        id: test
+      - name: Publish test results for report
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
+        with:
+          name: Raw Test Results
+          path: build/test-results/**/*.xml
+          retention-days: 1
 
       - uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: ${{ matrix.test }} (${{ matrix.java }}) Results
+          name: ${{ steps.test.outputs.test }} (${{ matrix.java }}) Results (Windows)
           path: build/reports/
 
   # Special case this test to run across all os's
@@ -111,9 +127,30 @@ jobs:
           java-version: ${{ matrix.java }}
 
       - run: ./gradlew test --tests *ReproducibleBuildTest --stacktrace --warning-mode fail
+      - name: Publish test results for report
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() || success() }}
+        with:
+          name: Raw Test Results
+          path: build/test-results/**/*.xml
+          retention-days: 1
 
       - uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
           name: Reproducible Build ${{ matrix.os }} (${{ matrix.java }}) Results
           path: build/reports/
+
+  test_report:
+    runs-on: ubuntu-latest
+    needs: [run_tests, run_tests_windows, reproducible_build_test]
+    if: ${{ failure() || success() }}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - name: Publish test report
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          junit_files: "artifacts/**/*.xml"
