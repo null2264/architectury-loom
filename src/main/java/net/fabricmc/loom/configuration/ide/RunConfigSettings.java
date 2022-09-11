@@ -39,8 +39,11 @@ import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.ApiStatus;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.configuration.providers.forge.ForgeRunTemplate;
+import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.OperatingSystem;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
@@ -103,6 +106,7 @@ public final class RunConfigSettings implements Named {
 	private final LoomGradleExtension extension;
 	public final Map<String, String> envVariables = new HashMap<>();
 	private List<Runnable> evaluateLater = new ArrayList<>();
+	private boolean evaluated = false;
 
 	public RunConfigSettings(Project project, String baseName) {
 		this.baseName = baseName;
@@ -130,6 +134,15 @@ public final class RunConfigSettings implements Named {
 		}
 
 		this.evaluateLater.clear();
+		evaluated = true;
+	}
+
+	private void evaluateNowOrLater(Runnable runnable) {
+		if (evaluated) {
+			runnable.run();
+		} else {
+			evaluateLater(runnable);
+		}
 	}
 
 	public Project getProject() {
@@ -293,6 +306,7 @@ public final class RunConfigSettings implements Named {
 		startFirstThread();
 		environment("client");
 		defaultMainClass(getExtension().isForge() ? Constants.Forge.LAUNCH_TESTING : Constants.Knot.KNOT_CLIENT);
+		forgeTemplate("client");
 	}
 
 	/**
@@ -302,6 +316,7 @@ public final class RunConfigSettings implements Named {
 		programArg("nogui");
 		environment("server");
 		defaultMainClass(getExtension().isForge() ? Constants.Forge.LAUNCH_TESTING : Constants.Knot.KNOT_SERVER);
+		forgeTemplate("server");
 	}
 
 	/**
@@ -310,6 +325,28 @@ public final class RunConfigSettings implements Named {
 	public void data() {
 		environment("data");
 		defaultMainClass(getExtension().isForge() ? Constants.Forge.LAUNCH_TESTING : Constants.Knot.KNOT_SERVER);
+		forgeTemplate("data");
+	}
+
+	/**
+	 * Applies a Forge run config template to these settings.
+	 *
+	 * @param templateName the template name (usually one of {@code server}, {@code client}, {@code data})
+	 * @since 1.0
+	 */
+	public void forgeTemplate(String templateName) {
+		ModPlatform.assertPlatform(getExtension(), ModPlatform.FORGE);
+		// Evaluate later if Forge hasn't been resolved yet.
+		evaluateNowOrLater(() -> {
+			ForgeRunsProvider runsProvider = getExtension().getForgeRunsProvider();
+			ForgeRunTemplate template = runsProvider.getTemplates().findByName(templateName);
+
+			if (template != null) {
+				template.applyTo(this, runsProvider::processTemplates);
+			} else {
+				project.getLogger().warn("Could not find Forge run template with name '{}'", templateName);
+			}
+		});
 	}
 
 	/**

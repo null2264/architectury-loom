@@ -45,6 +45,8 @@ public sealed interface ConfigValue {
 
 	<R> R fold(Function<? super Constant, ? extends R> constant, Function<? super Variable, ? extends R> variable);
 
+	String resolve(Resolver variableResolver);
+
 	static ConfigValue of(String str) {
 		if (str.startsWith("{") && str.endsWith("}")) {
 			return new Variable(str.substring(1, str.length() - 1));
@@ -53,10 +55,20 @@ public sealed interface ConfigValue {
 		return new Constant(str);
 	}
 
+	@FunctionalInterface
+	interface Resolver {
+		String resolve(String variable);
+	}
+
 	record Constant(String value) implements ConfigValue {
 		@Override
 		public <R> R fold(Function<? super Constant, ? extends R> constant, Function<? super Variable, ? extends R> variable) {
 			return constant.apply(this);
+		}
+
+		@Override
+		public String resolve(Resolver variableResolver) {
+			return value;
 		}
 	}
 
@@ -64,6 +76,11 @@ public sealed interface ConfigValue {
 		@Override
 		public <R> R fold(Function<? super Constant, ? extends R> constant, Function<? super Variable, ? extends R> variable) {
 			return variable.apply(this);
+		}
+
+		@Override
+		public String resolve(Resolver variableResolver) {
+			return variableResolver.resolve(name);
 		}
 	}
 }

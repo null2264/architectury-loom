@@ -297,7 +297,7 @@ public final class CompileConfiguration {
 		mappingsProvider.applyToProject(project, mappingsDep);
 
 		if (extension.isForge()) {
-			ForgeRunsProvider.provide(project);
+			extension.setForgeRunsProvider(ForgeRunsProvider.create(project));
 		}
 
 		if (minecraftProvider instanceof ForgeMinecraftProvider patched) {

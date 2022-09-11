@@ -59,7 +59,6 @@ import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.RemapConfigurations;
 import net.fabricmc.loom.configuration.ide.RunConfig;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
-import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
 import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
 import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpec;
@@ -112,7 +111,6 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	public Boolean generateSrgTiny = null;
 	private final List<String> tasksBeforeRun = Collections.synchronizedList(new ArrayList<>());
 	public final List<Consumer<RunConfig>> settingsPostEdit = new ArrayList<>();
-	private NamedDomainObjectContainer<LaunchProviderSettings> launchConfigs;
 
 	protected LoomGradleExtensionApiImpl(Project project, LoomFiles directories) {
 		this.jarProcessors = project.getObjects().listProperty(JarProcessor.class)
@@ -189,8 +187,6 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 			return ModPlatform.FABRIC;
 		})::get);
-		this.launchConfigs = project.container(LaunchProviderSettings.class,
-				baseName -> new LaunchProviderSettings(project, baseName));
 	}
 
 	@Override
@@ -430,16 +426,6 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 		}
 
 		return isForge();
-	}
-
-	@Override
-	public void launches(Action<NamedDomainObjectContainer<LaunchProviderSettings>> action) {
-		action.execute(launchConfigs);
-	}
-
-	@Override
-	public NamedDomainObjectContainer<LaunchProviderSettings> getLaunchConfigs() {
-		return launchConfigs;
 	}
 
 	@Override

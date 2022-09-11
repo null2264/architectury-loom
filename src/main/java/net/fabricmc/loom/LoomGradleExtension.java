@@ -42,6 +42,7 @@ import net.fabricmc.loom.configuration.accesswidener.AccessWidenerFile;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
 import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
 import net.fabricmc.loom.configuration.providers.forge.ForgeProvider;
+import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUniversalProvider;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.PatchProvider;
@@ -173,4 +174,7 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 	default ForgeProvider getForgeProvider() {
 		return getDependencyProviders().getProvider(ForgeProvider.class);
 	}
+
+	ForgeRunsProvider getForgeRunsProvider();
+	void setForgeRunsProvider(ForgeRunsProvider forgeRunsProvider);
 }
