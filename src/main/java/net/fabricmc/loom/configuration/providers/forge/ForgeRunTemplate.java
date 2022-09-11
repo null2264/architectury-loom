@@ -68,10 +68,10 @@ public record ForgeRunTemplate(
 
 		String name = json.getAsJsonPrimitive("name").getAsString();
 		String main = json.getAsJsonPrimitive("main").getAsString();
-		List<String> args = fromJson(json.getAsJsonArray("args"));
-		List<String> jvmArgs = fromJson(json.getAsJsonArray("jvmArgs"));
-		Map<String, ConfigValue> env = fromJson(json.getAsJsonObject("env"), ConfigValue::of);
-		Map<String, ConfigValue> props = fromJson(json.getAsJsonObject("props"), ConfigValue::of);
+		List<String> args = json.has("args") ? fromJson(json.getAsJsonArray("args")) : List.of();
+		List<String> jvmArgs = json.has("jvmArgs") ? fromJson(json.getAsJsonArray("jvmArgs")) : List.of();
+		Map<String, ConfigValue> env = json.has("env") ? fromJson(json.getAsJsonObject("env"), ConfigValue::of) : Map.of();
+		Map<String, ConfigValue> props = json.has("props") ? fromJson(json.getAsJsonObject("props"), ConfigValue::of) : Map.of();
 		return new ForgeRunTemplate(name, main, args, jvmArgs, env, props);
 	}
 
