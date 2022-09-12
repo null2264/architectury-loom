@@ -35,7 +35,7 @@ import org.gradle.api.Action;
 import org.gradle.api.logging.Logger;
 import org.gradle.process.JavaExecSpec;
 
-import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue;
+import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 import net.fabricmc.loom.util.download.DownloadBuilder;
 import net.fabricmc.loom.util.function.CollectionUtil;
 

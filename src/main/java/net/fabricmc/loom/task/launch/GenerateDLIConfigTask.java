@@ -42,7 +42,7 @@ import org.gradle.api.tasks.TaskAction;
 
 import net.fabricmc.loom.configuration.providers.forge.ForgeRunTemplate;
 import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
-import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue;
+import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftVersionMeta;
 import net.fabricmc.loom.configuration.providers.minecraft.mapped.MappedMinecraftProvider;
 import net.fabricmc.loom.task.AbstractLoomTask;
@@ -143,7 +143,7 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 				}
 
 				for (Map.Entry<String, ConfigValue> property : template.props().entrySet()) {
-					launchConfig.property(template.name(), property.getKey(), property.getValue().resolve(forgeRunsProvider::processTemplates));
+					launchConfig.property(template.name(), property.getKey(), property.getValue().resolve(forgeRunsProvider));
 				}
 			}
 		}

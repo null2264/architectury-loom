@@ -48,7 +48,7 @@ import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
-public class ForgeRunsProvider {
+public class ForgeRunsProvider implements ConfigValue.Resolver {
 	private final Project project;
 	private final LoomGradleExtension extension;
 	private final JsonObject json;
@@ -172,5 +172,10 @@ public class ForgeRunsProvider {
 
 	private Set<File> minecraftClasspath() {
 		return DependencyDownloader.resolveFiles(project, project.getConfigurations().getByName(Constants.Configurations.FORGE_RUNTIME_LIBRARY), true);
+	}
+
+	@Override
+	public String resolve(ConfigValue.Variable variable) {
+		return processTemplates(variable.name());
 	}
 }

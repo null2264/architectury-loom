@@ -34,7 +34,6 @@ import com.google.gson.JsonObject;
 import org.gradle.api.Named;
 
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
-import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue;
 import net.fabricmc.loom.util.Pair;
 import net.fabricmc.loom.util.function.CollectionUtil;
 

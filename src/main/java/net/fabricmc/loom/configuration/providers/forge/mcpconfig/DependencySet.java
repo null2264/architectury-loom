@@ -24,7 +24,7 @@
 
 package net.fabricmc.loom.configuration.providers.forge.mcpconfig;
 
-import static net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue.PREVIOUS_OUTPUT_SUFFIX;
+import static net.fabricmc.loom.configuration.providers.forge.ConfigValue.PREVIOUS_OUTPUT_SUFFIX;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -40,6 +40,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 import net.fabricmc.loom.util.function.CollectionUtil;
 
 public final class DependencySet {

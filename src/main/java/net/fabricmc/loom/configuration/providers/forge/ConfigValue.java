@@ -22,28 +22,24 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.configuration.providers.forge.mcpconfig;
-
-import java.util.function.Function;
+package net.fabricmc.loom.configuration.providers.forge;
 
 /**
- * A string or a variable in an MCPConfig step or function.
- *
- * <p>The special config value variable {@value #OUTPUT} is treated
- * as the current step's output path.
- *
- * <p>The suffix {@value #PREVIOUS_OUTPUT_SUFFIX} can be used to suffix step names
- * to get their output paths.
+ * A string or a variable in a Forge configuration file, or an MCPConfig step or function.
  */
 public sealed interface ConfigValue {
+	/**
+	 * The variable that refers to the current MCP step's output path.
+	 */
 	String OUTPUT = "output";
+	/**
+	 * A suffix that is appended to the name of an MCP step to get its output path.
+	 */
 	String PREVIOUS_OUTPUT_SUFFIX = "Output";
 	/**
-	 * A special config value that is the path to a log file if absent.
+	 * The variable that refers to a log file for the MCP executor.
 	 */
 	String LOG = "log";
-
-	<R> R fold(Function<? super Constant, ? extends R> constant, Function<? super Variable, ? extends R> variable);
 
 	String resolve(Resolver variableResolver);
 
@@ -57,15 +53,10 @@ public sealed interface ConfigValue {
 
 	@FunctionalInterface
 	interface Resolver {
-		String resolve(String variable);
+		String resolve(Variable variable);
 	}
 
 	record Constant(String value) implements ConfigValue {
-		@Override
-		public <R> R fold(Function<? super Constant, ? extends R> constant, Function<? super Variable, ? extends R> variable) {
-			return constant.apply(this);
-		}
-
 		@Override
 		public String resolve(Resolver variableResolver) {
 			return value;
@@ -74,13 +65,8 @@ public sealed interface ConfigValue {
 
 	record Variable(String name) implements ConfigValue {
 		@Override
-		public <R> R fold(Function<? super Constant, ? extends R> constant, Function<? super Variable, ? extends R> variable) {
-			return variable.apply(this);
-		}
-
-		@Override
 		public String resolve(Resolver variableResolver) {
-			return variableResolver.resolve(name);
+			return variableResolver.resolve(this);
 		}
 	}
 }

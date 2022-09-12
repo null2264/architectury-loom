@@ -24,7 +24,7 @@
 
 package net.fabricmc.loom.test.unit.forge
 
-import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue
+import net.fabricmc.loom.configuration.providers.forge.ConfigValue
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.DependencySet
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpConfigStep
 import spock.lang.Shared

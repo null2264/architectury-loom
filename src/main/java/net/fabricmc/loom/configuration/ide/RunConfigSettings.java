@@ -351,7 +351,7 @@ public final class RunConfigSettings implements Named {
 			ForgeRunTemplate template = runsProvider.getTemplates().findByName(templateName);
 
 			if (template != null) {
-				template.applyTo(this, runsProvider::processTemplates);
+				template.applyTo(this, runsProvider);
 			} else {
 				project.getLogger().warn("Could not find Forge run template with name '{}'", templateName);
 			}

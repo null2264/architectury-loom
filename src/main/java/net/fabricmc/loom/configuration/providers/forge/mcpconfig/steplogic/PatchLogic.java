@@ -33,7 +33,7 @@ import codechicken.diffpatch.util.LoggingOutputStream;
 import codechicken.diffpatch.util.PatchMode;
 import org.gradle.api.logging.LogLevel;
 
-import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue;
+import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 
 public final class PatchLogic implements StepLogic {
 	@Override
