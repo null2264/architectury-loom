@@ -86,7 +86,6 @@ public final class LoomTasks {
 
 		registerIDETasks(tasks);
 		registerRunTasks(tasks, project);
-		registerLaunchSettings(project);
 
 		// Must be done in afterEvaluate to allow time for the build script to configure the jar config.
 		GradleUtils.afterSuccessfulEvaluation(project, () -> {
@@ -189,17 +188,6 @@ public final class LoomTasks {
 			task.setDescription("Setup the required files to launch the Minecraft client");
 			task.setGroup(Constants.TaskGroup.FABRIC);
 		});
-	}
-
-	private static void registerLaunchSettings(Project project) {
-		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		Preconditions.checkArgument(extension.getLaunchConfigs().size() == 0, "Launch configurations must not be registered before loom");
-		extension.getLaunchConfigs().create("client");
-		extension.getLaunchConfigs().create("server");
-
-		if (extension.isForge()) {
-			extension.getLaunchConfigs().create("data");
-		}
 	}
 
 	public static Provider<Task> getIDELaunchConfigureTaskName(Project project) {

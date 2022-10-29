@@ -33,7 +33,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import net.fabricmc.loom.configuration.providers.forge.mcpconfig.ConfigValue;
+import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.ThreadingUtils;
 

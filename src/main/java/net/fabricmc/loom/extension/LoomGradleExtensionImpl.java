@@ -47,6 +47,7 @@ import net.fabricmc.loom.configuration.LoomDependencyManager;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerFile;
 import net.fabricmc.loom.configuration.processors.JarProcessorManager;
 import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
+import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
 import net.fabricmc.loom.configuration.providers.mappings.IntermediaryMappingsProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
@@ -82,6 +83,7 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	// | Architectury Loom |
 	// +-------------------+
 	private DependencyProviders dependencyProviders;
+	private ForgeRunsProvider forgeRunsProvider;
 
 	public LoomGradleExtensionImpl(Project project, LoomFiles files) {
 		super(project, files);
@@ -302,5 +304,17 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	@Override
 	public void setDependencyProviders(DependencyProviders dependencyProviders) {
 		this.dependencyProviders = dependencyProviders;
+	}
+
+	@Override
+	public ForgeRunsProvider getForgeRunsProvider() {
+		ModPlatform.assertPlatform(this, ModPlatform.FORGE);
+		return forgeRunsProvider;
+	}
+
+	@Override
+	public void setForgeRunsProvider(ForgeRunsProvider forgeRunsProvider) {
+		ModPlatform.assertPlatform(this, ModPlatform.FORGE);
+		this.forgeRunsProvider = forgeRunsProvider;
 	}
 }

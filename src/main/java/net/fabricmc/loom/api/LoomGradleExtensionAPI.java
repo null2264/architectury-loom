@@ -46,7 +46,6 @@ import net.fabricmc.loom.api.mappings.intermediate.IntermediateMappingsProvider;
 import net.fabricmc.loom.api.mappings.layered.spec.LayeredMappingSpecBuilder;
 import net.fabricmc.loom.configuration.ide.RunConfig;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
-import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
 import net.fabricmc.loom.configuration.providers.mappings.NoOpIntermediateMappingsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
@@ -229,10 +228,6 @@ public interface LoomGradleExtensionAPI {
 	void setGenerateSrgTiny(Boolean generateSrgTiny);
 
 	boolean shouldGenerateSrgTiny();
-
-	void launches(Action<NamedDomainObjectContainer<LaunchProviderSettings>> action);
-
-	NamedDomainObjectContainer<LaunchProviderSettings> getLaunchConfigs();
 
 	default void addTaskBeforeRun(String task) {
 		this.getTasksBeforeRun().add(task);

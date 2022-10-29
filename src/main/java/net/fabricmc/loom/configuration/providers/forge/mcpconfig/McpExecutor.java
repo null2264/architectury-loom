@@ -52,6 +52,7 @@ import org.gradle.process.JavaExecSpec;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.ConstantLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.DownloadManifestFileLogic;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.FunctionLogic;
@@ -141,7 +142,7 @@ public final class McpExecutor {
 	}
 
 	private String resolve(McpConfigStep step, ConfigValue value) {
-		return value.fold(ConfigValue.Constant::value, variable -> {
+		return value.resolve(variable -> {
 			String name = variable.name();
 			@Nullable ConfigValue valueFromStep = step.config().get(name);
 

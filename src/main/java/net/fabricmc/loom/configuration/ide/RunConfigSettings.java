@@ -39,8 +39,11 @@ import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.ApiStatus;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.configuration.providers.forge.ForgeRunTemplate;
+import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.OperatingSystem;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
@@ -103,6 +106,7 @@ public final class RunConfigSettings implements Named {
 	private final LoomGradleExtension extension;
 	public final Map<String, String> envVariables = new HashMap<>();
 	private List<Runnable> evaluateLater = new ArrayList<>();
+	private boolean evaluated = false;
 
 	public RunConfigSettings(Project project, String baseName) {
 		this.baseName = baseName;
@@ -130,6 +134,15 @@ public final class RunConfigSettings implements Named {
 		}
 
 		this.evaluateLater.clear();
+		evaluated = true;
+	}
+
+	private void evaluateNowOrLater(Runnable runnable) {
+		if (evaluated) {
+			runnable.run();
+		} else {
+			evaluateLater(runnable);
+		}
 	}
 
 	public Project getProject() {
@@ -292,7 +305,11 @@ public final class RunConfigSettings implements Named {
 	public void client() {
 		startFirstThread();
 		environment("client");
-		defaultMainClass(getExtension().isForge() ? Constants.Forge.LAUNCH_TESTING : Constants.Knot.KNOT_CLIENT);
+		defaultMainClass(Constants.Knot.KNOT_CLIENT);
+
+		if (getExtension().isForge()) {
+			forgeTemplate("client");
+		}
 	}
 
 	/**
@@ -301,7 +318,11 @@ public final class RunConfigSettings implements Named {
 	public void server() {
 		programArg("nogui");
 		environment("server");
-		defaultMainClass(getExtension().isForge() ? Constants.Forge.LAUNCH_TESTING : Constants.Knot.KNOT_SERVER);
+		defaultMainClass(Constants.Knot.KNOT_SERVER);
+
+		if (getExtension().isForge()) {
+			forgeTemplate("server");
+		}
 	}
 
 	/**
@@ -309,7 +330,36 @@ public final class RunConfigSettings implements Named {
 	 */
 	public void data() {
 		environment("data");
-		defaultMainClass(getExtension().isForge() ? Constants.Forge.LAUNCH_TESTING : Constants.Knot.KNOT_SERVER);
+		defaultMainClass(Constants.Knot.KNOT_SERVER);
+
+		if (getExtension().isForge()) {
+			forgeTemplate("data");
+		}
+	}
+
+	/**
+	 * Applies a Forge run config template to these settings.
+	 *
+	 * <p>Calling this method resets the {@link #getDefaultMainClass() defaultMainClass} of this
+	 * run config. If you don't want to use Forge's default main class, you need to specify one manually afterwards.
+	 *
+	 * @param templateName the template name (usually one of {@code server}, {@code client}, {@code data})
+	 * @since 1.0
+	 */
+	public void forgeTemplate(String templateName) {
+		ModPlatform.assertPlatform(getExtension(), ModPlatform.FORGE);
+		defaultMainClass(Constants.Forge.UNDETERMINED_MAIN_CLASS);
+		// Evaluate later if Forge hasn't been resolved yet.
+		evaluateNowOrLater(() -> {
+			ForgeRunsProvider runsProvider = getExtension().getForgeRunsProvider();
+			ForgeRunTemplate template = runsProvider.getTemplates().findByName(templateName);
+
+			if (template != null) {
+				template.applyTo(this, runsProvider);
+			} else {
+				project.getLogger().warn("Could not find Forge run template with name '{}'", templateName);
+			}
+		});
 	}
 
 	/**

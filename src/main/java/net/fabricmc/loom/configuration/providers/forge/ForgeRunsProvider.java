@@ -39,77 +39,43 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.ModSettings;
-import net.fabricmc.loom.configuration.ide.RunConfigSettings;
-import net.fabricmc.loom.configuration.launch.LaunchProviderSettings;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
-public class ForgeRunsProvider {
+public class ForgeRunsProvider implements ConfigValue.Resolver {
 	private final Project project;
 	private final LoomGradleExtension extension;
 	private final JsonObject json;
+	private final NamedDomainObjectSet<ForgeRunTemplate> templates;
 
 	public ForgeRunsProvider(Project project, JsonObject json) {
 		this.project = project;
 		this.extension = LoomGradleExtension.get(project);
 		this.json = json;
+		this.templates = project.getObjects().namedDomainObjectSet(ForgeRunTemplate.class);
+		readTemplates();
 	}
 
-	public static void provide(Project project) {
-		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		JsonObject json = extension.getForgeUserdevProvider().getJson();
-		ForgeRunsProvider provider = new ForgeRunsProvider(project, json);
-
+	private void readTemplates() {
 		for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject("runs").entrySet()) {
-			LaunchProviderSettings launchSettings = extension.getLaunchConfigs().findByName(entry.getKey());
-			RunConfigSettings settings = extension.getRunConfigs().findByName(entry.getKey());
-			JsonObject value = entry.getValue().getAsJsonObject();
-
-			if (launchSettings != null) {
-				launchSettings.evaluateLater(() -> {
-					if (value.has("args")) {
-						launchSettings.arg(StreamSupport.stream(value.getAsJsonArray("args").spliterator(), false)
-								.map(JsonElement::getAsString)
-								.map(provider::processTemplates)
-								.collect(Collectors.toList()));
-					}
-
-					if (value.has("props")) {
-						for (Map.Entry<String, JsonElement> props : value.getAsJsonObject("props").entrySet()) {
-							String string = provider.processTemplates(props.getValue().getAsString());
-
-							launchSettings.property(props.getKey(), string);
-						}
-					}
-				});
-			}
-
-			if (settings != null) {
-				settings.evaluateLater(() -> {
-					settings.defaultMainClass(value.getAsJsonPrimitive("main").getAsString());
-
-					if (value.has("jvmArgs")) {
-						settings.vmArgs(StreamSupport.stream(value.getAsJsonArray("jvmArgs").spliterator(), false)
-								.map(JsonElement::getAsString)
-								.map(provider::processTemplates)
-								.collect(Collectors.toList()));
-					}
-
-					if (value.has("env")) {
-						for (Map.Entry<String, JsonElement> env : value.getAsJsonObject("env").entrySet()) {
-							String string = provider.processTemplates(env.getValue().getAsString());
-
-							settings.envVariables.put(env.getKey(), string);
-						}
-					}
-				});
-			}
+			ForgeRunTemplate template = ForgeRunTemplate.fromJson(entry.getValue().getAsJsonObject());
+			templates.add(template);
 		}
+	}
+
+	public NamedDomainObjectSet<ForgeRunTemplate> getTemplates() {
+		return templates;
+	}
+
+	public static ForgeRunsProvider create(Project project) {
+		JsonObject json = LoomGradleExtension.get(project).getForgeUserdevProvider().getJson();
+		return new ForgeRunsProvider(project, json);
 	}
 
 	public String processTemplates(String string) {
@@ -206,5 +172,10 @@ public class ForgeRunsProvider {
 
 	private Set<File> minecraftClasspath() {
 		return DependencyDownloader.resolveFiles(project, project.getConfigurations().getByName(Constants.Configurations.FORGE_RUNTIME_LIBRARY), true);
+	}
+
+	@Override
+	public String resolve(ConfigValue.Variable variable) {
+		return processTemplates(variable.name());
 	}
 }
