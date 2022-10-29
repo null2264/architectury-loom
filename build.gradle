@@ -32,16 +32,18 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 group = "dev.architectury"
 archivesBaseName = project.name
 def baseVersion = '0.13.0'
-def runNumber = System.getenv("GITHUB_RUN_NUMBER") ?: "9999"
 
-def isSnapshot = System.getenv("PR_NUM") != null
+def ENV = System.getenv()
+def runNumber = ENV.GITHUB_RUN_NUMBER ?: "9999"
+
+def isSnapshot = ENV.PR_NUM != null
 
 def buildNum = "release #$runNumber"
 
 if (!isSnapshot) {
 	version = baseVersion + "." + runNumber
 } else {
-	version = baseVersion + "-PR." + System.getenv("PR_NUM") + "." + runNumber
+	version = baseVersion + "-PR." + ENV.PR_NUM + "." + runNumber
 }
 
 logger.lifecycle(":building plugin v${version}")
@@ -277,12 +279,12 @@ publishing {
 	}
 
 	repositories {
-		if (System.getenv("MAVEN_PASS") != null) {
+		if (ENV.MAVEN_PASS != null) {
 			maven {
 				url = "https://deploy.shedaniel.me/"
 				credentials {
 					username = "shedaniel"
-					password = System.getenv("MAVEN_PASS")
+					password = ENV.MAVEN_PASS
 				}
 			}
 		}
