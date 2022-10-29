@@ -34,6 +34,7 @@ import com.google.gson.JsonObject;
 import org.gradle.api.Named;
 
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
+import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.Pair;
 import net.fabricmc.loom.util.function.CollectionUtil;
 
@@ -51,12 +52,15 @@ public record ForgeRunTemplate(
 	}
 
 	public void applyTo(RunConfigSettings settings, ConfigValue.Resolver configValueResolver) {
-		settings.defaultMainClass(main);
+		if (settings.getDefaultMainClass().equals(Constants.Forge.UNDETERMINED_MAIN_CLASS)) {
+			settings.defaultMainClass(main);
+		}
+
 		settings.vmArgs(jvmArgs);
 
 		env.forEach((key, value) -> {
 			String resolved = value.resolve(configValueResolver);
-			settings.environmentVariable(key, resolved);
+			settings.getEnvironmentVariables().putIfAbsent(key, resolved);
 		});
 	}
 
