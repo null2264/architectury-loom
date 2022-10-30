@@ -60,12 +60,12 @@ public final class ModUtils {
 		}
 	}
 
-	public static boolean shouldRemapMod(Logger logger, File input, Object id, ModPlatform platform, String config) {
-		if (ZipUtils.contains(input.toPath(), "architectury.common.marker")) return true;
+	public static boolean shouldRemapMod(Logger logger, Path input, ModPlatform platform, String config) {
+		if (ZipUtils.contains(input, "architectury.common.marker")) return true;
 		if (isMod(input, platform)) return true;
 
 		if (platform == ModPlatform.FORGE) {
-			logger.lifecycle(":could not find forge mod in " + config + " but forcing: {}", id);
+			logger.lifecycle(":could not find forge mod in " + config + " but forcing: {}", input.getFileName());
 			return true;
 		}
 
