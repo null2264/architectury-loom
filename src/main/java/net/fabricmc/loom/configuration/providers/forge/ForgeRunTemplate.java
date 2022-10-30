@@ -41,8 +41,8 @@ import net.fabricmc.loom.util.function.CollectionUtil;
 public record ForgeRunTemplate(
 		String name,
 		String main,
-		List<String> args,
-		List<String> jvmArgs,
+		List<ConfigValue> args,
+		List<ConfigValue> jvmArgs,
 		Map<String, ConfigValue> env,
 		Map<String, ConfigValue> props
 ) implements Named {
@@ -56,7 +56,7 @@ public record ForgeRunTemplate(
 			settings.defaultMainClass(main);
 		}
 
-		settings.vmArgs(jvmArgs);
+		settings.vmArgs(CollectionUtil.map(jvmArgs, value -> value.resolve(configValueResolver)));
 
 		env.forEach((key, value) -> {
 			String resolved = value.resolve(configValueResolver);
@@ -71,15 +71,15 @@ public record ForgeRunTemplate(
 
 		String name = json.getAsJsonPrimitive("name").getAsString();
 		String main = json.getAsJsonPrimitive("main").getAsString();
-		List<String> args = json.has("args") ? fromJson(json.getAsJsonArray("args")) : List.of();
-		List<String> jvmArgs = json.has("jvmArgs") ? fromJson(json.getAsJsonArray("jvmArgs")) : List.of();
+		List<ConfigValue> args = json.has("args") ? fromJson(json.getAsJsonArray("args")) : List.of();
+		List<ConfigValue> jvmArgs = json.has("jvmArgs") ? fromJson(json.getAsJsonArray("jvmArgs")) : List.of();
 		Map<String, ConfigValue> env = json.has("env") ? fromJson(json.getAsJsonObject("env"), ConfigValue::of) : Map.of();
 		Map<String, ConfigValue> props = json.has("props") ? fromJson(json.getAsJsonObject("props"), ConfigValue::of) : Map.of();
 		return new ForgeRunTemplate(name, main, args, jvmArgs, env, props);
 	}
 
-	private static List<String> fromJson(JsonArray json) {
-		return CollectionUtil.map(json, child -> child.getAsJsonPrimitive().getAsString());
+	private static List<ConfigValue> fromJson(JsonArray json) {
+		return CollectionUtil.map(json, child -> ConfigValue.of(child.getAsJsonPrimitive().getAsString()));
 	}
 
 	private static <R> Map<String, R> fromJson(JsonObject json, Function<String, R> converter) {
