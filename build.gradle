@@ -38,8 +38,6 @@ def runNumber = ENV.GITHUB_RUN_NUMBER ?: "9999"
 
 def isSnapshot = ENV.PR_NUM != null
 
-def buildNum = "release #$runNumber"
-
 if (!isSnapshot) {
 	version = baseVersion + "." + runNumber
 } else {
