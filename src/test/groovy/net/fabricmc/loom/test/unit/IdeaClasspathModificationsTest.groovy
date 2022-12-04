@@ -65,17 +65,14 @@ class IdeaClasspathModificationsTest extends Specification {
         dummyConfig = dummyConfig.replace("%RUN_DIRECTORY%", ".run")
         dummyConfig = dummyConfig.replace("%PROGRAM_ARGS%", RunConfig.joinArguments([]).replaceAll("\"", "&quot;"))
         dummyConfig = dummyConfig.replace("%VM_ARGS%", RunConfig.joinArguments([]).replaceAll("\"", "&quot;"))
-        dummyConfig = dummyConfig.replace("%ENVS%", "") // Architectury: we have an extra variable that needs to be replaced here
 
         return dummyConfig
     }
 
-    // codenarc-disable TrailingWhitespace
     @Language("XML")
     private static final String EXPECTED = '''
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" factoryName="Application" name="Minecraft Client" type="Application">
-    
     <option name="MAIN_CLASS_NAME" value="net.minecraft.client.Main"/>
     <module name="main.test"/>
     <option name="PROGRAM_PARAMETERS" value=""/>
@@ -96,7 +93,6 @@ class IdeaClasspathModificationsTest extends Specification {
     private static final String EXPECTED2 = '''
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" factoryName="Application" name="Minecraft Client" type="Application">
-    
     <option name="MAIN_CLASS_NAME" value="net.minecraft.client.Main"/>
     <module name="main.test"/>
     <option name="PROGRAM_PARAMETERS" value=""/>
@@ -112,6 +108,5 @@ class IdeaClasspathModificationsTest extends Specification {
   <classpathModifications><entry exclude="true" path="/path/to/file.jar"/><entry exclude="true" path="/path/to/another.jar"/></classpathModifications></configuration>
 </component>
 '''.trim()
-    // codenarc-enable TrailingWhitespace
 
 }
