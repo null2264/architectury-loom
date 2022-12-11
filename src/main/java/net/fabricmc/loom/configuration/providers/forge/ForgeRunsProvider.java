@@ -47,6 +47,7 @@ import net.fabricmc.loom.api.ModSettings;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
+import net.fabricmc.loom.util.gradle.SourceSetReference;
 
 public class ForgeRunsProvider implements ConfigValue.Resolver {
 	private final Project project;
@@ -129,6 +130,12 @@ public class ForgeRunsProvider implements ConfigValue.Resolver {
 			Multimap<String, String> modClasses = MultimapBuilder.hashKeys().linkedHashSetValues().build();
 
 			for (ModSettings mod : extension.getMods()) {
+				// Note: In Forge 1.16.5, resources have to come first to find mods.toml
+				for (SourceSetReference modSourceSet : mod.getModSourceSets().get()) {
+					File resourcesDir = modSourceSet.sourceSet().getOutput().getResourcesDir();
+					modClasses.put(mod.getName(), resourcesDir.getAbsolutePath());
+				}
+
 				for (File file : SourceSetHelper.getClasspath(mod, project)) {
 					modClasses.put(mod.getName(), file.getAbsolutePath());
 				}
