@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test.unit.architectury
+package net.fabricmc.loom.test.unit.quilt
 
 import dev.architectury.loom.metadata.QuiltModJson
 import spock.lang.Specification
