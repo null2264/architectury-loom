@@ -24,16 +24,13 @@
 
 package net.fabricmc.loom.task;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,14 +39,13 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import javax.inject.Inject;
 
 import com.google.common.base.Suppliers;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.architectury.loom.extensions.ModBuildExtensions;
+import dev.architectury.loom.metadata.QuiltModJson;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.artifacts.Configuration;
@@ -74,7 +70,6 @@ import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.fabricmc.accesswidener.AccessWidenerRemapper;
 import net.fabricmc.accesswidener.AccessWidenerWriter;
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.build.MixinRefmapHelper;
 import net.fabricmc.loom.build.nesting.IncludedJarFactory;
 import net.fabricmc.loom.build.nesting.IncludedJarFactory.LazyNestedFile;
@@ -233,22 +228,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 					byte[] bytes = ZipUtils.unpackNullable(getInputFile().getAsFile().get().toPath(), "quilt.mod.json");
 
 					if (bytes != null) {
-						JsonObject json = LoomGradlePlugin.GSON.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes)), JsonObject.class);
-						JsonElement mixins = json.has("mixin") ? json.get("mixin") : json.get("mixins");
-
-						if (mixins != null) {
-							if (mixins.isJsonPrimitive()) {
-								allMixinConfigs = Collections.singletonList(mixins.getAsString());
-							} else if (mixins.isJsonArray()) {
-								allMixinConfigs = StreamSupport.stream(mixins.getAsJsonArray().spliterator(), false)
-										.map(JsonElement::getAsString)
-										.collect(Collectors.toList());
-							} else {
-								throw new RuntimeException("Unknown mixin type: " + mixins.getClass().getName());
-							}
-						} else {
-							allMixinConfigs = Collections.emptyList();
-						}
+						allMixinConfigs = QuiltModJson.of(bytes).getMixinConfigs();
 					}
 				} catch (IOException e) {
 					throw new RuntimeException("Cannot read file quilt.mod.json in the jar.", e);
