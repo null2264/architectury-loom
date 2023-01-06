@@ -59,7 +59,7 @@ public final class ArchitecturyCommonJson implements ModMetadataFile {
 	@Override
 	public List<InterfaceInjectionProcessor.InjectedInterface> getInjectedInterfaces(@Nullable String modId) {
 		if (modId == null) {
-			throw new IllegalArgumentException("visitInjectedInterfaces: mod ID has to be provided for architectury.common.json");
+			throw new IllegalArgumentException("getInjectedInterfaces: mod ID has to be provided for architectury.common.json");
 		}
 
 		return getInjectedInterfaces(json, modId);
