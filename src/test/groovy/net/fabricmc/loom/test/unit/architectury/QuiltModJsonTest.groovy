@@ -58,4 +58,18 @@ class QuiltModJsonTest extends Specification {
             '{}' | [:]
             '{"quilt_loom":{"injected_interfaces":{"target/class/Here":["my/Interface","another/Itf"]}}}' | ['target/class/Here': ['my/Interface', 'another/Itf']]
     }
+
+    def "read mixin configs"() {
+        given:
+            def qmj = QuiltModJson.of(jsonText)
+        when:
+            def mixinConfigs = qmj.mixinConfigs
+        then:
+            mixinConfigs == expected
+        where:
+            jsonText | expected
+            '{}' | []
+            '{"mixin":"foo.mixins.json"}' | ['foo.mixins.json']
+            '{"mixin":["foo.mixins.json","bar.mixins.json"]}' | ['foo.mixins.json', 'bar.mixins.json']
+    }
 }
