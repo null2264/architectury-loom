@@ -24,10 +24,66 @@
 
 package net.fabricmc.loom.test.unit.quilt
 
+import com.google.gson.JsonObject
 import dev.architectury.loom.metadata.QuiltModJson
 import spock.lang.Specification
+import spock.lang.TempDir
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
 class QuiltModJsonTest extends Specification {
+    private static final String OF_TEST_INPUT = '{"access_widener":"foo.accesswidener"}'
+
+    @TempDir
+    Path tempDir
+
+    def "create from byte[]"() {
+        given:
+            def bytes = OF_TEST_INPUT.getBytes(StandardCharsets.UTF_8)
+        when:
+            def qmj = QuiltModJson.of(bytes)
+        then:
+            qmj.accessWidener == 'foo.accesswidener'
+    }
+
+    def "create from String"() {
+        when:
+            def qmj = QuiltModJson.of(OF_TEST_INPUT)
+        then:
+            qmj.accessWidener == 'foo.accesswidener'
+    }
+
+    def "create from File"() {
+        given:
+            def file = new File(tempDir.toFile(), 'quilt.mod.json')
+            file.text = OF_TEST_INPUT
+        when:
+            def qmj = QuiltModJson.of(file)
+        then:
+            qmj.accessWidener == 'foo.accesswidener'
+    }
+
+    def "create from Path"() {
+        given:
+            def path = tempDir.resolve('quilt.mod.json')
+            path.text = OF_TEST_INPUT
+        when:
+            def qmj = QuiltModJson.of(path)
+        then:
+            qmj.accessWidener == 'foo.accesswidener'
+    }
+
+    def "create from JsonObject"() {
+        given:
+            def json = new JsonObject()
+            json.addProperty('access_widener', 'foo.accesswidener')
+        when:
+            def qmj = QuiltModJson.of(json)
+        then:
+            qmj.accessWidener == 'foo.accesswidener'
+    }
+
     def "read access widener"() {
         given:
             def qmj = QuiltModJson.of(jsonText)
