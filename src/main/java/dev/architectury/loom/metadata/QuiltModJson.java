@@ -79,7 +79,17 @@ public final class QuiltModJson implements ModMetadataFile {
 		}
 
 		// Quilt injected interfaces have the same format as architectury.common.json
-		return ArchitecturyCommonJson.getInjectedInterfaces(json.getAsJsonObject("quilt_loom"), modId);
+		if (json.has("quilt_loom")) {
+			JsonElement quiltLoom = json.get("quilt_loom");
+
+			if (quiltLoom.isJsonObject()) {
+				return ArchitecturyCommonJson.getInjectedInterfaces(json.getAsJsonObject("quilt_loom"), modId);
+			} else {
+				LOGGER.warn("Unexpected type for 'quilt_loom' in quilt.mod.json: {}", quiltLoom.getClass());
+			}
+		}
+
+		return List.of();
 	}
 
 	public List<String> getMixinConfigs() {
