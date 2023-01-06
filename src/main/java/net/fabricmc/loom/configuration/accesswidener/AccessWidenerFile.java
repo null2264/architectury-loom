@@ -32,8 +32,9 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import dev.architectury.loom.metadata.ArchitecturyCommonJson;
+import dev.architectury.loom.metadata.QuiltModJson;
 
 import net.fabricmc.loom.util.ZipUtils;
 
@@ -56,7 +57,7 @@ public record AccessWidenerFile(
 
 		if (modJsonBytes == null) {
 			if (ZipUtils.contains(modJarPath, "architectury.common.json")) {
-				String awPath = null;
+				String awPath;
 				byte[] commonJsonBytes;
 
 				try {
@@ -66,13 +67,8 @@ public record AccessWidenerFile(
 				}
 
 				if (commonJsonBytes != null) {
-					JsonObject jsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
-
-					if (jsonObject.has("accessWidener")) {
-						awPath = jsonObject.get("accessWidener").getAsString();
-					} else {
-						return null;
-					}
+					awPath = ArchitecturyCommonJson.of(commonJsonBytes).getAccessWidener();
+					if (awPath == null) return null;
 				} else {
 					// ???????????
 					throw new IllegalArgumentException("The architectury.common.json file does not exist.");
@@ -94,7 +90,7 @@ public record AccessWidenerFile(
 			}
 
 			if (ZipUtils.contains(modJarPath, "quilt.mod.json")) {
-				String awPath = null;
+				String awPath;
 				byte[] quiltModBytes;
 
 				try {
@@ -104,23 +100,8 @@ public record AccessWidenerFile(
 				}
 
 				if (quiltModBytes != null) {
-					JsonObject jsonObject = new Gson().fromJson(new String(quiltModBytes, StandardCharsets.UTF_8), JsonObject.class);
-
-					if (jsonObject.has("access_widener")) {
-						if (jsonObject.get("access_widener").isJsonArray()) {
-							JsonArray array = jsonObject.get("access_widener").getAsJsonArray();
-
-							if (array.size() != 1) {
-								throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
-							}
-
-							awPath = array.get(0).getAsString();
-						} else {
-							awPath = jsonObject.get("access_widener").getAsString();
-						}
-					} else {
-						return null;
-					}
+					awPath = QuiltModJson.of(quiltModBytes).getAccessWidener();
+					if (awPath == null) return null;
 				} else {
 					// ???????????
 					throw new IllegalArgumentException("The quilt.mod.json file does not exist.");

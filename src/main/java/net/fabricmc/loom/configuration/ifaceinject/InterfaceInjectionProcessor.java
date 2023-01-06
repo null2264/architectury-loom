@@ -44,10 +44,11 @@ import java.util.stream.Stream;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.architectury.loom.metadata.ArchitecturyCommonJson;
+import dev.architectury.loom.metadata.QuiltModJson;
 import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.SourceSet;
@@ -213,16 +214,11 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 						.matching(patternFilterable -> patternFilterable.include("architectury.common.json"))
 						.getSingleFile();
 
-				final String jsonString;
-
 				try {
-					jsonString = Files.readString(archCommonJson.toPath(), StandardCharsets.UTF_8);
+					return ArchitecturyCommonJson.of(archCommonJson).getInjectedInterfaces(archCommonJson.getAbsolutePath());
 				} catch (IOException e2) {
 					throw new UncheckedIOException("Failed to read architectury.common.json", e2);
 				}
-
-				JsonObject jsonObject = new Gson().fromJson(jsonString, JsonObject.class);
-				return InjectedInterface.fromJsonArch(jsonObject, archCommonJson.getAbsolutePath());
 			} catch (IllegalStateException e2) {
 				File quiltModJson;
 
@@ -231,19 +227,10 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 							.matching(patternFilterable -> patternFilterable.include("quilt.mod.json"))
 							.getSingleFile();
 
-					final String jsonString;
-
 					try {
-						jsonString = Files.readString(quiltModJson.toPath(), StandardCharsets.UTF_8);
+						return QuiltModJson.of(quiltModJson).getInjectedInterfaces(quiltModJson.getAbsolutePath());
 					} catch (IOException e3) {
 						throw new UncheckedIOException("Failed to read quilt.mod.json", e3);
-					}
-
-					JsonObject jsonObject = new Gson().fromJson(jsonString, JsonObject.class);
-
-					if (jsonObject.has("quilt_loom")) {
-						// quilt injected interfaces has the same format as architectury.common.json
-						return InjectedInterface.fromJsonArch(jsonObject.getAsJsonObject("quilt_loom"), quiltModJson.getAbsolutePath());
 					}
 				} catch (IllegalStateException e3) {
 					// File not found
@@ -310,7 +297,7 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 		return comment;
 	}
 
-	private record InjectedInterface(String modId, String className, String ifaceName) {
+	public record InjectedInterface(String modId, String className, String ifaceName) {
 		/**
 		 * Reads the injected interfaces contained in a mod jar, or returns empty if there is none.
 		 */
@@ -327,8 +314,7 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 				}
 
 				if (commonJsonBytes != null) {
-					JsonObject commonJsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
-					return fromJsonArch(commonJsonObject, modJarPath.toString());
+					return ArchitecturyCommonJson.of(commonJsonBytes).getInjectedInterfaces(modJarPath.toString());
 				} else {
 					try {
 						commonJsonBytes = ZipUtils.unpackNullable(modJarPath, "quilt.mod.json");
@@ -337,12 +323,7 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 					}
 
 					if (commonJsonBytes != null) {
-						JsonObject commonJsonObject = new Gson().fromJson(new String(commonJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
-
-						if (commonJsonObject.has("quilt_loom")) {
-							// quilt injected interfaces has the same format as architectury.common.json
-							return fromJsonArch(commonJsonObject.getAsJsonObject("quilt_loom"), modJarPath.toString());
-						}
+						return QuiltModJson.of(commonJsonBytes).getInjectedInterfaces(modJarPath.toString());
 					}
 				}
 
@@ -382,26 +363,6 @@ public class InterfaceInjectionProcessor implements JarProcessor, GenerateSource
 			}
 
 			return result;
-		}
-
-		public static List<InjectedInterface> fromJsonArch(JsonObject jsonObject, String modId) {
-			if (jsonObject.has("injected_interfaces")) {
-				JsonObject addedIfaces = jsonObject.getAsJsonObject("injected_interfaces");
-
-				final List<InjectedInterface> result = new ArrayList<>();
-
-				for (String className : addedIfaces.keySet()) {
-					final JsonArray ifaceNames = addedIfaces.getAsJsonArray(className);
-
-					for (JsonElement ifaceName : ifaceNames) {
-						result.add(new InjectedInterface(modId, className, ifaceName.getAsString()));
-					}
-				}
-
-				return result;
-			}
-
-			return Collections.emptyList();
 		}
 	}
 
