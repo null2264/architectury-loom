@@ -28,8 +28,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import dev.architectury.loom.metadata.ModMetadataFile;
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.commons.Remapper;
 
 import net.fabricmc.accesswidener.AccessWidenerReader;
@@ -59,43 +60,33 @@ public class AccessWidenerUtils {
 	}
 
 	public static AccessWidenerData readAccessWidenerData(Path inputJar) throws IOException {
-		String fieldName = "accessWidener";
 		byte[] modJsonBytes = ZipUtils.unpackNullable(inputJar, "fabric.mod.json");
-
-		if (modJsonBytes == null) {
-			modJsonBytes = ZipUtils.unpackNullable(inputJar, "architectury.common.json");
-
-			if (modJsonBytes == null) {
-				modJsonBytes = ZipUtils.unpackNullable(inputJar, "quilt.mod.json");
-
-				if (modJsonBytes != null) {
-					fieldName = "access_widener";
-				} else {
-					// No access widener data
-					// We can just ignore in architectury
-					return null;
-				}
-			}
-		}
-
-		JsonObject jsonObject = LoomGradlePlugin.GSON.fromJson(new String(modJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
-
-		if (!jsonObject.has(fieldName)) {
-			return null;
-		}
-
 		String accessWidenerPath;
 
-		if (fieldName.equals("access_widener") && jsonObject.get(fieldName).isJsonArray()) {
-			JsonArray array = jsonObject.get(fieldName).getAsJsonArray();
+		if (modJsonBytes != null) {
+			JsonObject jsonObject = LoomGradlePlugin.GSON.fromJson(new String(modJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
 
-			if (array.size() != 1) {
-				throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
+			if (!jsonObject.has("accessWidener")) {
+				return null;
 			}
 
-			accessWidenerPath = array.get(0).getAsString();
+			accessWidenerPath = jsonObject.get("accessWidener").getAsString();
 		} else {
-			accessWidenerPath = jsonObject.get(fieldName).getAsString();
+			@Nullable ModMetadataFile modMetadata = ModMetadataFile.fromJar(inputJar);
+
+			if (modMetadata == null) {
+				// Unknown or missing mod metadata
+				// We can just ignore in architectury
+				return null;
+			}
+
+			accessWidenerPath = modMetadata.getAccessWidener();
+
+			if (accessWidenerPath == null) {
+				// No access widener data
+				// We can just ignore in architectury
+				return null;
+			}
 		}
 
 		byte[] accessWidener = ZipUtils.unpack(inputJar, accessWidenerPath);

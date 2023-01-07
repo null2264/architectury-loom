@@ -128,4 +128,28 @@ class QuiltModJsonTest extends Specification {
             '{"mixin":"foo.mixins.json"}' | ['foo.mixins.json']
             '{"mixin":["foo.mixins.json","bar.mixins.json"]}' | ['foo.mixins.json', 'bar.mixins.json']
     }
+
+    def "read mod id"() {
+        given:
+            def qmj = QuiltModJson.of(jsonText)
+        when:
+            def id = qmj.id
+        then:
+            id == expected
+        where:
+            jsonText | expected
+            '{}' | null
+            '{"quilt_loader":{"id":"foo"}}' | 'foo'
+    }
+
+    def "get file name"() {
+        given:
+            def qmj = QuiltModJson.of(jsonText)
+        when:
+            def fileName = qmj.fileName
+        then:
+            fileName == 'quilt.mod.json'
+        where:
+            jsonText << ['{}', '{"quilt_loader":{"id":"foo"}}', '{"mixin":"foo.mixins.json"}']
+    }
 }

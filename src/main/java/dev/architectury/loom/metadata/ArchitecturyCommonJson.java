@@ -19,6 +19,7 @@ import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
 public final class ArchitecturyCommonJson implements ModMetadataFile {
+	public static final String FILE_NAME = "architectury.common.json";
 	private static final String ACCESS_WIDENER_KEY = "accessWidener";
 
 	private final JsonObject json;
@@ -45,6 +46,11 @@ public final class ArchitecturyCommonJson implements ModMetadataFile {
 
 	public static ArchitecturyCommonJson of(JsonObject json) {
 		return new ArchitecturyCommonJson(json);
+	}
+
+	@Override
+	public @Nullable String getId() {
+		return null;
 	}
 
 	@Override
@@ -85,5 +91,13 @@ public final class ArchitecturyCommonJson implements ModMetadataFile {
 		}
 
 		return Collections.emptyList();
+	}
+
+	/**
+	 * {@return {@value #FILE_NAME}}.
+	 */
+	@Override
+	public String getFileName() {
+		return FILE_NAME;
 	}
 }

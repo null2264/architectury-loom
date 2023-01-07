@@ -113,4 +113,26 @@ class ArchitecturyCommonJsonTest extends Specification {
             '{}' | [:]
             '{"injected_interfaces":{"target/class/Here":["my/Interface","another/Itf"]}}' | ['target/class/Here': ['my/Interface', 'another/Itf']]
     }
+
+    def "read mod id"() {
+        given:
+            def acj = ArchitecturyCommonJson.of(jsonText)
+        when:
+            def id = acj.id
+        then:
+            id == null
+        where:
+            jsonText << ['{}', '{"accessWidener":"foo.accesswidener"}']
+    }
+
+    def "get file name"() {
+        given:
+            def acj = ArchitecturyCommonJson.of(jsonText)
+        when:
+            def fileName = acj.fileName
+        then:
+            fileName == 'architectury.common.json'
+        where:
+            jsonText << ['{}', '{"accessWidener":"foo.accesswidener"}']
+    }
 }

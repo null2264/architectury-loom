@@ -20,6 +20,7 @@ import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
 public final class QuiltModJson implements ModMetadataFile {
+	public static final String FILE_NAME = "quilt.mod.json";
 	private static final Logger LOGGER = LoggerFactory.getLogger(QuiltModJson.class);
 	private static final String ACCESS_WIDENER_KEY = "access_widener";
 	private static final String MIXIN_KEY = "mixin";
@@ -51,6 +52,17 @@ public final class QuiltModJson implements ModMetadataFile {
 	}
 
 	@Override
+	public @Nullable String getId() {
+		JsonObject quiltLoader = json.getAsJsonObject("quilt_loader");
+
+		if (quiltLoader != null && quiltLoader.has("id")) {
+			return quiltLoader.get("id").getAsString();
+		}
+
+		return null;
+	}
+
+	@Override
 	public @Nullable String getAccessWidener() {
 		if (json.has(ACCESS_WIDENER_KEY)) {
 			if (json.get(ACCESS_WIDENER_KEY).isJsonArray()) {
@@ -73,9 +85,9 @@ public final class QuiltModJson implements ModMetadataFile {
 	@Override
 	public List<InterfaceInjectionProcessor.InjectedInterface> getInjectedInterfaces(@Nullable String modId) {
 		try {
-			modId = Objects.requireNonNullElseGet(modId, () -> json.getAsJsonObject("quilt_loader").get("id").getAsString());
+			modId = Objects.requireNonNullElse(getId(), modId);
 		} catch (NullPointerException e) {
-			throw new IllegalArgumentException("Could not determine mod ID for Quilt mod and no fallback provided");
+			throw new IllegalArgumentException("Could not determine mod ID for Quilt mod and no fallback provided", e);
 		}
 
 		// Quilt injected interfaces have the same format as architectury.common.json
@@ -116,5 +128,13 @@ public final class QuiltModJson implements ModMetadataFile {
 		}
 
 		return List.of();
+	}
+
+	/**
+	 * {@return {@value #FILE_NAME}}.
+	 */
+	@Override
+	public String getFileName() {
+		return FILE_NAME;
 	}
 }

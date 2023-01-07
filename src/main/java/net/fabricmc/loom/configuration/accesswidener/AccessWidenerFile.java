@@ -33,8 +33,7 @@ import java.util.Objects;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import dev.architectury.loom.metadata.ArchitecturyCommonJson;
-import dev.architectury.loom.metadata.QuiltModJson;
+import dev.architectury.loom.metadata.ModMetadataFile;
 
 import net.fabricmc.loom.util.ZipUtils;
 
@@ -56,73 +55,36 @@ public record AccessWidenerFile(
 		}
 
 		if (modJsonBytes == null) {
-			if (ZipUtils.contains(modJarPath, "architectury.common.json")) {
-				String awPath;
-				byte[] commonJsonBytes;
+			ModMetadataFile modMetadata;
+			String awPath;
 
-				try {
-					commonJsonBytes = ZipUtils.unpackNullable(modJarPath, "architectury.common.json");
-				} catch (IOException e) {
-					throw new UncheckedIOException("Failed to read architectury.common.json file from: " + modJarPath.toAbsolutePath(), e);
-				}
+			try {
+				modMetadata = ModMetadataFile.fromJar(modJarPath);
 
-				if (commonJsonBytes != null) {
-					awPath = ArchitecturyCommonJson.of(commonJsonBytes).getAccessWidener();
+				if (modMetadata != null) {
+					awPath = modMetadata.getAccessWidener();
 					if (awPath == null) return null;
 				} else {
-					// ???????????
-					throw new IllegalArgumentException("The architectury.common.json file does not exist.");
+					// No known mod metadata
+					return null;
 				}
-
-				byte[] content;
-
-				try {
-					content = ZipUtils.unpack(modJarPath, awPath);
-				} catch (IOException e) {
-					throw new UncheckedIOException("Could not find access widener file (%s) defined in the architectury.common.json file of %s".formatted(awPath, modJarPath.toAbsolutePath()), e);
-				}
-
-				return new AccessWidenerFile(
-						awPath,
-						modJarPath.getFileName().toString(),
-						content
-				);
+			} catch (IOException e) {
+				throw new UncheckedIOException("Could not read mod metadata from " + modJarPath.toAbsolutePath(), e);
 			}
 
-			if (ZipUtils.contains(modJarPath, "quilt.mod.json")) {
-				String awPath;
-				byte[] quiltModBytes;
+			byte[] content;
 
-				try {
-					quiltModBytes = ZipUtils.unpackNullable(modJarPath, "quilt.mod.json");
-				} catch (IOException e) {
-					throw new UncheckedIOException("Failed to read quilt.mod.json file from: " + modJarPath.toAbsolutePath(), e);
-				}
-
-				if (quiltModBytes != null) {
-					awPath = QuiltModJson.of(quiltModBytes).getAccessWidener();
-					if (awPath == null) return null;
-				} else {
-					// ???????????
-					throw new IllegalArgumentException("The quilt.mod.json file does not exist.");
-				}
-
-				byte[] content;
-
-				try {
-					content = ZipUtils.unpack(modJarPath, awPath);
-				} catch (IOException e) {
-					throw new UncheckedIOException("Could not find access widener file (%s) defined in the quilt.mod.json file of %s".formatted(awPath, modJarPath.toAbsolutePath()), e);
-				}
-
-				return new AccessWidenerFile(
-						awPath,
-						modJarPath.getFileName().toString(),
-						content
-				);
+			try {
+				content = ZipUtils.unpack(modJarPath, awPath);
+			} catch (IOException e) {
+				throw new UncheckedIOException("Could not find access widener file (%s) defined in the %s file of %s".formatted(awPath, modMetadata.getFileName(), modJarPath.toAbsolutePath()), e);
 			}
 
-			return null;
+			return new AccessWidenerFile(
+					awPath,
+					Objects.requireNonNullElseGet(modMetadata.getId(), () -> modJarPath.getFileName().toString()),
+					content
+			);
 		}
 
 		JsonObject jsonObject = new Gson().fromJson(new String(modJsonBytes, StandardCharsets.UTF_8), JsonObject.class);
