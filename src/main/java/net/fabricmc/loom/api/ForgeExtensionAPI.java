@@ -110,20 +110,29 @@ public interface ForgeExtensionAPI {
 	 * {@link #dataGen(Action)}.
 	 *
 	 * @return the list
+	 * @deprecated See {@link net.fabricmc.loom.configuration.ide.RunConfigSettings#data}.
 	 */
+	@ApiStatus.ScheduledForRemoval(inVersion = "2.0")
+	@Deprecated(forRemoval = true)
 	List<String> getDataGenMods();
 
 	/**
 	 * Applies data generation settings.
 	 *
 	 * @param action the action to configure data generation
+	 * @deprecated See {@link net.fabricmc.loom.configuration.ide.RunConfigSettings#data}.
 	 */
+	@ApiStatus.ScheduledForRemoval(inVersion = "2.0")
+	@Deprecated(forRemoval = true)
 	void dataGen(Action<DataGenConsumer> action);
 
 	/**
 	 * Data generation config.
+	 * @deprecated See {@link net.fabricmc.loom.configuration.ide.RunConfigSettings#data}.
 	 */
 	@ApiStatus.NonExtendable
+	@ApiStatus.ScheduledForRemoval(inVersion = "2.0")
+	@Deprecated(forRemoval = true)
 	interface DataGenConsumer {
 		/**
 		 * Adds mod IDs applied for data generation.
