@@ -58,21 +58,14 @@ public class SourceRemapper {
 
 	private Mercury mercury;
 
-	public SourceRemapper(Project project, boolean named) {
-		this(project, named ? IntermediaryNamespaces.intermediary(project) : "named", !named ? IntermediaryNamespaces.intermediary(project) : "named");
+	public SourceRemapper(Project project, boolean toNamed) {
+		this(project, toNamed ? IntermediaryNamespaces.intermediary(project) : "named", !toNamed ? IntermediaryNamespaces.intermediary(project) : "named");
 	}
 
 	public SourceRemapper(Project project, String from, String to) {
 		this.project = project;
 		this.from = from;
 		this.to = to;
-	}
-
-	public static void remapSources(Project project, File input, File output, String from, String to, boolean reproducibleFileOrder, boolean preserveFileTimestamps) {
-		SourceRemapper sourceRemapper = new SourceRemapper(project, from, to);
-		sourceRemapper.scheduleRemapSources(input, output, reproducibleFileOrder, preserveFileTimestamps, () -> {
-		});
-		sourceRemapper.remapAll();
 	}
 
 	public void scheduleRemapSources(File source, File destination, boolean reproducibleFileOrder, boolean preserveFileTimestamps, Runnable completionCallback) {
@@ -174,7 +167,7 @@ public class SourceRemapper {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		MappingsProviderImpl mappingsProvider = extension.getMappingsProvider();
 
-		String intermediary = extension.isForge() ? "srg" : "intermediary";
+		String intermediary = IntermediaryNamespaces.intermediary(project);
 		int id = -1;
 
 		if (from.equals(intermediary) && to.equals("named")) {

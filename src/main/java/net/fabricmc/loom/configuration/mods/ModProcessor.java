@@ -49,6 +49,7 @@ import org.gradle.api.artifacts.Configuration;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.RemapConfigurationSettings;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.mods.dependency.ModDependency;
 import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
 import net.fabricmc.loom.task.RemapJarTask;
@@ -64,7 +65,6 @@ import net.fabricmc.loom.util.srg.CoreModClassRemapper;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class ModProcessor {
-	private static final String fromM = MappingsNamespace.INTERMEDIARY.toString();
 	private static final String toM = MappingsNamespace.NAMED.toString();
 
 	private final Project project;
@@ -118,8 +118,7 @@ public class ModProcessor {
 	private void remapJars(List<ModDependency> remapList) throws IOException {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
 		final MappingsProviderImpl mappingsProvider = extension.getMappingsProvider();
-		String fromM = extension.isForge() ? MappingsNamespace.SRG.toString() : MappingsNamespace.INTERMEDIARY.toString();
-		String toM = MappingsNamespace.NAMED.toString();
+		String fromM = IntermediaryNamespaces.intermediary(project);
 		Path[] mcDeps = project.getConfigurations().getByName(Constants.Configurations.LOADER_DEPENDENCIES).getFiles()
 				.stream().map(File::toPath).toArray(Path[]::new);
 
