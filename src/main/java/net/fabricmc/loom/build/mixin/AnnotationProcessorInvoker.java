@@ -66,15 +66,17 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 	protected final Project project;
 	protected final MixinExtension mixinExtension;
 	protected final Map<SourceSet, T> invokerTasks;
+	private final String name;
 	private final Collection<Configuration> apConfigurations;
 
 	protected AnnotationProcessorInvoker(Project project,
-										Collection<Configuration> apConfigurations,
-										Map<SourceSet, T> invokerTasks) {
+											Collection<Configuration> apConfigurations,
+											Map<SourceSet, T> invokerTasks, String name) {
 		this.project = project;
 		this.mixinExtension = LoomGradleExtension.get(project).getMixin();
 		this.apConfigurations = apConfigurations;
 		this.invokerTasks = invokerTasks;
+		this.name = name;
 	}
 
 	protected static Collection<Configuration> getApConfigurations(Project project, Function<SourceSet, String> getApConfigNameFunc) {
@@ -95,9 +97,14 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 			LoomGradleExtension loom = LoomGradleExtension.get(project);
 			String refmapName = Objects.requireNonNull(MixinExtension.getMixinInformationContainer(sourceSet)).refmapNameProvider().get();
 			Path mappings = loom.getMappingsProvider().getReplacedTarget(loom, loom.getMixin().getRefmapTargetNamespace().get());
+
+			final File mixinMappings = MixinMappingsService.getMixinMappingFile(project, sourceSet);
+
+			task.getOutputs().file(mixinMappings).withPropertyName("mixin-ap-" + sourceSet.getName() + "-" + name).optional();
+
 			Map<String, String> args = new HashMap<>() {{
 					put(Constants.MixinArguments.IN_MAP_FILE_NAMED_INTERMEDIARY, mappings.toFile().getCanonicalPath());
-					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, MixinMappingsService.getMixinMappingFile(project, sourceSet).getCanonicalPath());
+					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, mixinMappings.getCanonicalPath());
 					put(Constants.MixinArguments.OUT_REFMAP_FILE, getRefmapDestination(task, refmapName));
 					put(Constants.MixinArguments.DEFAULT_OBFUSCATION_ENV, "named:" + IntermediaryNamespaces.replaceMixinIntermediaryNamespace(project, loom.getMixin().getRefmapTargetNamespace().get()));
 					put(Constants.MixinArguments.QUIET, "true");
