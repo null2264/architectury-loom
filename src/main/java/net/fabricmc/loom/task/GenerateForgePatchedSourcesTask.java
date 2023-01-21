@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2022 FabricMC
+ * Copyright (c) 2022-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@ import codechicken.diffpatch.cli.CliOperation;
 import codechicken.diffpatch.cli.PatchOperation;
 import codechicken.diffpatch.util.LoggingOutputStream;
 import codechicken.diffpatch.util.PatchMode;
+import dev.architectury.loom.util.TempFiles;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.tasks.InputFile;
@@ -72,16 +73,18 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 
 	@TaskAction
 	public void run() throws IOException {
-		Path cache = Files.createTempDirectory("loom-decompilation");
-		// Step 1: decompile and patch with MCP patches
-		Path rawDecompiled = decompileAndPatch(cache);
-		// Step 2: patch with Forge patches
-		getLogger().lifecycle(":applying Forge patches");
-		Path patched = sourcePatch(cache, rawDecompiled);
-		// Step 3: remap
-		remap(patched);
-		// Step 4: add Forge's own sources
-		ForgeSourcesRemapper.addForgeSources(getProject(), getOutputJar().get().getAsFile().toPath());
+		try (var tempFiles = new TempFiles()) {
+			Path cache = tempFiles.directory("loom-decompilation");
+			// Step 1: decompile and patch with MCP patches
+			Path rawDecompiled = decompileAndPatch(cache);
+			// Step 2: patch with Forge patches
+			getLogger().lifecycle(":applying Forge patches");
+			Path patched = sourcePatch(cache, rawDecompiled);
+			// Step 3: remap
+			remap(patched);
+			// Step 4: add Forge's own sources
+			ForgeSourcesRemapper.addForgeSources(getProject(), getOutputJar().get().getAsFile().toPath());
+		}
 	}
 
 	private Path decompileAndPatch(Path cache) throws IOException {

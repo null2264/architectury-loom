@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2020-2022 FabricMC
+ * Copyright (c) 2020-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -53,6 +53,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import de.oceanlabs.mcp.mcinjector.adaptors.ParameterAnnotationFixer;
+import dev.architectury.loom.util.TempFiles;
 import dev.architectury.tinyremapper.InputTag;
 import dev.architectury.tinyremapper.NonClassCopyMode;
 import dev.architectury.tinyremapper.OutputConsumerPath;
@@ -176,9 +177,12 @@ public class MinecraftPatchedProvider {
 
 		if (Files.notExists(minecraftSrgJar)) {
 			this.dirty = true;
-			McpExecutor executor = createMcpExecutor(Files.createTempDirectory("loom-mcp"));
-			Path output = executor.enqueue("rename").execute();
-			Files.copy(output, minecraftSrgJar);
+
+			try (var tempFiles = new TempFiles()) {
+				McpExecutor executor = createMcpExecutor(tempFiles.directory("loom-mcp"));
+				Path output = executor.enqueue("rename").execute();
+				Files.copy(output, minecraftSrgJar);
+			}
 		}
 
 		if (dirty || Files.notExists(minecraftPatchedSrgJar)) {
@@ -349,7 +353,6 @@ public class MinecraftPatchedProvider {
 	}
 
 	private void accessTransformForge() throws IOException {
-		List<Path> toDelete = new ArrayList<>();
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
 		logger.lifecycle(":access transforming minecraft");
@@ -358,22 +361,19 @@ public class MinecraftPatchedProvider {
 		Path target = minecraftPatchedSrgAtJar;
 		Files.deleteIfExists(target);
 
-		AccessTransformerJarProcessor.executeAt(project, input, target, args -> {
-			for (Path jar : ImmutableList.of(getForgeJar().toPath(), getExtension().getForgeUserdevProvider().getUserdevJar().toPath(), minecraftPatchedSrgJar)) {
-				byte[] atBytes = ZipUtils.unpackNullable(jar, Constants.Forge.ACCESS_TRANSFORMER_PATH);
+		try (var tempFiles = new TempFiles()) {
+			AccessTransformerJarProcessor.executeAt(project, input, target, args -> {
+				for (Path jar : ImmutableList.of(getForgeJar().toPath(), getExtension().getForgeUserdevProvider().getUserdevJar().toPath(), minecraftPatchedSrgJar)) {
+					byte[] atBytes = ZipUtils.unpackNullable(jar, Constants.Forge.ACCESS_TRANSFORMER_PATH);
 
-				if (atBytes != null) {
-					Path tmpFile = Files.createTempFile("at-conf", ".cfg");
-					toDelete.add(tmpFile);
-					Files.write(tmpFile, atBytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-					args.add("--atFile");
-					args.add(tmpFile.toAbsolutePath().toString());
+					if (atBytes != null) {
+						Path tmpFile = tempFiles.file("at-conf", ".cfg");
+						Files.write(tmpFile, atBytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+						args.add("--atFile");
+						args.add(tmpFile.toAbsolutePath().toString());
+					}
 				}
-			}
-		});
-
-		for (Path file : toDelete) {
-			Files.delete(file);
+			});
 		}
 
 		logger.lifecycle(":access transformed minecraft in " + stopwatch.stop());
