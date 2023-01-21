@@ -1,15 +1,15 @@
 package dev.architectury.loom.util;
 
-import net.fabricmc.loom.util.DeletingFileVisitor;
-
-import org.jetbrains.annotations.Nullable;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
+
+import net.fabricmc.loom.util.DeletingFileVisitor;
 
 /**
  * A helper for temporary files and directories
