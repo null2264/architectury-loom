@@ -46,24 +46,28 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.RemapConfigurationSettings;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.build.IntermediaryNamespaces;
-import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
+import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
+import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
+import net.fabricmc.loom.util.service.SharedServiceManager;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class SourceRemapper {
 	private final Project project;
+	private final SharedServiceManager serviceManager;
 	private String from;
 	private String to;
 	private final List<Consumer<ProgressLogger>> remapTasks = new ArrayList<>();
 
 	private Mercury mercury;
 
-	public SourceRemapper(Project project, boolean toNamed) {
-		this(project, toNamed ? IntermediaryNamespaces.intermediary(project) : "named", !toNamed ? IntermediaryNamespaces.intermediary(project) : "named");
+	public SourceRemapper(Project project, SharedServiceManager serviceManager, boolean toNamed) {
+		this(project, serviceManager, toNamed ? IntermediaryNamespaces.intermediary(project) : "named", !toNamed ? IntermediaryNamespaces.intermediary(project) : "named");
 	}
 
-	public SourceRemapper(Project project, String from, String to) {
+	public SourceRemapper(Project project, SharedServiceManager serviceManager, String from, String to) {
 		this.project = project;
+		this.serviceManager = serviceManager;
 		this.from = from;
 		this.to = to;
 	}
@@ -165,7 +169,7 @@ public class SourceRemapper {
 		}
 
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		MappingsProviderImpl mappingsProvider = extension.getMappingsProvider();
+		MappingConfiguration mappingConfiguration = extension.getMappingConfiguration();
 
 		String intermediary = IntermediaryNamespaces.intermediary(project);
 		int id = -1;
@@ -178,8 +182,9 @@ public class SourceRemapper {
 
 		MappingSet mappings = extension.getOrCreateSrcMappingCache(id, () -> {
 			try {
-				MemoryMappingTree m = (from.equals("srg") || to.equals("srg")) && extension.shouldGenerateSrgTiny() ? mappingsProvider.getMappingsWithSrg() : mappingsProvider.getMappings();
-				project.getLogger().info(":loading " + from + " -> " + to + " source mappings");
+				TinyMappingsService mappingsService = mappingConfiguration.getMappingsService(serviceManager);
+				MemoryMappingTree m = (from.equals("srg") || to.equals("srg")) && extension.shouldGenerateSrgTiny() ? mappingsService.getMappingTreeWithSrg() : mappingsService.getMappingTree();
+				project.getLogger().info(":loading " + from + " source mappings");
 				return new TinyMappingsReader(m, from, to).read();
 			} catch (Exception e) {
 				throw new RuntimeException(e);

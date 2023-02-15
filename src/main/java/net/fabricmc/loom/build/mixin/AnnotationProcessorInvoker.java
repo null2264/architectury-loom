@@ -47,7 +47,7 @@ import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.ide.idea.IdeaUtils;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.extension.MixinExtension;
-import net.fabricmc.loom.task.service.MixinMappingsService;
+import net.fabricmc.loom.task.PrepareJarRemapTask;
 import net.fabricmc.loom.util.Constants;
 
 /**
@@ -96,15 +96,11 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 		try {
 			LoomGradleExtension loom = LoomGradleExtension.get(project);
 			String refmapName = Objects.requireNonNull(MixinExtension.getMixinInformationContainer(sourceSet)).refmapNameProvider().get();
-			Path mappings = loom.getMappingsProvider().getReplacedTarget(loom, loom.getMixin().getRefmapTargetNamespace().get());
-
-			final File mixinMappings = MixinMappingsService.getMixinMappingFile(project, sourceSet);
-
-			task.getOutputs().file(mixinMappings).withPropertyName("mixin-ap-" + sourceSet.getName() + "-" + name).optional();
+			Path mappings = loom.getMappingConfiguration().getReplacedTarget(loom, loom.getMixin().getRefmapTargetNamespace().get());
 
 			Map<String, String> args = new HashMap<>() {{
 					put(Constants.MixinArguments.IN_MAP_FILE_NAMED_INTERMEDIARY, mappings.toFile().getCanonicalPath());
-					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, mixinMappings.getCanonicalPath());
+					put(Constants.MixinArguments.OUT_MAP_FILE_NAMED_INTERMEDIARY, getMixinMappingsForSourceSet(project, sourceSet).getCanonicalPath());
 					put(Constants.MixinArguments.OUT_REFMAP_FILE, getRefmapDestination(task, refmapName));
 					put(Constants.MixinArguments.DEFAULT_OBFUSCATION_ENV, "named:" + IntermediaryNamespaces.replaceMixinIntermediaryNamespace(project, loom.getMixin().getRefmapTargetNamespace().get()));
 					put(Constants.MixinArguments.QUIET, "true");
@@ -120,6 +116,9 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 
 				args.put("MSG_" + key, value);
 			});
+
+			// Ensure that all of the mixin mappings have been generated before we create the mixin mappings.
+			runBeforePrepare(project, task);
 
 			project.getLogger().debug("Outputting refmap to dir: " + getRefmapDestinationDir(task) + " for compile task: " + task);
 			args.forEach((k, v) -> passArgument(task, k, v));
@@ -158,11 +157,22 @@ public abstract class AnnotationProcessorInvoker<T extends Task> {
 		}
 	}
 
+	private void runBeforePrepare(Project project, Task compileTask) {
+		project.getGradle().allprojects(otherProject -> {
+			otherProject.getTasks().withType(PrepareJarRemapTask.class, prepareRemapTask -> prepareRemapTask.mustRunAfter(compileTask));
+		});
+	}
+
 	private static void checkPattern(String input, Pattern pattern) {
 		final Matcher matcher = pattern.matcher(input);
 
 		if (!matcher.find()) {
 			throw new IllegalArgumentException("Mixin argument (%s) does not match pattern (%s)".formatted(input, pattern.toString()));
 		}
+	}
+
+	public static File getMixinMappingsForSourceSet(Project project, SourceSet sourceSet) {
+		final LoomGradleExtension extension = LoomGradleExtension.get(project);
+		return new File(extension.getFiles().getProjectBuildCache(), "mixin-map-" + extension.getMappingConfiguration().mappingsIdentifier() + "." + sourceSet.getName() + ".tiny");
 	}
 }

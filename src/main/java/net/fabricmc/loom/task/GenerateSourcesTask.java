@@ -49,10 +49,12 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.work.DisableCachingByDefault;
 import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
@@ -65,9 +67,9 @@ import net.fabricmc.loom.api.decompilers.DecompilationMetadata;
 import net.fabricmc.loom.api.decompilers.DecompilerOptions;
 import net.fabricmc.loom.api.decompilers.LoomDecompiler;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.api.processor.MappingProcessorContext;
 import net.fabricmc.loom.configuration.accesswidener.TransitiveAccessWidenerMappingsProcessor;
-import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
-import net.fabricmc.loom.configuration.processors.ModJavadocProcessor;
+import net.fabricmc.loom.configuration.processors.MinecraftJarProcessorManager;
 import net.fabricmc.loom.configuration.sources.ForgeSourcesRemapper;
 import net.fabricmc.loom.decompilers.LineNumberRemapper;
 import net.fabricmc.loom.decompilers.linemap.LineMapClassFilter;
@@ -81,6 +83,7 @@ import net.fabricmc.loom.util.gradle.ThreadedSimpleProgressLogger;
 import net.fabricmc.loom.util.gradle.WorkerDaemonClientsManagerHelper;
 import net.fabricmc.loom.util.ipc.IPCClient;
 import net.fabricmc.loom.util.ipc.IPCServer;
+import net.fabricmc.loom.util.service.BuildSharedServiceManager;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.Tiny2Writer;
@@ -115,6 +118,11 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	public abstract WorkerDaemonClientsManager getWorkerDaemonClientsManager();
 
 	@Inject
+	protected abstract BuildEventsListenerRegistry getBuildEventsListenerRegistry();
+
+	private final Provider<BuildSharedServiceManager> serviceManagerProvider;
+
+	@Inject
 	public GenerateSourcesTask(DecompilerOptions decompilerOptions) {
 		this.decompilerOptions = decompilerOptions;
 
@@ -123,6 +131,8 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 		dependsOn(decompilerOptions.getClasspath().getBuiltBy());
 
 		getOutputJar().fileProvider(getProject().provider(() -> getMappedJarFileWithSuffix("-sources.jar")));
+
+		serviceManagerProvider = BuildSharedServiceManager.createForTask(this, getBuildEventsListenerRegistry());
 	}
 
 	@TaskAction
@@ -153,7 +163,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 		// Inject Forge's own sources
 		if (getExtension().isForge()) {
-			ForgeSourcesRemapper.addForgeSources(getProject(), getOutputJar().get().getAsFile().toPath());
+			ForgeSourcesRemapper.addForgeSources(getProject(), serviceManagerProvider.get().get(), getOutputJar().get().getAsFile().toPath());
 		}
 	}
 
@@ -355,7 +365,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	}
 
 	private Path getMappings() {
-		Path inputMappings = getExtension().isForge() ? getExtension().getMappingsProvider().tinyMappingsWithSrg : getExtension().getMappingsProvider().tinyMappings;
+		Path inputMappings = getExtension().isForge() ? getExtension().getMappingConfiguration().tinyMappingsWithSrg : getExtension().getMappingConfiguration().tinyMappings;
 
 		MemoryMappingTree mappingTree = new MemoryMappingTree();
 
@@ -371,14 +381,10 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			mappingsProcessors.add(new TransitiveAccessWidenerMappingsProcessor(getProject()));
 		}
 
-		if (getExtension().getInterfaceInjection().isEnabled()) {
-			mappingsProcessors.add(new InterfaceInjectionProcessor(getProject()));
-		}
+		MinecraftJarProcessorManager minecraftJarProcessorManager = MinecraftJarProcessorManager.create(getProject());
 
-		final ModJavadocProcessor javadocProcessor = ModJavadocProcessor.create(getProject());
-
-		if (javadocProcessor != null) {
-			mappingsProcessors.add(javadocProcessor);
+		if (minecraftJarProcessorManager != null) {
+			mappingsProcessors.add(mappings -> minecraftJarProcessorManager.processMappings(mappings, new MappingProcessorContextImpl()));
 		}
 
 		if (mappingsProcessors.isEmpty()) {
@@ -428,5 +434,8 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static class MappingProcessorContextImpl implements MappingProcessorContext {
 	}
 }

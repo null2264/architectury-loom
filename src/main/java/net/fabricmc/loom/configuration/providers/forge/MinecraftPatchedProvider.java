@@ -74,6 +74,7 @@ import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarPro
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpConfigProvider;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpExecutor;
 import net.fabricmc.loom.configuration.providers.forge.minecraft.ForgeMinecraftProvider;
+import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
@@ -84,6 +85,8 @@ import net.fabricmc.loom.util.ThreadingUtils;
 import net.fabricmc.loom.util.TinyRemapperHelper;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.function.FsPathConsumer;
+import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
+import net.fabricmc.loom.util.service.SharedServiceManager;
 import net.fabricmc.loom.util.srg.InnerClassRemapper;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
@@ -198,7 +201,10 @@ public class MinecraftPatchedProvider {
 
 	public void remapJar() throws Exception {
 		if (dirty) {
-			remapPatchedJar();
+			try (var serviceManager = new ScopedSharedServiceManager()) {
+				remapPatchedJar(serviceManager);
+			}
+
 			fillClientExtraJar();
 		}
 
@@ -213,9 +219,10 @@ public class MinecraftPatchedProvider {
 		copyNonClassFiles(minecraftProvider.getMinecraftClientJar().toPath(), minecraftClientExtra);
 	}
 
-	private TinyRemapper buildRemapper(Path input) throws IOException {
+	private TinyRemapper buildRemapper(SharedServiceManager serviceManager, Path input) throws IOException {
 		Path[] libraries = TinyRemapperHelper.getMinecraftDependencies(project);
-		MemoryMappingTree mappingsWithSrg = getExtension().getMappingsProvider().getMappingsWithSrg();
+		TinyMappingsService mappingsService = getExtension().getMappingConfiguration().getMappingsService(serviceManager);
+		MemoryMappingTree mappingsWithSrg = mappingsService.getMappingTreeWithSrg();
 
 		TinyRemapper remapper = TinyRemapper.newRemapper()
 				.logger(logger::lifecycle)
@@ -379,7 +386,7 @@ public class MinecraftPatchedProvider {
 		logger.lifecycle(":access transformed minecraft in " + stopwatch.stop());
 	}
 
-	private void remapPatchedJar() throws Exception {
+	private void remapPatchedJar(SharedServiceManager serviceManager) throws Exception {
 		logger.lifecycle(":remapping minecraft (TinyRemapper, srg -> official)");
 		Path mcInput = minecraftPatchedSrgAtJar;
 		Path mcOutput = minecraftPatchedJar;
@@ -387,7 +394,7 @@ public class MinecraftPatchedProvider {
 		Path forgeUserdevJar = getForgeUserdevJar().toPath();
 		Files.deleteIfExists(mcOutput);
 
-		TinyRemapper remapper = buildRemapper(mcInput);
+		TinyRemapper remapper = buildRemapper(serviceManager, mcInput);
 
 		try (OutputConsumerPath outputConsumer = new OutputConsumerPath.Builder(mcOutput).build()) {
 			outputConsumer.addNonClassFiles(mcInput);

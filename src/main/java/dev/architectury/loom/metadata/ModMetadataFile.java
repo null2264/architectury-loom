@@ -7,7 +7,6 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
-import net.fabricmc.loom.util.ZipUtils;
 
 public interface ModMetadataFile {
 	/**
@@ -35,26 +34,18 @@ public interface ModMetadataFile {
 	String getFileName();
 
 	/**
+	 * {@return a list of the mixin configs declared in this mod metadata file}.
+	 */
+	List<String> getMixinConfigs();
+
+	/**
 	 * Reads the mod metadata file from a jar.
 	 *
 	 * @param jar the path to the jar file
 	 * @return the mod metadata file, or {@code null} if not found
 	 */
+	@Deprecated // TODO 1.1 MERGE
 	static @Nullable ModMetadataFile fromJar(Path jar) throws IOException {
-		// architectury.common.json
-		byte[] bytes = ZipUtils.unpackNullable(jar, ArchitecturyCommonJson.FILE_NAME);
-
-		if (bytes != null) {
-			return ArchitecturyCommonJson.of(bytes);
-		}
-
-		// quilt.mod.json
-		bytes = ZipUtils.unpackNullable(jar, QuiltModJson.FILE_NAME);
-
-		if (bytes != null) {
-			return QuiltModJson.of(bytes);
-		}
-
-		return null;
+		return ModMetadataFiles.fromJar(jar);
 	}
 }

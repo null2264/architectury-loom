@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,7 +46,6 @@ import javax.inject.Inject;
 import com.google.common.base.Suppliers;
 import com.google.gson.JsonObject;
 import dev.architectury.loom.extensions.ModBuildExtensions;
-import dev.architectury.loom.metadata.QuiltModJson;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.artifacts.Configuration;
@@ -63,6 +63,7 @@ import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.TaskDependency;
+import org.jetbrains.annotations.ApiStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,6 @@ import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.fabricmc.accesswidener.AccessWidenerRemapper;
 import net.fabricmc.accesswidener.AccessWidenerWriter;
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.build.MixinRefmapHelper;
 import net.fabricmc.loom.build.nesting.IncludedJarFactory;
 import net.fabricmc.loom.build.nesting.IncludedJarFactory.LazyNestedFile;
 import net.fabricmc.loom.build.nesting.IncludedJarFactory.NestedFile;
@@ -83,10 +83,12 @@ import net.fabricmc.loom.task.service.TinyRemapperService;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ExceptionUtil;
 import net.fabricmc.loom.util.ModPlatform;
-import net.fabricmc.loom.util.ModUtils;
 import net.fabricmc.loom.util.Pair;
 import net.fabricmc.loom.util.SidedClassVisitor;
 import net.fabricmc.loom.util.ZipUtils;
+import net.fabricmc.loom.util.fmj.FabricModJson;
+import net.fabricmc.loom.util.fmj.FabricModJsonFactory;
+import net.fabricmc.loom.util.service.BuildSharedServiceManager;
 import net.fabricmc.loom.util.service.UnsafeWorkQueueHelper;
 
 public abstract class RemapJarTask extends AbstractRemapJarTask {
@@ -130,11 +132,18 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 	@Input
 	public abstract Property<Boolean> getInjectAccessWidener();
 
-	private Supplier<TinyRemapperService> tinyRemapperService = Suppliers.memoize(() -> TinyRemapperService.getOrCreate(this));
+	@Input
+	@ApiStatus.Internal
+	public abstract Property<Boolean> getUseMixinAP();
+
+	private final Provider<BuildSharedServiceManager> serviceManagerProvider;
+	private final Supplier<TinyRemapperService> tinyRemapperService;
 
 	@Inject
 	public RemapJarTask() {
 		super();
+		serviceManagerProvider = BuildSharedServiceManager.createForTask(this, getBuildEventsListenerRegistry());
+		tinyRemapperService = Suppliers.memoize(() -> TinyRemapperService.getOrCreate(serviceManagerProvider.get().get(), this));
 
 		getClasspath().from(getProject().getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
 		getAddNestedDependencies().convention(true).finalizeValueOnRead();
@@ -155,6 +164,8 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			}));
 			getNestedJars().builtBy(forgeNestedJars.map(Pair::right));
 		}
+
+		getUseMixinAP().set(LoomGradleExtension.get(getProject()).getMixin().getUseLegacyMixinAp());
 
 		setupPreparationTask();
 	}
@@ -188,13 +199,13 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 				}
 			}
 
-			params.getTinyRemapperBuildServiceUuid().set(UnsafeWorkQueueHelper.create(getProject(), tinyRemapperService.get()));
+			params.getTinyRemapperBuildServiceUuid().set(UnsafeWorkQueueHelper.create(tinyRemapperService.get()));
 			params.getRemapClasspath().from(getClasspath());
 
-			final boolean legacyMixin = extension.getMixin().getUseLegacyMixinAp().get();
-			params.getUseMixinExtension().set(!legacyMixin);
+			final boolean mixinAp = getUseMixinAP().get();
+			params.getUseMixinExtension().set(!mixinAp);
 
-			if (legacyMixin) {
+			if (mixinAp) {
 				setupLegacyMixinRefmapRemapping(params);
 			} else if (extension.isForge()) {
 				throw new RuntimeException("Forge must have useLegacyMixinAp enabled");
@@ -210,7 +221,7 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 			params.getAtAccessWideners().set(getAtAccessWideners());
 
 			if (!getAtAccessWideners().get().isEmpty()) {
-				params.getMappingBuildServiceUuid().set(UnsafeWorkQueueHelper.create(getProject(), MappingsService.createDefault(getProject(), getSourceNamespace().get(), getTargetNamespace().get())));
+				params.getMappingBuildServiceUuid().set(UnsafeWorkQueueHelper.create(MappingsService.createDefault(getProject(), serviceManagerProvider.get().get(), getSourceNamespace().get(), getTargetNamespace().get())));
 			}
 		});
 	}
@@ -218,38 +229,18 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 	private void setupLegacyMixinRefmapRemapping(RemapParams params) {
 		final LoomGradleExtension extension = LoomGradleExtension.get(getProject());
 		final MixinExtension mixinExtension = extension.getMixin();
-		Collection<String> allMixinConfigs = null;
 
-		final JsonObject fabricModJson = extension.getPlatform().get() == ModPlatform.FABRIC ? ModUtils.getFabricModJson(getInputFile().getAsFile().get().toPath()) : null;
+		final FabricModJson fabricModJson = FabricModJsonFactory.createFromZipNullable(getInputFile().getAsFile().get().toPath());
 
 		if (fabricModJson == null) {
-			if (extension.getPlatform().get() == ModPlatform.QUILT) {
-				try {
-					byte[] bytes = ZipUtils.unpackNullable(getInputFile().getAsFile().get().toPath(), "quilt.mod.json");
+			return;
+		}
 
-					if (bytes != null) {
-						allMixinConfigs = QuiltModJson.of(bytes).getMixinConfigs();
-					}
-				} catch (IOException e) {
-					throw new RuntimeException("Cannot read file quilt.mod.json in the jar.", e);
-				}
-			}
+		Collection<String> allMixinConfigs = fabricModJson.getMixinConfigurations();
 
-			if (allMixinConfigs == null && getReadMixinConfigsFromManifest().get()) {
-				allMixinConfigs = ModBuildExtensions.readMixinConfigsFromManifest(getInputFile().get().getAsFile());
-			}
-
-			if (allMixinConfigs == null) {
-				if (extension.getPlatform().get() == ModPlatform.QUILT) {
-					getProject().getLogger().warn("Could not find quilt.mod.json file in: " + getInputFile().getAsFile().get().getName());
-					return;
-				}
-
-				getProject().getLogger().warn("Could not find fabric.mod.json file in: " + getInputFile().getAsFile().get().getName());
-				return;
-			}
-		} else {
-			allMixinConfigs = MixinRefmapHelper.getMixinConfigurationFiles(fabricModJson);
+		if (getReadMixinConfigsFromManifest().get()) {
+			allMixinConfigs = new LinkedHashSet<>(allMixinConfigs);
+			allMixinConfigs.addAll(ModBuildExtensions.readMixinConfigsFromManifest(getInputFile().get().getAsFile()));
 		}
 
 		for (SourceSet sourceSet : mixinExtension.getMixinSourceSets()) {

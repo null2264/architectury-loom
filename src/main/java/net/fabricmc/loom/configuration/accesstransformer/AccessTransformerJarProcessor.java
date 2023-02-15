@@ -47,10 +47,12 @@ import org.gradle.api.tasks.SourceSet;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
+import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.util.Checksum;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.ForgeToolExecutor;
+import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
@@ -145,8 +147,9 @@ public final class AccessTransformerJarProcessor implements JarProcessor {
 			}
 		}
 
-		try {
-			MemoryMappingTree mappings = LoomGradleExtension.get(project).getMappingsProvider().getMappingsWithSrg();
+		try (var serviceManager = new ScopedSharedServiceManager()) {
+			TinyMappingsService mappingsService = LoomGradleExtension.get(project).getMappingConfiguration().getMappingsService(serviceManager);
+			MemoryMappingTree mappings = mappingsService.getMappingTreeWithSrg();
 			accessTransformSet = accessTransformSet.remap(new TinyMappingsReader(mappings, MappingsNamespace.SRG.toString(), MappingsNamespace.NAMED.toString()).read());
 		} catch (IOException e) {
 			throw new UncheckedIOException("Could not remap access transformers from srg to named", e);

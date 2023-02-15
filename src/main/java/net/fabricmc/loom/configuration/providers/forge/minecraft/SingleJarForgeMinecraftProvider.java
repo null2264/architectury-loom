@@ -27,25 +27,24 @@ package net.fabricmc.loom.configuration.providers.forge.minecraft;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.gradle.api.Project;
-
+import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.SingleJarMinecraftProvider;
 
 public final class SingleJarForgeMinecraftProvider extends SingleJarMinecraftProvider implements ForgeMinecraftProvider {
 	private final MinecraftPatchedProvider patchedProvider;
 
-	private SingleJarForgeMinecraftProvider(Project project, SingleJarMinecraftProvider.Environment environment) {
-		super(project, environment);
-		this.patchedProvider = new MinecraftPatchedProvider(project, this, provideServer() ? MinecraftPatchedProvider.Type.SERVER_ONLY : MinecraftPatchedProvider.Type.CLIENT_ONLY);
+	private SingleJarForgeMinecraftProvider(ConfigContext configContext, SingleJarMinecraftProvider.Environment environment) {
+		super(configContext, environment);
+		this.patchedProvider = new MinecraftPatchedProvider(configContext.project(), this, provideServer() ? MinecraftPatchedProvider.Type.SERVER_ONLY : MinecraftPatchedProvider.Type.CLIENT_ONLY);
 	}
 
-	public static SingleJarForgeMinecraftProvider server(Project project) {
-		return new SingleJarForgeMinecraftProvider(project, new Server());
+	public static SingleJarForgeMinecraftProvider server(ConfigContext configContext) {
+		return new SingleJarForgeMinecraftProvider(configContext, new Server());
 	}
 
-	public static SingleJarForgeMinecraftProvider client(Project project) {
-		return new SingleJarForgeMinecraftProvider(project, new Client());
+	public static SingleJarForgeMinecraftProvider client(ConfigContext configContext) {
+		return new SingleJarForgeMinecraftProvider(configContext, new Client());
 	}
 
 	@Override

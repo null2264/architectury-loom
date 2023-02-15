@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.CompileConfiguration;
+import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.providers.BundleMetadata;
 import net.fabricmc.loom.util.Constants;
@@ -69,8 +70,8 @@ public abstract class MinecraftProvider {
 
 	private final Project project;
 
-	public MinecraftProvider(Project project) {
-		this.project = project;
+	public MinecraftProvider(ConfigContext configContext) {
+		this.project = configContext.project();
 	}
 
 	protected boolean provideClient() {

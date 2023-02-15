@@ -46,10 +46,12 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
+import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
@@ -91,11 +93,16 @@ public abstract class AbstractRemapJarTask extends Jar {
 	@Inject
 	protected abstract WorkerExecutor getWorkerExecutor();
 
+	@Inject
+	protected abstract BuildEventsListenerRegistry getBuildEventsListenerRegistry();
+
 	@Input
 	public abstract Property<Boolean> getIncludesClientOnlyClasses();
 
 	@Input
 	public abstract ListProperty<String> getAdditionalClientOnlyEntries();
+
+	private final Provider<JarManifestService> jarManifestServiceProvider;
 
 	@Inject
 	public AbstractRemapJarTask() {
@@ -103,6 +110,9 @@ public abstract class AbstractRemapJarTask extends Jar {
 		getTargetNamespace().convention(IntermediaryNamespaces.intermediary(getProject())).finalizeValueOnRead();
 		getRemapperIsolation().convention(true).finalizeValueOnRead();
 		getIncludesClientOnlyClasses().convention(false).finalizeValueOnRead();
+
+		jarManifestServiceProvider = JarManifestService.get(getProject());
+		usesService(jarManifestServiceProvider);
 	}
 
 	public final <P extends AbstractRemapParams> void submitWork(Class<? extends AbstractRemapAction<P>> workAction, Action<P> action) {
@@ -118,7 +128,7 @@ public abstract class AbstractRemapJarTask extends Jar {
 			params.getArchivePreserveFileTimestamps().set(isPreserveFileTimestamps());
 			params.getArchiveReproducibleFileOrder().set(isReproducibleFileOrder());
 
-			params.getJarManifestService().set(JarManifestService.get(getProject()));
+			params.getJarManifestService().set(jarManifestServiceProvider);
 
 			if (getIncludesClientOnlyClasses().get()) {
 				final List<String> clientOnlyEntries = new ArrayList<>(getClientOnlyEntries());

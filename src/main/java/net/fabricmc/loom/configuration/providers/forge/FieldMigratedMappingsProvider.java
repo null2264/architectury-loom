@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashBasedTable;
@@ -54,11 +53,11 @@ import org.objectweb.asm.Opcodes;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.configuration.providers.mappings.IntermediateMappingsService;
-import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
+import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftProvider;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.ThreadingUtils;
+import net.fabricmc.loom.util.service.SharedServiceManager;
 import net.fabricmc.loom.util.srg.SrgMerger;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.format.Tiny2Writer;
@@ -66,18 +65,19 @@ import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
-public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
+// TODO 1.1 MERGE: Rename and repackage
+public class FieldMigratedMappingsProvider extends MappingConfiguration {
 	private List<Map.Entry<FieldMember, String>> migratedFields = new ArrayList<>();
 	public Path migratedFieldsCache;
 	public Path rawTinyMappings;
 	public Path rawTinyMappingsWithSrg;
 
-	public FieldMigratedMappingsProvider(String mappingsIdentifier, Path mappingsWorkingDir, Supplier<IntermediateMappingsService> intermediaryService) {
-		super(mappingsIdentifier, mappingsWorkingDir, intermediaryService);
+	public FieldMigratedMappingsProvider(String mappingsIdentifier, Path mappingsWorkingDir) {
+		super(mappingsIdentifier, mappingsWorkingDir);
 	}
 
 	@Override
-	protected void setup(Project project, MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
+	protected void setup(Project project, SharedServiceManager serviceManager, MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		PatchProvider patchProvider = extension.getPatchProvider();
 		migratedFieldsCache = patchProvider.getProjectCacheFolder().resolve("migrated-fields.json");
@@ -97,7 +97,7 @@ public class FieldMigratedMappingsProvider extends MappingsProviderImpl {
 			}
 		}
 
-		super.setup(project, minecraftProvider, inputJar);
+		super.setup(project, serviceManager, minecraftProvider, inputJar);
 	}
 
 	public static String createForgeMappingsIdentifier(LoomGradleExtension extension, String mappingsName, String version, String classifier, String minecraftVersion) {

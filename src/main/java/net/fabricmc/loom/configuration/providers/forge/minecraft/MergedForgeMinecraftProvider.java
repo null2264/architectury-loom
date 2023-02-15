@@ -28,17 +28,16 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.gradle.api.Project;
-
+import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MergedMinecraftProvider;
 
 public final class MergedForgeMinecraftProvider extends MergedMinecraftProvider implements ForgeMinecraftProvider {
 	private final MinecraftPatchedProvider patchedProvider;
 
-	public MergedForgeMinecraftProvider(Project project) {
-		super(project);
-		this.patchedProvider = new MinecraftPatchedProvider(project, this, MinecraftPatchedProvider.Type.MERGED);
+	public MergedForgeMinecraftProvider(ConfigContext configContext) {
+		super(configContext);
+		this.patchedProvider = new MinecraftPatchedProvider(configContext.project(), this, MinecraftPatchedProvider.Type.MERGED);
 	}
 
 	@Override

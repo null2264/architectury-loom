@@ -63,10 +63,10 @@ public abstract class JarManifestService implements BuildService<JarManifestServ
 				params.getGradleVersion().set(GradleVersion.current().getVersion());
 				params.getLoomVersion().set(LoomGradlePlugin.LOOM_VERSION);
 				params.getMCEVersion().set(Constants.Dependencies.Versions.MIXIN_COMPILE_EXTENSIONS);
-				params.getMinecraftVersion().set(extension.getMinecraftProvider().minecraftVersion());
+				params.getMinecraftVersion().set(project.provider(() -> extension.getMinecraftProvider().minecraftVersion()));
 				params.getTinyRemapperVersion().set(tinyRemapperVersion.orElse("unknown"));
 				params.getFabricLoaderVersion().set(getLoaderVersion(project).orElse("unknown"));
-				params.getMixinVersion().set(getMixinVersion(project).orElse(new MixinVersion("unknown", "unknown")));
+				params.getMixinVersion().set(getMixinVersion(project));
 			});
 		});
 	}
@@ -112,20 +112,23 @@ public abstract class JarManifestService implements BuildService<JarManifestServ
 
 	private record MixinVersion(String group, String version) implements Serializable { }
 
-	private static Optional<MixinVersion> getMixinVersion(Project project) {
-		if (LoomGradleExtension.get(project).isForge()) return Optional.empty();
+	private static Provider<MixinVersion> getMixinVersion(Project project) {
+		return project.getConfigurations().named(Constants.Configurations.LOADER_DEPENDENCIES).map(configuration -> {
+			if (LoomGradleExtension.get(project).isForge()) return new MixinVersion("unknown", "unknown");
 
-		// Not super ideal that this uses the mod compile classpath, should prob look into making this not a thing at somepoint
-		Optional<Dependency> dependency = project.getConfigurations().getByName(Constants.Configurations.LOADER_DEPENDENCIES)
-				.getDependencies()
-				.stream()
-				.filter(dep -> "sponge-mixin".equals(dep.getName()))
-				.findFirst();
+			// Not super ideal that this uses the mod compile classpath, should prob look into making this not a thing at somepoint
+			Optional<Dependency> dependency = configuration
+					.getDependencies()
+					.stream()
+					.filter(dep -> "sponge-mixin".equals(dep.getName()))
+					.findFirst();
 
-		if (dependency.isEmpty()) {
-			project.getLogger().warn("Could not determine Mixin version for jar manifest");
-		}
+			if (dependency.isEmpty()) {
+				project.getLogger().warn("Could not determine Mixin version for jar manifest");
+			}
 
-		return dependency.map(d -> new MixinVersion(d.getGroup(), d.getVersion()));
+			return dependency.map(d -> new MixinVersion(d.getGroup(), d.getVersion()))
+					.orElse(new MixinVersion("unknown", "unknown"));
+		});
 	}
 }

@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
-public final class ArchitecturyCommonJson implements ModMetadataFile {
+public final class ArchitecturyCommonJson implements JsonBackedModMetadataFile {
 	public static final String FILE_NAME = "architectury.common.json";
 	private static final String ACCESS_WIDENER_KEY = "accessWidener";
 
@@ -46,6 +46,11 @@ public final class ArchitecturyCommonJson implements ModMetadataFile {
 
 	public static ArchitecturyCommonJson of(JsonObject json) {
 		return new ArchitecturyCommonJson(json);
+	}
+
+	@Override
+	public JsonObject getJson() {
+		return json;
 	}
 
 	@Override
@@ -99,5 +104,10 @@ public final class ArchitecturyCommonJson implements ModMetadataFile {
 	@Override
 	public String getFileName() {
 		return FILE_NAME;
+	}
+
+	@Override
+	public List<String> getMixinConfigs() {
+		return List.of();
 	}
 }

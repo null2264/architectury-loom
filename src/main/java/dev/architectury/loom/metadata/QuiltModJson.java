@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
-public final class QuiltModJson implements ModMetadataFile {
+public final class QuiltModJson implements JsonBackedModMetadataFile {
 	public static final String FILE_NAME = "quilt.mod.json";
 	private static final Logger LOGGER = LoggerFactory.getLogger(QuiltModJson.class);
 	private static final String ACCESS_WIDENER_KEY = "access_widener";
@@ -49,6 +49,11 @@ public final class QuiltModJson implements ModMetadataFile {
 
 	public static QuiltModJson of(JsonObject json) {
 		return new QuiltModJson(json);
+	}
+
+	@Override
+	public JsonObject getJson() {
+		return json;
 	}
 
 	@Override
@@ -104,6 +109,7 @@ public final class QuiltModJson implements ModMetadataFile {
 		return List.of();
 	}
 
+	@Override
 	public List<String> getMixinConfigs() {
 		// RFC 0002: The `mixin` field:
 		//   Type: Array/String
