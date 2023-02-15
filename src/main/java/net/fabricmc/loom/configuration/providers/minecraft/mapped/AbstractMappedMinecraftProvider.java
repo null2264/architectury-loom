@@ -132,11 +132,13 @@ public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvide
 	}
 
 	protected String getName(String name) {
+		String computedName = "minecraft-" + name;;
+
 		if (getTargetNamespace() != MappingsNamespace.NAMED) {
-			name = getTargetNamespace().name().toLowerCase(Locale.ROOT) + "-" + name;
+			computedName = getTargetNamespace().name() + "-" + name;
 		}
 
-		return minecraftProvider.getJarPrefix() + "minecraft-" + name;
+		return minecraftProvider.getJarPrefix() + computedName.toLowerCase(Locale.ROOT);
 	}
 
 	protected String getVersion() {
