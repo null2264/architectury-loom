@@ -219,7 +219,7 @@ public class MappingConfiguration {
 			}
 		}
 
-		project.getDependencies().add(Constants.Configurations.MAPPINGS_FINAL, project.getDependencies().module("loom.resolved:mappings:" + extension.getMinecraftProvider().minecraftVersion() + "/" + mappingsIdentifier()));
+		project.getDependencies().add(Constants.Configurations.MAPPINGS_FINAL, project.files(tinyMappingsJar.toFile()));
 	}
 
 	public static Path getRawSrgFile(Project project) throws IOException {
