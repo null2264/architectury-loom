@@ -51,6 +51,8 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.workers.WorkAction;
@@ -65,6 +67,7 @@ import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.task.service.JarManifestService;
 import net.fabricmc.loom.util.ZipReprocessorUtil;
 import net.fabricmc.loom.util.ZipUtils;
+import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public abstract class AbstractRemapJarTask extends Jar {
 	public static final String MANIFEST_PATH = "META-INF/MANIFEST.MF";
@@ -104,6 +107,10 @@ public abstract class AbstractRemapJarTask extends Jar {
 	@Input
 	public abstract ListProperty<String> getAdditionalClientOnlyEntries();
 
+	@Input
+	@Optional
+	public abstract Property<String> getClientOnlySourceSetName();
+
 	private final Provider<JarManifestService> jarManifestServiceProvider;
 
 	@Inject
@@ -133,7 +140,7 @@ public abstract class AbstractRemapJarTask extends Jar {
 			params.getJarManifestService().set(jarManifestServiceProvider);
 
 			if (getIncludesClientOnlyClasses().get()) {
-				final List<String> clientOnlyEntries = new ArrayList<>(getClientOnlyEntries());
+				final List<String> clientOnlyEntries = new ArrayList<>(getClientOnlyEntries(getClientSourceSet()));
 				clientOnlyEntries.addAll(getAdditionalClientOnlyEntries().get());
 				applyClientOnlyManifestAttributes(params, clientOnlyEntries);
 				params.getClientOnlyEntries().set(clientOnlyEntries.stream().filter(s -> s.endsWith(".class")).toList());
@@ -143,8 +150,7 @@ public abstract class AbstractRemapJarTask extends Jar {
 		});
 	}
 
-	@Internal
-	protected abstract List<String> getClientOnlyEntries();
+	protected abstract List<String> getClientOnlyEntries(SourceSet sourceSet);
 
 	public interface AbstractRemapParams extends WorkParameters {
 		RegularFileProperty getInputFile();
@@ -241,5 +247,10 @@ public abstract class AbstractRemapJarTask extends Jar {
 	@Internal
 	protected LoomGradleExtension getLoomExtension() {
 		return LoomGradleExtension.get(getProject());
+	}
+
+	private SourceSet getClientSourceSet() {
+		Preconditions.checkArgument(LoomGradleExtension.get(getProject()).areEnvironmentSourceSetsSplit(), "Cannot get client sourceset as project is not split");
+		return SourceSetHelper.getSourceSetByName(getClientOnlySourceSetName().get(), getProject());
 	}
 }
