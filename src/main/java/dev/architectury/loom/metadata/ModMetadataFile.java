@@ -7,6 +7,12 @@ import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
+/**
+ * The metadata file of a mod, such as {@link ArchitecturyCommonJson architectury.common.json} or
+ * {@link QuiltModJson quilt.mod.json}.
+ *
+ * @see net.fabricmc.loom.util.fmj.FabricModJson
+ */
 public interface ModMetadataFile {
 	/**
 	 * {@return the mod ID in this mod metadata file, or {@code null} if absent}.
