@@ -1,6 +1,7 @@
 package dev.architectury.loom.metadata;
 
 import java.util.List;
+import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -14,9 +15,9 @@ public interface ModMetadataFile {
 	@Nullable String getId();
 
 	/**
-	 * {@return the path to the access widener file of this mod, or {@code null} if absent}.
+	 * {@return the paths to the access widener file of this mod, or an empty set if absent}.
 	 */
-	@Nullable String getAccessWidener();
+	Set<String> getAccessWideners();
 
 	/**
 	 * {@return the injected interface data in this mod metadata file}.

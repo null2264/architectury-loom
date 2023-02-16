@@ -6,8 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import net.fabricmc.loom.util.function.CollectionUtil;
 
 public final class QuiltModJson implements JsonBackedModMetadataFile {
 	public static final String FILE_NAME = "quilt.mod.json";
@@ -68,22 +71,16 @@ public final class QuiltModJson implements JsonBackedModMetadataFile {
 	}
 
 	@Override
-	public @Nullable String getAccessWidener() {
+	public Set<String> getAccessWideners() {
 		if (json.has(ACCESS_WIDENER_KEY)) {
 			if (json.get(ACCESS_WIDENER_KEY).isJsonArray()) {
 				JsonArray array = json.get(ACCESS_WIDENER_KEY).getAsJsonArray();
-
-				// TODO (1.1): Support multiple access wideners in Quilt mods
-				if (array.size() != 1) {
-					throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
-				}
-
-				return array.get(0).getAsString();
+				return CollectionUtil.mapTo(array, new LinkedHashSet<>(), JsonElement::getAsString);
 			} else {
-				return json.get(ACCESS_WIDENER_KEY).getAsString();
+				return Set.of(json.get(ACCESS_WIDENER_KEY).getAsString());
 			}
 		} else {
-			return null;
+			return Set.of();
 		}
 	}
 
