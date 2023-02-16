@@ -68,7 +68,10 @@ public final class ModMetadataFabricModJson extends FabricModJson {
 
 	@Override
 	public @Nullable JsonElement getCustom(String key) {
-		// TODO 1.1 MERGE: Add support for quilt custom keys
+		if (modMetadata instanceof JsonBackedModMetadataFile jsonBacked) {
+			return jsonBacked.getCustomValue(key);
+		}
+
 		return null;
 	}
 

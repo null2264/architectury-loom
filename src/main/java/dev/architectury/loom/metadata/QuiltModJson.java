@@ -140,4 +140,12 @@ public final class QuiltModJson implements JsonBackedModMetadataFile {
 	public String getFileName() {
 		return FILE_NAME;
 	}
+
+	@Override
+	public @Nullable JsonElement getCustomValue(String key) {
+		// Quilt Loader allows reading any field from the quilt.mod.json as
+		// custom values (under the name "loader values").
+		// See https://github.com/QuiltMC/quilt-loader/blob/7da975c7/src/main/java/org/quiltmc/loader/api/ModMetadata.java#L150-L152
+		return json.get(key);
+	}
 }
