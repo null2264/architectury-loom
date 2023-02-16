@@ -35,7 +35,6 @@ public class Constants {
 	public static final String FABRIC_REPOSITORY = "https://maven.fabricmc.net/";
 
 	public static final int ASM_VERSION = Opcodes.ASM9;
-	public static final String MERCURY_SOURCE_VERSION = "17";
 
 	private Constants() {
 	}
