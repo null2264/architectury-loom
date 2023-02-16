@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2022 FabricMC
+ * Copyright (c) 2022-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,18 +24,16 @@
 
 package net.fabricmc.loom.configuration.processors;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
-
 import dev.architectury.tinyremapper.TinyRemapper;
 
+import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.api.processor.ProcessorContext;
 import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJar;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
-import net.fabricmc.loom.util.TinyRemapperHelper;
+import net.fabricmc.loom.util.LazyCloseable;
+import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public record ProcessorContextImpl(ConfigContext configContext, MinecraftJar minecraftJar) implements ProcessorContext {
 	@Override
@@ -59,18 +57,13 @@ public record ProcessorContextImpl(ConfigContext configContext, MinecraftJar min
 	}
 
 	@Override
-	public TinyRemapper createRemapper(MappingsNamespace from, MappingsNamespace to) {
-		try {
-			TinyRemapper tinyRemapper = TinyRemapperHelper.getTinyRemapper(configContext().project(), configContext().serviceManager(), from.toString(), to.toString());
-			tinyRemapper.readClassPath(TinyRemapperHelper.getMinecraftDependencies(configContext.project()));
+	public LazyCloseable<TinyRemapper> createRemapper(MappingsNamespace from, MappingsNamespace to) {
+		return ContextImplHelper.createRemapper(configContext, from, to);
+	}
 
-			for (Path minecraftJar : configContext.extension().getMinecraftJars(MappingsNamespace.INTERMEDIARY)) {
-				tinyRemapper.readClassPath(minecraftJar);
-			}
-
-			return tinyRemapper;
-		} catch (IOException e) {
-			throw new UncheckedIOException("Failed to create tiny remapper", e);
-		}
+	@Override
+	public MemoryMappingTree getMappings() {
+		LoomGradleExtension extension = LoomGradleExtension.get(configContext().project());
+		return extension.getMappingConfiguration().getMappingsService(configContext().serviceManager()).getMappingTree();
 	}
 }

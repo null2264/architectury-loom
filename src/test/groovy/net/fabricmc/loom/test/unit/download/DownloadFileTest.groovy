@@ -60,7 +60,7 @@ class DownloadFileTest extends DownloadTest {
 				it.result("Hello World")
 			}
 
-			def output = new File(File.createTempDir(), "file.txt").toPath()
+			def output = new File(File.createTempDir(), "subdir/file.txt").toPath()
 
 		when:
 			def result = Download.create("$PATH/simpleFile").downloadPath(output)
@@ -203,7 +203,7 @@ class DownloadFileTest extends DownloadTest {
 		def output = new File(File.createTempDir(), "etag.txt").toPath()
 
 		when:
-			for (i in 0..<2) {
+			for (i in 0..<3) {
 				Download.create("$PATH/etag")
 					.etag(true)
 					.downloadPath(output)

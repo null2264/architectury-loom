@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2022-2023 FabricMC
+ * Copyright (c) 2022 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,33 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.api.processor;
+package net.fabricmc.loom.configuration.providers.mappings.utils;
 
-import dev.architectury.tinyremapper.TinyRemapper;
+import java.nio.file.Path;
+import java.util.Objects;
 
-import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
-import net.fabricmc.loom.util.LazyCloseable;
-import net.fabricmc.mappingio.tree.MemoryMappingTree;
+import org.gradle.api.artifacts.MinimalExternalModuleDependency;
 
-public interface ProcessorContext {
-	MinecraftJarConfiguration getJarConfiguration();
+import net.fabricmc.loom.api.mappings.layered.MappingContext;
+import net.fabricmc.loom.api.mappings.layered.spec.FileSpec;
 
-	boolean isMerged();
+public record MinimalExternalModuleDependencyFileSpec(MinimalExternalModuleDependency dependency) implements FileSpec {
+	@Override
+	public Path get(MappingContext context) {
+		return context.resolveDependency(dependency);
+	}
 
-	boolean includesClient();
+	@Override
+	public int hashCode() {
+		return Objects.hash(dependency.getModule().getGroup(), dependency.getModule().getName(), dependency.getVersionConstraint());
+	}
 
-	boolean includesServer();
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof MinimalExternalModuleDependencyFileSpec other) {
+			return other.dependency().equals(this.dependency());
+		}
 
-	LazyCloseable<TinyRemapper> createRemapper(MappingsNamespace from, MappingsNamespace to);
-
-	MemoryMappingTree getMappings();
+		return false;
+	}
 }

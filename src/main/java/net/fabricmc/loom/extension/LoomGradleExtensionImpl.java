@@ -32,8 +32,6 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 import com.google.common.base.Suppliers;
-import org.cadixdev.lorenz.MappingSet;
-import org.cadixdev.mercury.Mercury;
 import org.gradle.api.Project;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -67,8 +65,6 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	private final ConfigurableFileCollection unmappedMods;
 	private final Supplier<ForgeExtensionAPI> forgeExtension;
 
-	private final MappingSet[] srcMappingCache = new MappingSet[2];
-	private final Mercury[] srcMercuryCache = new Mercury[2];
 	private final List<AccessWidenerFile> transitiveAccessWideners = new ArrayList<>();
 
 	private LoomDependencyManager dependencyManager;
@@ -190,18 +186,6 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 				getProject().files(getMinecraftJars(mappingsNamespace).stream().map(Path::toFile).toList())
 			)
 		);
-	}
-
-	@Override
-	public MappingSet getOrCreateSrcMappingCache(int id, Supplier<MappingSet> factory) {
-		if (id < 0 || id >= srcMappingCache.length) return factory.get();
-		return srcMappingCache[id] != null ? srcMappingCache[id] : (srcMappingCache[id] = factory.get());
-	}
-
-	@Override
-	public Mercury getOrCreateSrcMercuryCache(int id, Supplier<Mercury> factory) {
-		if (id < 0 || id >= srcMercuryCache.length) return factory.get();
-		return srcMercuryCache[id] != null ? srcMercuryCache[id] : (srcMercuryCache[id] = factory.get());
 	}
 
 	@Override

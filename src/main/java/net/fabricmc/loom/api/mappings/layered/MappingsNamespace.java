@@ -62,6 +62,7 @@ public enum MappingsNamespace {
 		return switch (namespace) {
 		case "official" -> OFFICIAL;
 		case "intermediary" -> INTERMEDIARY;
+		case "srg" -> SRG;
 		case "named" -> NAMED;
 		default -> null;
 		};

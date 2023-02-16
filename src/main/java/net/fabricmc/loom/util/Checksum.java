@@ -34,6 +34,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.common.io.Files;
+import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
@@ -87,5 +88,10 @@ public class Checksum {
 
 	public static String toHex(byte[] bytes) {
 		return BaseEncoding.base16().lowerCase().encode(bytes);
+	}
+
+	public static String projectHash(Project project) {
+		String str = project.getProjectDir().getAbsolutePath() + ":" + project.getPath();
+		return toHex(str.getBytes(StandardCharsets.UTF_8)).substring(0, 16);
 	}
 }

@@ -187,12 +187,13 @@ public class TinyRemapperService implements SharedService {
 			classpath.addAll(paths);
 		}
 
-		tinyRemapper.readClassPathAsync(toRead.toArray(Path[]::new));
+		tinyRemapper.readClassPath(toRead.toArray(Path[]::new));
 	}
 
 	@Override
 	public void close() throws IOException {
 		if (tinyRemapper != null) {
+			tinyRemapper.getEnvironment();
 			tinyRemapper.finish();
 			tinyRemapper = null;
 		}

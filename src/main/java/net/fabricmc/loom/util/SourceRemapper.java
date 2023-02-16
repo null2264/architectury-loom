@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -52,9 +53,8 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
 import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
+import net.fabricmc.loom.task.service.LorenzMappingService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
-import net.fabricmc.lorenztiny.TinyMappingsReader;
-import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class SourceRemapper {
 	private final Project project;
@@ -175,67 +175,49 @@ public class SourceRemapper {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		MappingConfiguration mappingConfiguration = extension.getMappingConfiguration();
 
-		String intermediary = IntermediaryNamespaces.intermediary(project);
-		int id = -1;
+		MappingSet mappings = LorenzMappingService.create(serviceManager,
+															mappingConfiguration,
+															Objects.requireNonNull(MappingsNamespace.of(from)),
+															Objects.requireNonNull(MappingsNamespace.of(to))
+		).mappings();
 
-		if (from.equals(intermediary) && to.equals("named")) {
-			id = 1;
-		} else if (to.equals(intermediary) && from.equals("named")) {
-			id = 0;
+		Mercury mercury = createMercuryWithClassPath(project, MappingsNamespace.of(to) == MappingsNamespace.NAMED);
+		mercury.setSourceCompatibilityFromRelease(getJavaCompileRelease(project));
+
+		for (File file : extension.getUnmappedModCollection()) {
+			Path path = file.toPath();
+
+			if (Files.isRegularFile(path)) {
+				mercury.getClassPath().add(path);
+			}
 		}
 
-		MappingSet mappings = extension.getOrCreateSrcMappingCache(id, () -> {
-			try {
-				TinyMappingsService mappingsService = mappingConfiguration.getMappingsService(serviceManager);
-				MemoryMappingTree m = (from.equals("srg") || to.equals("srg")) && extension.shouldGenerateSrgTiny() ? mappingsService.getMappingTreeWithSrg() : mappingsService.getMappingTree();
-				project.getLogger().info(":loading " + from + " source mappings");
-				return new TinyMappingsReader(m, from, to).read();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
+		for (Path intermediaryJar : extension.getMinecraftJars(MappingsNamespace.INTERMEDIARY)) {
+			mercury.getClassPath().add(intermediaryJar);
+		}
+
+		for (Path intermediaryJar : extension.getMinecraftJars(MappingsNamespace.NAMED)) {
+			mercury.getClassPath().add(intermediaryJar);
+		}
+
+		if (extension.isForge()) {
+			for (Path srgJar : extension.getMinecraftJars(MappingsNamespace.SRG)) {
+				mercury.getClassPath().add(srgJar);
 			}
-		});
+		}
 
-		Mercury mercury = extension.getOrCreateSrcMercuryCache(id, () -> {
-			Mercury m = createMercuryWithClassPath(project, to.equals("named"));
-			m.setSourceCompatibilityFromRelease(getJavaCompileRelease(project));
+		Set<File> files = project.getConfigurations()
+				.detachedConfiguration(project.getDependencies().create(Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS))
+				.resolve();
 
-			for (File file : extension.getUnmappedModCollection()) {
-				Path path = file.toPath();
+		for (File file : files) {
+			mercury.getClassPath().add(file.toPath());
+		}
 
-				if (Files.isRegularFile(path)) {
-					m.getClassPath().add(path);
-				}
-			}
-
-			for (Path intermediaryJar : extension.getMinecraftJars(MappingsNamespace.INTERMEDIARY)) {
-				m.getClassPath().add(intermediaryJar);
-			}
-
-			for (Path intermediaryJar : extension.getMinecraftJars(MappingsNamespace.NAMED)) {
-				m.getClassPath().add(intermediaryJar);
-			}
-
-			if (extension.isForge()) {
-				for (Path srgJar : extension.getMinecraftJars(MappingsNamespace.SRG)) {
-					m.getClassPath().add(srgJar);
-				}
-			}
-
-			Set<File> files = project.getConfigurations()
-					.detachedConfiguration(project.getDependencies().create(Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS))
-					.resolve();
-
-			for (File file : files) {
-				m.getClassPath().add(file.toPath());
-			}
-
-			m.getProcessors().add(MercuryRemapper.create(mappings));
-
-			return m;
-		});
+		mercury.getProcessors().add(MercuryRemapper.create(mappings));
 
 		this.mercury = mercury;
-		return mercury;
+		return this.mercury;
 	}
 
 	public static int getJavaCompileRelease(Project project) {
