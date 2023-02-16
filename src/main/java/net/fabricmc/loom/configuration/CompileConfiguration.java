@@ -289,6 +289,10 @@ public final class CompileConfiguration {
 		extension.setMinecraftProvider(minecraftProvider);
 		minecraftProvider.provideFirst();
 
+		// This needs to run after MinecraftProvider.initFiles
+		// but before MinecraftPatchedProvider.provide.
+		setupDependencyProviders(project, extension);
+
 		if (!extension.isForge()) {
 			minecraftProvider.provide();
 		}

@@ -38,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
-import net.fabricmc.loom.configuration.CompileConfiguration;
 import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.providers.BundleMetadata;
@@ -103,12 +102,6 @@ public abstract class MinecraftProvider {
 		if (provideServer()) {
 			serverBundleMetadata = BundleMetadata.fromJar(minecraftServerJar.toPath());
 		}
-
-		// TODO: Find a better place for this. This needs to run after MinecraftProvider.initFiles
-		//   but before MinecraftPatchedProvider.provide, so it's a bit tough.
-		//   Honestly, the ForgeProvider stuff that uses the results of initFiles could be moved to
-		//   MinecraftPatchedProvider.
-		CompileConfiguration.setupDependencyProviders(getProject(), getExtension());
 	}
 
 	public void provide() throws Exception {
