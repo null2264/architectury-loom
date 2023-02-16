@@ -168,6 +168,10 @@ public final class FabricModJsonFactory {
 	}
 
 	public static boolean containsMod(FileSystemUtil.Delegate fs, ModPlatform platform) {
+		if (Files.exists(fs.getPath("architectury.common.marker"))) {
+			return true;
+		}
+
 		if (platform == ModPlatform.FORGE) {
 			return Files.exists(fs.getPath("META-INF/mods.toml"));
 		} else if (platform == ModPlatform.QUILT) {
