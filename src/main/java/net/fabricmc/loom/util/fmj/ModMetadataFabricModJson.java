@@ -74,7 +74,7 @@ public final class ModMetadataFabricModJson extends FabricModJson {
 		if (source instanceof FabricModJsonSource.ZipSource zip) {
 			return Optional.of(zip.zipPath().getFileName().toString());
 		} else if (source instanceof FabricModJsonSource.DirectorySource directory) {
-			return Optional.of(directory.directoryPath().getFileName().toString());
+			return Optional.of(directory.directoryPath().toAbsolutePath().toString());
 		} else if (source instanceof FabricModJsonSource.SourceSetSource sourceSets) {
 			final StringJoiner joiner = new StringJoiner("+");
 
