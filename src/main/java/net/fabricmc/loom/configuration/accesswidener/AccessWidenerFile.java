@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -37,6 +38,7 @@ import dev.architectury.loom.metadata.ModMetadataFile;
 import dev.architectury.loom.metadata.ModMetadataFiles;
 
 import net.fabricmc.loom.util.ZipUtils;
+import net.fabricmc.loom.util.function.CollectionUtil;
 
 public record AccessWidenerFile(
 		String path,
@@ -63,7 +65,13 @@ public record AccessWidenerFile(
 				modMetadata = ModMetadataFiles.fromJar(modJarPath);
 
 				if (modMetadata != null) {
-					awPath = modMetadata.getAccessWidener();
+					final Set<String> accessWideners = modMetadata.getAccessWideners();
+
+					if (accessWideners.size() > 1) {
+						throw new UnsupportedOperationException("Cannot read multiple access wideners from " + modJarPath);
+					}
+
+					awPath = CollectionUtil.single(modMetadata.getAccessWideners()).orElse(null);
 					if (awPath == null) return null;
 				} else {
 					// No known mod metadata

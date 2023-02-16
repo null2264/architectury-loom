@@ -26,6 +26,7 @@ package net.fabricmc.loom.util.function;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -117,5 +118,30 @@ public final class CollectionUtil {
 		ArrayList<A> result = new ArrayList<>(collection);
 		result.removeIf(filter.negate());
 		return result;
+	}
+
+	/**
+	 * Gets the single element of an iterable.
+	 *
+	 * @param iterable the iterable
+	 * @param <A> the element type
+	 * @return the single element, or empty if there are no elements or multiple elements
+	 */
+	public static <A> Optional<A> single(Iterable<? extends A> iterable) {
+		final Iterator<? extends A> iter = iterable.iterator();
+
+		// No elements
+		if (!iter.hasNext()) {
+			return Optional.empty();
+		}
+
+		A single = iter.next();
+
+		// Too many elements
+		if (iter.hasNext()) {
+			return Optional.empty();
+		}
+
+		return Optional.of(single);
 	}
 }

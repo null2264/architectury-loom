@@ -34,14 +34,12 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import com.google.gson.JsonObject;
-
-import net.fabricmc.loom.util.ModPlatform;
-
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.InstallerData;
 import net.fabricmc.loom.util.FileSystemUtil;
+import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.fmj.FabricModJsonFactory;
 
 // ARCH: isFabricMod means "is mod on current platform"

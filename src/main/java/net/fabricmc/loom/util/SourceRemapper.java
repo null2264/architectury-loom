@@ -52,7 +52,6 @@ import net.fabricmc.loom.api.RemapConfigurationSettings;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
-import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.task.service.LorenzMappingService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
 

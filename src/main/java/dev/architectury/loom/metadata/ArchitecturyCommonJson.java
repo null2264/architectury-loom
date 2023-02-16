@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -59,11 +60,11 @@ public final class ArchitecturyCommonJson implements JsonBackedModMetadataFile {
 	}
 
 	@Override
-	public @Nullable String getAccessWidener() {
+	public Set<String> getAccessWideners() {
 		if (json.has(ACCESS_WIDENER_KEY)) {
-			return json.get(ACCESS_WIDENER_KEY).getAsString();
+			return Set.of(json.get(ACCESS_WIDENER_KEY).getAsString());
 		} else {
-			return null;
+			return Set.of();
 		}
 	}
 

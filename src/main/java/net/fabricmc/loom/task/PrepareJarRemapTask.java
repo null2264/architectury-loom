@@ -28,7 +28,6 @@ import java.nio.file.Path;
 
 import javax.inject.Inject;
 
-import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.InputFile;

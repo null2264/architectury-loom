@@ -28,12 +28,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Objects;
 
-import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
-
 import org.cadixdev.lorenz.MappingSet;
 
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
+import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.util.service.SharedService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
 import net.fabricmc.lorenztiny.TinyMappingsReader;

@@ -285,6 +285,7 @@ public final class CompileConfiguration {
 		if (extension.isForge() && !(minecraftProvider instanceof ForgeMinecraftProvider)) {
 			throw new UnsupportedOperationException("Using Forge with split jars is not supported!");
 		}
+
 		extension.setMinecraftProvider(minecraftProvider);
 		minecraftProvider.provideFirst();
 
