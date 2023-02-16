@@ -40,7 +40,6 @@ import javax.inject.Inject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import dev.architectury.tinyremapper.TinyRemapper;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -193,8 +192,7 @@ public abstract class InterfaceInjectionProcessor implements MinecraftJarProcess
 	public record InjectedInterface(String modId, String className, String ifaceName) {
 		public static List<InjectedInterface> fromMod(FabricModJson fabricModJson) {
 			if (fabricModJson instanceof ModMetadataFabricModJson modMetadataFmj) {
-				// TODO 1.1 MERGE: Inject file path into mod metadatas if possible
-				return modMetadataFmj.getModMetadata().getInjectedInterfaces("<unknown mod>");
+				return modMetadataFmj.getModMetadata().getInjectedInterfaces(modMetadataFmj.getId());
 			}
 
 			final String modId = fabricModJson.getId();

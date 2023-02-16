@@ -26,7 +26,8 @@ package net.fabricmc.loom.util.fmj;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,14 +35,20 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.architectury.loom.metadata.JsonBackedModMetadataFile;
 import dev.architectury.loom.metadata.ModMetadataFile;
+import org.gradle.api.Project;
+import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.Nullable;
+
+import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public final class ModMetadataFabricModJson extends FabricModJson {
 	private final ModMetadataFile modMetadata;
+	private final FabricModJsonSource source;
 
 	ModMetadataFabricModJson(ModMetadataFile modMetadata, FabricModJsonSource source) {
 		super(getJsonForModMetadata(modMetadata), source);
 		this.modMetadata = modMetadata;
+		this.source = source;
 	}
 
 	private static JsonObject getJsonForModMetadata(ModMetadataFile modMetadata) {
@@ -58,7 +65,36 @@ public final class ModMetadataFabricModJson extends FabricModJson {
 
 	@Override
 	public String getId() {
-		return Objects.requireNonNullElseGet(modMetadata.getId(), super::getId);
+		return Optional.ofNullable(modMetadata.getId())
+				.or(this::getIdFromSource)
+				.orElseGet(super::getId);
+	}
+
+	private Optional<String> getIdFromSource() {
+		if (source instanceof FabricModJsonSource.ZipSource zip) {
+			return Optional.of(zip.zipPath().getFileName().toString());
+		} else if (source instanceof FabricModJsonSource.DirectorySource directory) {
+			return Optional.of(directory.directoryPath().getFileName().toString());
+		} else if (source instanceof FabricModJsonSource.SourceSetSource sourceSets) {
+			final StringJoiner joiner = new StringJoiner("+");
+
+			for (SourceSet sourceSet : sourceSets.sourceSets()) {
+				final Project project = SourceSetHelper.getSourceSetProject(sourceSet);
+				final String path = project.getPath();
+				final StringBuilder sb = new StringBuilder(path);
+
+				if (!path.endsWith(":")) {
+					sb.append(':');
+				}
+
+				sb.append(sourceSet.getName());
+				joiner.add(sb.toString());
+			}
+
+			return Optional.of(joiner.toString());
+		}
+
+		return Optional.empty();
 	}
 
 	@Override
