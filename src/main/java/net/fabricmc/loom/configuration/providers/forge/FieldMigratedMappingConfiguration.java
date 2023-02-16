@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 FabricMC
+ * Copyright (c) 2021-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -65,14 +65,13 @@ import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
-// TODO 1.1 MERGE: Rename and repackage
-public class FieldMigratedMappingsProvider extends MappingConfiguration {
+public final class FieldMigratedMappingConfiguration extends MappingConfiguration {
 	private List<Map.Entry<FieldMember, String>> migratedFields = new ArrayList<>();
 	public Path migratedFieldsCache;
 	public Path rawTinyMappings;
 	public Path rawTinyMappingsWithSrg;
 
-	public FieldMigratedMappingsProvider(String mappingsIdentifier, Path mappingsWorkingDir) {
+	public FieldMigratedMappingConfiguration(String mappingsIdentifier, Path mappingsWorkingDir) {
 		super(mappingsIdentifier, mappingsWorkingDir);
 	}
 
@@ -101,7 +100,7 @@ public class FieldMigratedMappingsProvider extends MappingConfiguration {
 	}
 
 	public static String createForgeMappingsIdentifier(LoomGradleExtension extension, String mappingsName, String version, String classifier, String minecraftVersion) {
-		return FieldMigratedMappingsProvider.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion) + "-forge-" + extension.getForgeProvider().getVersion().getCombined();
+		return FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion) + "-forge-" + extension.getForgeProvider().getVersion().getCombined();
 	}
 
 	@Override
