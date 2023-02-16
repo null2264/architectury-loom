@@ -43,6 +43,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import net.fabricmc.loom.LoomGradlePlugin;
+import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
@@ -164,5 +165,15 @@ public final class FabricModJsonFactory {
 		}
 
 		return ZipUtils.contains(input, FABRIC_MOD_JSON);
+	}
+
+	public static boolean containsMod(FileSystemUtil.Delegate fs, ModPlatform platform) {
+		if (platform == ModPlatform.FORGE) {
+			return Files.exists(fs.getPath("META-INF/mods.toml"));
+		} else if (platform == ModPlatform.QUILT) {
+			return Files.exists(fs.getPath("quilt.mod.json")) || containsMod(fs, platform);
+		}
+
+		return Files.exists(fs.getPath(FABRIC_MOD_JSON));
 	}
 }

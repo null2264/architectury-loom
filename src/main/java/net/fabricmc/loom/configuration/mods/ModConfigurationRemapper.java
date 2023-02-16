@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import dev.architectury.loom.extensions.ModDependencyExtensions;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.FileCollectionDependency;
@@ -89,7 +88,24 @@ public class ModConfigurationRemapper {
 				final List<ModDependency> modDependencies = new ArrayList<>();
 
 				for (ArtifactRef artifact : resolveArtifacts(project, sourceConfig)) {
-					if (!ModDependencyExtensions.shouldRemapMod(project.getLogger(), artifact.path(), extension.getPlatform().get(), sourceConfig.getName())) {
+					final ArtifactMetadata artifactMetadata;
+
+					try {
+						artifactMetadata = ArtifactMetadata.create(artifact, extension.getPlatform().get());
+					} catch (IOException e) {
+						throw new UncheckedIOException("Failed to read metadata from" + artifact.path(), e);
+					}
+
+					if (artifactMetadata.installerData() != null) {
+						if (extension.getInstallerData() != null) {
+							project.getLogger().info("Found another installer JSON in ({}), ignoring", artifact.path());
+						} else {
+							project.getLogger().info("Applying installer data from {}", artifact.path());
+							artifactMetadata.installerData().applyToProject(project);
+						}
+					}
+
+					if (!artifactMetadata.shouldRemap()) {
 						artifact.applyToConfiguration(project, targetConfig);
 						continue;
 					}
