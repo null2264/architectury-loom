@@ -1,7 +1,5 @@
 package dev.architectury.loom.metadata;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -37,15 +35,4 @@ public interface ModMetadataFile {
 	 * {@return a list of the mixin configs declared in this mod metadata file}.
 	 */
 	List<String> getMixinConfigs();
-
-	/**
-	 * Reads the mod metadata file from a jar.
-	 *
-	 * @param jar the path to the jar file
-	 * @return the mod metadata file, or {@code null} if not found
-	 */
-	@Deprecated // TODO 1.1 MERGE
-	static @Nullable ModMetadataFile fromJar(Path jar) throws IOException {
-		return ModMetadataFiles.fromJar(jar);
-	}
 }

@@ -73,7 +73,7 @@ public final class FabricModJsonFactory {
 
 	public static FabricModJson createFromZip(Path zipPath) {
 		try {
-			@Nullable ModMetadataFile modMetadata = ModMetadataFile.fromJar(zipPath);
+			@Nullable ModMetadataFile modMetadata = ModMetadataFiles.fromJar(zipPath);
 
 			if (modMetadata != null) {
 				return new ModMetadataFabricModJson(modMetadata, new FabricModJsonSource.ZipSource(zipPath));
@@ -92,7 +92,7 @@ public final class FabricModJsonFactory {
 	@Nullable
 	public static FabricModJson createFromZipNullable(Path zipPath) {
 		try {
-			final @Nullable ModMetadataFile modMetadata = ModMetadataFile.fromJar(zipPath);
+			final @Nullable ModMetadataFile modMetadata = ModMetadataFiles.fromJar(zipPath);
 
 			if (modMetadata != null) {
 				return new ModMetadataFabricModJson(modMetadata, new FabricModJsonSource.ZipSource(zipPath));

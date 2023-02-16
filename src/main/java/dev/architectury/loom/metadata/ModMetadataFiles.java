@@ -14,12 +14,21 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
+/**
+ * Utilities for reading mod metadata files.
+ */
 public final class ModMetadataFiles {
 	private static final Map<String, Function<byte[], ModMetadataFile>> SINGLE_FILE_METADATA_TYPES = ImmutableMap.<String, Function<byte[], ModMetadataFile>>builder()
 			.put(ArchitecturyCommonJson.FILE_NAME, ArchitecturyCommonJson::of)
 			.put(QuiltModJson.FILE_NAME, QuiltModJson::of)
 			.build();
 
+	/**
+	 * Reads the mod metadata file from a jar.
+	 *
+	 * @param jar the path to the jar file
+	 * @return the mod metadata file, or {@code null} if not found
+	 */
 	public static @Nullable ModMetadataFile fromJar(Path jar) throws IOException {
 		for (final String filePath : SINGLE_FILE_METADATA_TYPES.keySet()) {
 			final byte @Nullable [] bytes = ZipUtils.unpackNullable(jar, filePath);
@@ -32,6 +41,12 @@ public final class ModMetadataFiles {
 		return null;
 	}
 
+	/**
+	 * Reads the mod metadata file from a directory.
+	 *
+	 * @param directory the path to the directory
+	 * @return the mod metadata file, or {@code null} if not found
+	 */
 	public static @Nullable ModMetadataFile fromDirectory(Path directory) throws IOException {
 		for (final String filePath : SINGLE_FILE_METADATA_TYPES.keySet()) {
 			final Path metadataPath = directory.resolve(filePath);
@@ -44,6 +59,12 @@ public final class ModMetadataFiles {
 		return null;
 	}
 
+	/**
+	 * Reads the first mod metadata file from source sets.
+	 *
+	 * @param sourceSets the source sets to read from
+	 * @return the mod metadata file, or {@code null} if not found
+	 */
 	public static @Nullable ModMetadataFile fromSourceSets(SourceSet... sourceSets) throws IOException {
 		for (final String filePath : SINGLE_FILE_METADATA_TYPES.keySet()) {
 			final @Nullable File file = SourceSetHelper.findFirstFileInResource(filePath, sourceSets);

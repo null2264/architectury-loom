@@ -34,6 +34,7 @@ import java.util.Objects;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import dev.architectury.loom.metadata.ModMetadataFile;
+import dev.architectury.loom.metadata.ModMetadataFiles;
 
 import net.fabricmc.loom.util.ZipUtils;
 
@@ -59,7 +60,7 @@ public record AccessWidenerFile(
 			String awPath;
 
 			try {
-				modMetadata = ModMetadataFile.fromJar(modJarPath);
+				modMetadata = ModMetadataFiles.fromJar(modJarPath);
 
 				if (modMetadata != null) {
 					awPath = modMetadata.getAccessWidener();
