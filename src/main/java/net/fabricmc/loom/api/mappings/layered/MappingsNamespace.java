@@ -45,6 +45,13 @@ public enum MappingsNamespace {
 	 * @see <a href="https://github.com/FabricMC/intermediary/">github.com/FabricMC/intermediary/</a>
 	 */
 	INTERMEDIARY,
+
+	/**
+	 * SRG mappings provided by Minecraft Forge.
+	 *
+	 * <p>They are used as the mapping set in a Forge production environment akin to Fabric's
+	 * {@linkplain #INTERMEDIARY intermediary mappings}.
+	 */
 	SRG,
 
 	/**
