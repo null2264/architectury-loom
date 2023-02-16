@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import dev.architectury.tinyremapper.TinyRemapper;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.accesswidener.AccessWidenerReader;
@@ -40,7 +41,6 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.util.LazyCloseable;
 import net.fabricmc.loom.util.fmj.FabricModJson;
 import net.fabricmc.loom.util.fmj.ModEnvironment;
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 /**
  * {@link AccessWidenerEntry} implementation for a {@link FabricModJson}.

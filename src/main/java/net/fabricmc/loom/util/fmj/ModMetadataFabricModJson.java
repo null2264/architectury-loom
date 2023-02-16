@@ -25,6 +25,7 @@
 package net.fabricmc.loom.util.fmj;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import com.google.gson.JsonElement;
@@ -75,8 +76,8 @@ public final class ModMetadataFabricModJson extends FabricModJson {
 	}
 
 	@Override
-	public List<String> getClassTweakers(ModEnvironment modEnvironment) {
+	public Map<String, ModEnvironment> getClassTweakers() {
 		@Nullable String accessWidener = modMetadata.getAccessWidener();
-		return accessWidener != null ? List.of(accessWidener) : List.of();
+		return accessWidener != null ? Map.of(accessWidener, ModEnvironment.UNIVERSAL) : Map.of();
 	}
 }

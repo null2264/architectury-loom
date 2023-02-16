@@ -28,11 +28,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
+import dev.architectury.tinyremapper.TinyRemapper;
+
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.util.LazyCloseable;
 import net.fabricmc.loom.util.TinyRemapperHelper;
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 public final class ContextImplHelper {
 	private ContextImplHelper() {
