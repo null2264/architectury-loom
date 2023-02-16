@@ -22,28 +22,29 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test.unit
+package net.fabricmc.loom.test.unit.processor
 
-import net.fabricmc.loom.util.Checksum
-import org.gradle.api.Project
+import net.fabricmc.loom.configuration.accesswidener.ModAccessWidenerEntry
+import net.fabricmc.loom.util.fmj.FabricModJson
+import net.fabricmc.loom.util.fmj.ModEnvironment
 import spock.lang.Specification
 
-class ChecksumTest extends Specification {
-	def "project hash"() {
-		given:
-			def project = Mock(Project)
-			project.getPath() >> path
-			project.getProjectDir() >> new File(dir)
+class ModAccessWidenerEntryTest extends Specification {
+    def "read local mod"() {
+        given:
+            def mod = Mock(FabricModJson.Mockable)
+            mod.getClassTweakers() >> ["test.accesswidener": ModEnvironment.UNIVERSAL]
+            mod.hashCode() >> 0
 
-		when:
-			def hash = Checksum.projectHash(project)
+        when:
+            def entries = ModAccessWidenerEntry.readAll(mod, true)
+        then:
+            entries.size() == 1
+            def entry = entries[0]
 
-		then:
-			!hash.empty
-
-		where:
-			path   | dir
-			":"    | "C://mod"
-			":sub" | "/Users/test/Documents/modding/fabric-loom"
-	}
+            entry.path() == "test.accesswidener"
+            entry.environment() == ModEnvironment.UNIVERSAL
+            entry.transitiveOnly()
+            entry.hashCode() == -1218981396
+    }
 }

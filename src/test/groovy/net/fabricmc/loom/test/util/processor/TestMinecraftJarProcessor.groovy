@@ -22,28 +22,36 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test.unit
+package net.fabricmc.loom.test.util.processor
 
-import net.fabricmc.loom.util.Checksum
-import org.gradle.api.Project
-import spock.lang.Specification
+import groovy.transform.Immutable
+import net.fabricmc.loom.api.processor.MinecraftJarProcessor
+import net.fabricmc.loom.api.processor.ProcessorContext
+import net.fabricmc.loom.api.processor.SpecContext
 
-class ChecksumTest extends Specification {
-	def "project hash"() {
-		given:
-			def project = Mock(Project)
-			project.getPath() >> path
-			project.getProjectDir() >> new File(dir)
+import java.nio.file.Path
 
-		when:
-			def hash = Checksum.projectHash(project)
+@Immutable
+class TestMinecraftJarProcessor implements MinecraftJarProcessor<Spec> {
+    String input
 
-		then:
-			!hash.empty
+    final String name = "TestProcessor"
 
-		where:
-			path   | dir
-			":"    | "C://mod"
-			":sub" | "/Users/test/Documents/modding/fabric-loom"
-	}
+    @Override
+    Spec buildSpec(SpecContext context) {
+        if (input == null) {
+            return null
+        }
+
+        return new Spec(input)
+    }
+
+    @Immutable
+    class Spec implements MinecraftJarProcessor.Spec {
+        String input
+    }
+
+    @Override
+    void processJar(Path jar, Spec spec, ProcessorContext context) throws IOException {
+    }
 }
