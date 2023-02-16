@@ -241,7 +241,7 @@ public class MappingConfiguration {
 		}
 	}
 
-	public void manipulateMappings(Project project, Path mappingsJar) throws IOException {
+	protected void manipulateMappings(Project project, Path mappingsJar) throws IOException {
 	}
 
 	private static String getMappingsClassifier(DependencyInfo dependency, boolean isV2) {

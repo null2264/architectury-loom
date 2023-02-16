@@ -104,7 +104,7 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 	}
 
 	@Override
-	public void manipulateMappings(Project project, Path mappingsJar) throws IOException {
+	protected void manipulateMappings(Project project, Path mappingsJar) throws IOException {
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		this.rawTinyMappings = tinyMappings;
@@ -118,8 +118,8 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 			}
 		}
 
-		tinyMappings = mappingsWorkingDir().resolve("mappings-updated.tiny");
-		tinyMappingsWithSrg = mappingsWorkingDir().resolve("mappings-srg-updated.tiny");
+		tinyMappings = mappingsWorkingDir().resolve("mappings-field-migrated.tiny");
+		tinyMappingsWithSrg = mappingsWorkingDir().resolve("mappings-srg-field-migrated.tiny");
 
 		try {
 			updateFieldMigration(project);
