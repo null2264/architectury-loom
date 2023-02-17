@@ -30,6 +30,8 @@ import org.gradle.api.Project;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.provider.Provider;
 
+import net.fabricmc.loom.util.Constants;
+
 public final class GradleUtils {
 	private GradleUtils() {
 	}
@@ -55,7 +57,7 @@ public final class GradleUtils {
 	}
 
 	public static boolean isLoomProject(Project project) {
-		return project.getPluginManager().hasPlugin("fabric-loom");
+		return project.getPluginManager().hasPlugin(Constants.PLUGIN_ID);
 	}
 
 	public static Provider<Boolean> getBooleanPropertyProvider(Project project, String key) {
