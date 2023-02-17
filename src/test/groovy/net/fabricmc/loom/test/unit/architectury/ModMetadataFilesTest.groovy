@@ -51,6 +51,16 @@ class ModMetadataFilesTest extends Specification {
             modMetadata == null
     }
 
+    def "read nothing from directory"() {
+        given:
+            // unrelated file
+            workingDir.resolve('foo.txt').text = 'hello'
+        when:
+            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
+        then:
+            modMetadata == null
+    }
+
     def "read quilt.mod.json from jar"() {
         given:
             def jar = workingDir.resolve("my_mod.jar")
@@ -62,6 +72,15 @@ class ModMetadataFilesTest extends Specification {
             modMetadata instanceof QuiltModJson
     }
 
+    def "read quilt.mod.json from directory"() {
+        given:
+            workingDir.resolve('quilt.mod.json').text = '{}'
+        when:
+            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
+        then:
+            modMetadata instanceof QuiltModJson
+    }
+
     def "read architectury.common.json from jar"() {
         given:
             def jar = workingDir.resolve("my_mod.jar")
@@ -69,6 +88,15 @@ class ModMetadataFilesTest extends Specification {
             ZipUtils.pack(zipContents, jar)
         when:
             def modMetadata = ModMetadataFiles.fromJar(jar)
+        then:
+            modMetadata instanceof ArchitecturyCommonJson
+    }
+
+    def "read architectury.common.json from directory"() {
+        given:
+            workingDir.resolve('architectury.common.json').text = '{}'
+        when:
+            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
         then:
             modMetadata instanceof ArchitecturyCommonJson
     }
