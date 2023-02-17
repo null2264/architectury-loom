@@ -354,16 +354,16 @@ public final class CompileConfiguration {
 
 		final InterfaceInjectionExtensionAPI interfaceInjection = extension.getInterfaceInjection();
 
+		if (interfaceInjection.isEnabled()) {
+			extension.addMinecraftJarProcessor(InterfaceInjectionProcessor.class, "fabric-loom:interface-inject", interfaceInjection.getEnableDependencyInterfaceInjection().get());
+		}
+
 		if (extension.isForge()) {
 			Set<File> atFiles = AccessTransformerJarProcessor.getAccessTransformerFiles(configContext.project());
 
 			if (!atFiles.isEmpty()) {
 				extension.getGameJarProcessors().add(new AccessTransformerJarProcessor(configContext.project(), atFiles));
 			}
-		}
-
-		if (interfaceInjection.isEnabled()) {
-			extension.addMinecraftJarProcessor(InterfaceInjectionProcessor.class, "fabric-loom:interface-inject", interfaceInjection.getEnableDependencyInterfaceInjection().get());
 		}
 	}
 
