@@ -228,17 +228,19 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		final LoomGradleExtension extension = LoomGradleExtension.get(getProject());
 		final MixinExtension mixinExtension = extension.getMixin();
 
+		final Collection<String> allMixinConfigs = new LinkedHashSet<>();
 		final FabricModJson fabricModJson = FabricModJsonFactory.createFromZipNullable(getInputFile().getAsFile().get().toPath());
 
-		if (fabricModJson == null) {
-			return;
+		if (fabricModJson != null) {
+			allMixinConfigs.addAll(fabricModJson.getMixinConfigurations());
 		}
 
-		Collection<String> allMixinConfigs = fabricModJson.getMixinConfigurations();
-
 		if (getReadMixinConfigsFromManifest().get()) {
-			allMixinConfigs = new LinkedHashSet<>(allMixinConfigs);
 			allMixinConfigs.addAll(ModBuildExtensions.readMixinConfigsFromManifest(getInputFile().get().getAsFile()));
+		}
+
+		if (allMixinConfigs.isEmpty()) {
+			return;
 		}
 
 		for (SourceSet sourceSet : mixinExtension.getMixinSourceSets()) {
