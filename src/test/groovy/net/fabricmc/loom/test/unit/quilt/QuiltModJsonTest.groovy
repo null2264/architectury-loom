@@ -96,6 +96,7 @@ class QuiltModJsonTest extends Specification {
             '{}'                                       | []
             '{"access_widener":"foo.accesswidener"}'   | ['foo.accesswidener']
             '{"access_widener":["bar.accesswidener"]}' | ['bar.accesswidener']
+            '{"access_widener":["foo.accesswidener","bar.accesswidener"]}' | ['foo.accesswidener', 'bar.accesswidener']
     }
 
     def "read injected interfaces"() {
