@@ -106,7 +106,7 @@ jobs:
           TEST_WARNING_MODE: fail
         id: test
       - name: Publish test results for report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() || success() }}
         with:
           name: Raw Test Results
@@ -139,7 +139,7 @@ jobs:
 
       - run: ./gradlew test --tests *ReproducibleBuildTest --stacktrace --warning-mode fail
       - name: Publish test results for report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ failure() || success() }}
         with:
           name: Raw Test Results
@@ -158,7 +158,7 @@ jobs:
     if: ${{ failure() || success() }}
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: artifacts
       - name: Publish test report
