@@ -44,14 +44,14 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(bytes)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from String"() {
         when:
             def qmj = QuiltModJson.of(OF_TEST_INPUT)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from File"() {
@@ -61,7 +61,7 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(file)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from Path"() {
@@ -71,7 +71,7 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(path)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from JsonObject"() {
@@ -81,21 +81,21 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(json)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "read access widener"() {
         given:
             def qmj = QuiltModJson.of(jsonText)
         when:
-            def accessWidenerName = qmj.accessWidener
+            def accessWidenerNames = qmj.accessWideners
         then:
-            accessWidenerName == expectedAw
+            accessWidenerNames == expectedAw as Set
         where:
             jsonText                                   | expectedAw
-            '{}'                                       | null
-            '{"access_widener":"foo.accesswidener"}'   | 'foo.accesswidener'
-            '{"access_widener":["bar.accesswidener"]}' | 'bar.accesswidener'
+            '{}'                                       | []
+            '{"access_widener":"foo.accesswidener"}'   | ['foo.accesswidener']
+            '{"access_widener":["bar.accesswidener"]}' | ['bar.accesswidener']
     }
 
     def "read injected interfaces"() {
