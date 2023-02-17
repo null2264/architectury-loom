@@ -52,7 +52,7 @@ public final class ModMetadataFiles {
 			final Path metadataPath = directory.resolve(filePath);
 
 			if (Files.exists(metadataPath)) {
-				return SINGLE_FILE_METADATA_TYPES.get(filePath).apply(Files.readAllBytes(directory));
+				return SINGLE_FILE_METADATA_TYPES.get(filePath).apply(Files.readAllBytes(metadataPath));
 			}
 		}
 
