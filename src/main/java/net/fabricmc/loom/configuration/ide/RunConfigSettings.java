@@ -104,8 +104,7 @@ public final class RunConfigSettings implements Named {
 
 	private final Project project;
 	private final LoomGradleExtension extension;
-	public final Map<String, String> envVariables = new HashMap<>();
-	private List<Runnable> evaluateLater = new ArrayList<>();
+	private final List<Runnable> evaluateLater = new ArrayList<>();
 	private boolean evaluated = false;
 
 	public RunConfigSettings(Project project, String baseName) {
