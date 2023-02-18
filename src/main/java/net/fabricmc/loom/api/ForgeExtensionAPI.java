@@ -110,7 +110,7 @@ public interface ForgeExtensionAPI {
 	 * {@link #dataGen(Action)}.
 	 *
 	 * @return the list
-	 * @deprecated See {@link net.fabricmc.loom.configuration.ide.RunConfigSettings#data}.
+	 * @deprecated Removed in favor of configuring the data generator directly.
 	 */
 	@ApiStatus.ScheduledForRemoval(inVersion = "2.0")
 	@Deprecated(forRemoval = true)
@@ -120,7 +120,7 @@ public interface ForgeExtensionAPI {
 	 * Applies data generation settings.
 	 *
 	 * @param action the action to configure data generation
-	 * @deprecated See {@link net.fabricmc.loom.configuration.ide.RunConfigSettings#data}.
+	 * @deprecated Removed in favor of configuring the data generator directly.
 	 */
 	@ApiStatus.ScheduledForRemoval(inVersion = "2.0")
 	@Deprecated(forRemoval = true)
@@ -128,7 +128,7 @@ public interface ForgeExtensionAPI {
 
 	/**
 	 * Data generation config.
-	 * @deprecated See {@link net.fabricmc.loom.configuration.ide.RunConfigSettings#data}.
+	 * @deprecated Removed in favor of configuring the data generator directly.
 	 */
 	@ApiStatus.NonExtendable
 	@ApiStatus.ScheduledForRemoval(inVersion = "2.0")

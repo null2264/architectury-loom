@@ -328,23 +328,12 @@ public final class RunConfigSettings implements Named {
 	/**
 	 * Configure run config with the default data options.
 	 *
-	 * @deprecated Use <code>{@link #environment}("server")</code> and <code>{@link #forgeTemplate}("data")</code> instead and
-	 * configure the data generator manually. Deprecated for removal for two reasons:
-	 * <ol>
-	 *     <li>This method is only needed on Forge. Fabric setups should use {@link #server}.
-	 *     <li>It's inflexible and hardcodes the output path as well as validation.
-	 * </ol>
+	 * <p>This method can only be used on Forge.
 	 */
-	@ApiStatus.ScheduledForRemoval(inVersion = "2.0")
-	@Deprecated(forRemoval = true)
 	public void data() {
-		extension.getDeprecationHelper().warn("RunConfigSettings.data() has been deprecated and replaced with forgeTemplate(\"data\"). This will be removed in Loom 2.0.");
+		ModPlatform.assertPlatform(getExtension(), ModPlatform.FORGE, () -> "RunConfigSettings.data() is only usable on Forge.");
 		environment("data");
-		defaultMainClass(Constants.Knot.KNOT_SERVER);
-
-		if (getExtension().isForge()) {
-			forgeTemplate("data");
-		}
+		forgeTemplate("data");
 	}
 
 	/**
