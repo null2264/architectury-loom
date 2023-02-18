@@ -25,16 +25,18 @@
 package net.fabricmc.loom.test.util
 
 import groovy.transform.Immutable
+import net.fabricmc.loom.util.download.Download
 
 import java.util.concurrent.TimeUnit
 
 class ServerRunner {
-    static final String LOADER_VERSION = "0.14.9"
+    static final String LOADER_VERSION = "0.14.12"
+	static final String INSTALLER_VERSION = "0.11.1"
     static final Map<String, String> FABRIC_API_URLS = [
             "1.16.5": "https://github.com/FabricMC/fabric/releases/download/0.37.1%2B1.16/fabric-api-0.37.1+1.16.jar",
             "1.17.1": "https://github.com/FabricMC/fabric/releases/download/0.37.1%2B1.17/fabric-api-0.37.1+1.17.jar"
     ]
-    static final String FABRIC_LANG_KOTLIN = "https://maven.fabricmc.net/net/fabricmc/fabric-language-kotlin/1.7.3%2Bkotlin.1.6.20/fabric-language-kotlin-1.7.3%2Bkotlin.1.6.20.jar"
+    static final String FABRIC_LANG_KOTLIN = "https://maven.fabricmc.net/net/fabricmc/fabric-language-kotlin/1.8.5%2Bkotlin.1.7.20/fabric-language-kotlin-1.8.5%2Bkotlin.1.7.20.jar"
 
     final File serverDir
     final String minecraftVersion
@@ -53,19 +55,9 @@ class ServerRunner {
     }
 
     def install() {
-        def args = [
-                "server",
-                "-dir",
-                serverDir.absolutePath,
-                "-mcversion",
-                minecraftVersion,
-                "-loader",
-                LOADER_VERSION,
-                "-downloadMinecraft"
-        ]
-
-        //noinspection UnnecessaryQualifiedReference
-        net.fabricmc.installer.Main.main(args as String[])
+		def url = "https://meta.fabricmc.net/v2/versions/loader/${minecraftVersion}/${LOADER_VERSION}/${INSTALLER_VERSION}/server/jar"
+		Download.create(url)
+			.downloadPath(serverDir.toPath().resolve("fabric-server-launch.jar"))
 
         def eulaFile = new File(serverDir, "eula.txt")
         eulaFile << "eula=true"

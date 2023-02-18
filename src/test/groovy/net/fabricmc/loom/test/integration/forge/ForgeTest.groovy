@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 FabricMC
+ * Copyright (c) 2021-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,12 +49,13 @@ class ForgeTest extends Specification implements GradleProjectTestTrait {
 		where:
 			mcVersion | forgeVersion | mappings
 			'1.18.1'  | "39.0.63"    | "loom.officialMojangMappings()"
-			'1.18.1'  | "39.0.63"    | "\"net.fabricmc:yarn:1.18.1+build.22:v2\""
+			'1.18.1'  | "39.0.63"    | '"net.fabricmc:yarn:1.18.1+build.22:v2"'
 			'1.17.1'  | "37.0.67"    | "loom.officialMojangMappings()"
-			'1.17.1'  | "37.0.67"    | "\"net.fabricmc:yarn:1.17.1+build.61:v2\""
+			'1.17.1'  | "37.0.67"    | '"net.fabricmc:yarn:1.17.1+build.61:v2"'
 			'1.16.5'  | "36.2.4"     | "loom.officialMojangMappings()"
-			'1.16.5'  | "36.2.4"     | "\"net.fabricmc:yarn:1.16.5+build.5:v2\""
+			'1.16.5'  | "36.2.4"     | '"net.fabricmc:yarn:1.16.5+build.5:v2"'
+			'1.16.5'  | '36.2.4'     | '"de.oceanlabs.mcp:mcp_snapshot:20210309-1.16.5"'
 			'1.14.4'  | "28.2.23"    | "loom.officialMojangMappings()"
-			'1.14.4'  | "28.2.23"    | "\"net.fabricmc:yarn:1.14.4+build.18:v2\""
+			'1.14.4'  | "28.2.23"    | '"net.fabricmc:yarn:1.14.4+build.18:v2"'
 	}
 }

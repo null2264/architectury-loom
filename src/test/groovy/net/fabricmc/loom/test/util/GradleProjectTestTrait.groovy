@@ -26,6 +26,7 @@ package net.fabricmc.loom.test.util
 
 import groovy.transform.Immutable
 import net.fabricmc.loom.test.LoomTestConstants
+import net.fabricmc.loom.util.Constants
 import net.fabricmc.loom.util.ZipUtils
 import org.apache.commons.io.FileUtils
 import org.gradle.testkit.runner.BuildResult
@@ -36,22 +37,13 @@ trait GradleProjectTestTrait {
     @Lazy
     @Shared
     private static File sharedProjectDir = File.createTempDir()
-    @Lazy
-    @Shared
-    private static File sharedGradleHomeDir = File.createTempDir()
+    private static File gradleHomeDir = new File(LoomTestConstants.TEST_DIR, "integration/gradle_home")
 
     GradleProject gradleProject(Map options) {
         String gradleVersion = options.version as String ?: LoomTestConstants.DEFAULT_GRADLE
         String warningMode = options.warningMode as String ?: "fail"
         File projectDir = options.projectDir as File ?: options.sharedFiles ? sharedProjectDir : File.createTempDir()
-        File gradleHomeDir = options.gradleHomeDir as File ?: options.sharedFiles ? sharedGradleHomeDir : File.createTempDir()
-
-		// Useful for faster local testing.
-		def homeDirOverride = System.getProperty("fabric.loom.test.homeDir")
-
-		if (homeDirOverride) {
-			gradleHomeDir = new File(homeDirOverride)
-		}
+        File gradleHomeDir = gradleHomeDir
 
         setupProject(options, projectDir)
 
@@ -244,11 +236,11 @@ trait GradleProjectTestTrait {
         }
 
         File getGeneratedSources(String mappings) {
-            return new File(getGradleHomeDir(), "caches/fabric-loom/${mappings}/minecraft-merged-named-sources.jar")
+            return new File(getGradleHomeDir(), "caches/fabric-loom/minecraftMaven/net/minecraft/minecraft-merged/${mappings}/minecraft-merged-${mappings}-sources.jar")
         }
 
         File getGeneratedLocalSources(String mappings) {
-            return new File(getProjectDir(), ".gradle/loom-cache/${mappings}/minecraft-project-@-merged-named-sources.jar")
+            return new File(getProjectDir(), ".gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-project-root/${mappings}/minecraft-merged-project-root-${mappings}-sources.jar")
         }
 
         void buildSrc(String name) {
@@ -310,5 +302,9 @@ trait GradleProjectTestTrait {
                 }
             """
         }
+
+		void enableMultiProjectOptimisation() {
+			getGradleProperties() << "\n${Constants.Properties.MULTI_PROJECT_OPTIMISATION}=true"
+		}
     }
 }

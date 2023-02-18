@@ -24,26 +24,43 @@
 
 package net.fabricmc.loom.test.unit.download
 
-import io.javalin.http.HttpCode
+import io.javalin.http.HttpStatus
 import net.fabricmc.loom.util.Checksum
 import net.fabricmc.loom.util.download.Download
 import net.fabricmc.loom.util.download.DownloadException
 import net.fabricmc.loom.util.download.DownloadExecutor
 import net.fabricmc.loom.util.download.DownloadProgressListener
-
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
+import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 
 class DownloadFileTest extends DownloadTest {
+	def "Directory: Symlink"() {
+		setup:
+			server.get("/symlinkFile") {
+				it.result("Hello World")
+			}
+			def output = new File(File.createTempDir(), "file.txt").toPath()
+			def linkedtmp = new File(File.createTempDir(), "linkedtmp").toPath()
+			Files.createSymbolicLink(linkedtmp, output.getParent())
+			def symlink = Paths.get(linkedtmp.toString(), "file.txt")
+
+		when:
+			def result = Download.create("$PATH/symlinkFile").downloadPath(symlink)
+
+		then:
+			Files.readString(symlink) == "Hello World"
+	}
+
 	def "File: Simple"() {
 		setup:
 			server.get("/simpleFile") {
 				it.result("Hello World")
 			}
 
-			def output = new File(File.createTempDir(), "file.txt").toPath()
+			def output = new File(File.createTempDir(), "subdir/file.txt").toPath()
 
 		when:
 			def result = Download.create("$PATH/simpleFile").downloadPath(output)
@@ -175,7 +192,7 @@ class DownloadFileTest extends DownloadTest {
 
 				if (clientEtag == etag) {
 					// Etag matches, no need to send the data.
-					it.status(HttpCode.NOT_MODIFIED)
+					it.status(HttpStatus.NOT_MODIFIED)
 					return
 				}
 
@@ -186,7 +203,7 @@ class DownloadFileTest extends DownloadTest {
 		def output = new File(File.createTempDir(), "etag.txt").toPath()
 
 		when:
-			for (i in 0..<2) {
+			for (i in 0..<3) {
 				Download.create("$PATH/etag")
 					.etag(true)
 					.downloadPath(output)
@@ -320,6 +337,15 @@ class DownloadFileTest extends DownloadTest {
 
 		then:
 			Files.readAllBytes(output) == data
+	}
+
+	def "File: Insecure protocol"() {
+		setup:
+			def output = new File(File.createTempDir(), "file").toPath()
+		when:
+			def result = Download.create("http://fabricmc.net").downloadPath(output)
+		then:
+			thrown IllegalArgumentException
 	}
 
 	// Known

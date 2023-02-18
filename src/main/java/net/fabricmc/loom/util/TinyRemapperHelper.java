@@ -45,6 +45,8 @@ import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
+import net.fabricmc.loom.util.service.SharedServiceManager;
 import net.fabricmc.loom.util.srg.InnerClassRemapper;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.tree.MappingTree;
@@ -69,20 +71,21 @@ public final class TinyRemapperHelper {
 	private TinyRemapperHelper() {
 	}
 
-	public static TinyRemapper getTinyRemapper(Project project, String fromM, String toM) throws IOException {
-		return getTinyRemapper(project, fromM, toM, false, (builder) -> { }, Set.of());
+	public static TinyRemapper getTinyRemapper(Project project, SharedServiceManager serviceManager, String fromM, String toM) throws IOException {
+		return getTinyRemapper(project, serviceManager, fromM, toM, false, (builder) -> { }, Set.of());
 	}
 
-	public static TinyRemapper getTinyRemapper(Project project, String fromM, String toM, boolean fixRecords, Consumer<TinyRemapper.Builder> builderConsumer, Set<String> fromClassNames) throws IOException {
+	public static TinyRemapper getTinyRemapper(Project project, SharedServiceManager serviceManager, String fromM, String toM, boolean fixRecords, Consumer<TinyRemapper.Builder> builderConsumer, Set<String> fromClassNames) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 
 		TinyRemapper remapper = _getTinyRemapper(project, fixRecords, builderConsumer).getLeft();
 		ImmutableSet.Builder<IMappingProvider> providers = ImmutableSet.builder();
-		providers.add(TinyRemapperHelper.create((fromM.equals("srg") || toM.equals("srg")) && extension.isForge() ? extension.getMappingsProvider().getMappingsWithSrg() : extension.getMappingsProvider().getMappings(), fromM, toM, true));
+		TinyMappingsService mappingsService = extension.getMappingConfiguration().getMappingsService(serviceManager);
+		providers.add(TinyRemapperHelper.create((fromM.equals("srg") || toM.equals("srg")) && extension.isForge() ? mappingsService.getMappingTreeWithSrg() : mappingsService.getMappingTree(), fromM, toM, true));
 
 		if (extension.isForge()) {
 			if (!fromClassNames.isEmpty()) {
-				providers.add(InnerClassRemapper.of(fromClassNames, extension.getMappingsProvider().getMappingsWithSrg(), fromM, toM));
+				providers.add(InnerClassRemapper.of(fromClassNames, mappingsService.getMappingTreeWithSrg(), fromM, toM));
 			}
 		} else {
 			providers.add(out -> TinyRemapperHelper.JSR_TO_JETBRAINS.forEach(out::acceptClass));

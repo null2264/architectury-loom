@@ -44,14 +44,14 @@ class ArchitecturyCommonJsonTest extends Specification {
         when:
             def acj = ArchitecturyCommonJson.of(bytes)
         then:
-            acj.accessWidener == 'foo.accesswidener'
+            acj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from String"() {
         when:
             def acj = ArchitecturyCommonJson.of(OF_TEST_INPUT)
         then:
-            acj.accessWidener == 'foo.accesswidener'
+            acj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from File"() {
@@ -61,7 +61,7 @@ class ArchitecturyCommonJsonTest extends Specification {
         when:
             def acj = ArchitecturyCommonJson.of(file)
         then:
-            acj.accessWidener == 'foo.accesswidener'
+            acj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from Path"() {
@@ -71,7 +71,7 @@ class ArchitecturyCommonJsonTest extends Specification {
         when:
             def acj = ArchitecturyCommonJson.of(path)
         then:
-            acj.accessWidener == 'foo.accesswidener'
+            acj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from JsonObject"() {
@@ -81,20 +81,20 @@ class ArchitecturyCommonJsonTest extends Specification {
         when:
             def acj = ArchitecturyCommonJson.of(json)
         then:
-            acj.accessWidener == 'foo.accesswidener'
+            acj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "read access widener"() {
         given:
             def acj = ArchitecturyCommonJson.of(jsonText)
         when:
-            def accessWidenerName = acj.accessWidener
+            def accessWidenerNames = acj.accessWideners
         then:
-            accessWidenerName == expectedAw
+            accessWidenerNames == expectedAw as Set
         where:
             jsonText                                | expectedAw
-            '{}'                                    | null
-            '{"accessWidener":"foo.accesswidener"}' | 'foo.accesswidener'
+            '{}'                                    | []
+            '{"accessWidener":"foo.accesswidener"}' | ['foo.accesswidener']
     }
 
     def "read injected interfaces"() {
@@ -112,5 +112,27 @@ class ArchitecturyCommonJsonTest extends Specification {
             jsonText | expected
             '{}' | [:]
             '{"injected_interfaces":{"target/class/Here":["my/Interface","another/Itf"]}}' | ['target/class/Here': ['my/Interface', 'another/Itf']]
+    }
+
+    def "read mod id"() {
+        given:
+            def acj = ArchitecturyCommonJson.of(jsonText)
+        when:
+            def id = acj.id
+        then:
+            id == null
+        where:
+            jsonText << ['{}', '{"accessWidener":"foo.accesswidener"}']
+    }
+
+    def "get file name"() {
+        given:
+            def acj = ArchitecturyCommonJson.of(jsonText)
+        when:
+            def fileName = acj.fileName
+        then:
+            fileName == 'architectury.common.json'
+        where:
+            jsonText << ['{}', '{"accessWidener":"foo.accesswidener"}']
     }
 }

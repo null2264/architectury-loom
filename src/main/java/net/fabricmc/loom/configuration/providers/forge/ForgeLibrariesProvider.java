@@ -53,7 +53,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 
 import net.fabricmc.loom.LoomGradleExtension;
-import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
+import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.PropertyUtil;
@@ -63,10 +63,10 @@ import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class ForgeLibrariesProvider {
-	public static void provide(MappingsProviderImpl mappingsProvider, Project project) throws Exception {
+	public static void provide(MappingConfiguration mappingConfiguration, Project project) throws Exception {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		Attribute<String> transformed = Attribute.of("architectury-loom-forge-dependencies-transformed-3", String.class);
-		String mappingsIdentifier = extension.getMappingsProvider().mappingsIdentifier;
+		String mappingsIdentifier = mappingConfiguration.mappingsIdentifier;
 
 		project.getDependencies().registerTransform(ALFDTransformAction.class, spec -> {
 			spec.getFrom().attribute(transformed, "");
@@ -76,10 +76,10 @@ public class ForgeLibrariesProvider {
 
 			Supplier<Path> mappings = Suppliers.memoize(() -> {
 				try {
-					SrgMerger.ExtraMappings extraMappings = SrgMerger.ExtraMappings.ofMojmapTsrg(MappingsProviderImpl.getMojmapSrgFileIfPossible(project));
+					SrgMerger.ExtraMappings extraMappings = SrgMerger.ExtraMappings.ofMojmapTsrg(MappingConfiguration.getMojmapSrgFileIfPossible(project));
 					Path tempFile = Files.createTempFile(null, null);
 					Files.deleteIfExists(tempFile);
-					SrgMerger.mergeSrg(MappingsProviderImpl.getRawSrgFile(project), mappingsProvider.tinyMappings, tempFile, extraMappings, true);
+					SrgMerger.mergeSrg(MappingConfiguration.getRawSrgFile(project), mappingConfiguration.tinyMappings, tempFile, extraMappings, true);
 					tempFile.toFile().deleteOnExit();
 					return tempFile;
 				} catch (IOException e) {

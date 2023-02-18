@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2018-2021 FabricMC
+ * Copyright (c) 2018-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonObject;
@@ -45,12 +47,15 @@ import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.attributes.Usage;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.RemapConfigurationSettings;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.mods.dependency.ModDependency;
-import net.fabricmc.loom.configuration.providers.mappings.MappingsProviderImpl;
+import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
+import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.task.RemapJarTask;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.LoggerFilter;
@@ -59,29 +64,60 @@ import net.fabricmc.loom.util.TinyRemapperHelper;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.kotlin.KotlinClasspathService;
 import net.fabricmc.loom.util.kotlin.KotlinRemapperClassloader;
+import net.fabricmc.loom.util.service.SharedServiceManager;
 import net.fabricmc.loom.util.srg.AtRemapper;
 import net.fabricmc.loom.util.srg.CoreModClassRemapper;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class ModProcessor {
-	private static final String fromM = MappingsNamespace.INTERMEDIARY.toString();
 	private static final String toM = MappingsNamespace.NAMED.toString();
+
+	private static final Pattern COPY_CONFIGURATION_PATTERN = Pattern.compile("^(.+)Copy[0-9]*$");
 
 	private final Project project;
 	private final Configuration sourceConfiguration;
+	private final SharedServiceManager serviceManager;
 
-	public ModProcessor(Project project, Configuration sourceConfiguration) {
+	public ModProcessor(Project project, Configuration sourceConfiguration, SharedServiceManager serviceManager) {
 		this.project = project;
 		this.sourceConfiguration = sourceConfiguration;
+		this.serviceManager = serviceManager;
 	}
 
 	public void processMods(List<ModDependency> remapList) throws IOException {
 		try {
-			project.getLogger().lifecycle(":remapping {} mods from {}", remapList.size(), sourceConfiguration.getName());
+			project.getLogger().lifecycle(":remapping {} mods from {}", remapList.size(), describeConfiguration(sourceConfiguration));
 			remapJars(remapList);
 		} catch (Exception e) {
 			throw new RuntimeException(String.format(Locale.ENGLISH, "Failed to remap %d mods", remapList.size()), e);
 		}
+	}
+
+	// Creates a human-readable descriptive string for the configuration.
+	// This consists primarily of the name with any copy suffixes stripped
+	// (they're not informative), and the usage attribute if present.
+	private String describeConfiguration(Configuration configuration) {
+		String description = configuration.getName();
+		final Matcher copyMatcher = COPY_CONFIGURATION_PATTERN.matcher(description);
+
+		// If we find a copy suffix, remove it.
+		if (copyMatcher.matches()) {
+			final String realName = copyMatcher.group(1);
+
+			// It's only a copy if we find a non-copy version.
+			if (project.getConfigurations().findByName(realName) != null) {
+				description = realName;
+			}
+		}
+
+		// Add the usage if present, e.g. "modImplementation (java-api)"
+		final Usage usage = configuration.getAttributes().getAttribute(Usage.USAGE_ATTRIBUTE);
+
+		if (usage != null) {
+			description += " (" + usage.getName() + ")";
+		}
+
+		return description;
 	}
 
 	private void stripNestedJars(Path path) {
@@ -117,15 +153,15 @@ public class ModProcessor {
 
 	private void remapJars(List<ModDependency> remapList) throws IOException {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
-		final MappingsProviderImpl mappingsProvider = extension.getMappingsProvider();
-		String fromM = extension.isForge() ? MappingsNamespace.SRG.toString() : MappingsNamespace.INTERMEDIARY.toString();
-		String toM = MappingsNamespace.NAMED.toString();
+		final MappingConfiguration mappingConfiguration = extension.getMappingConfiguration();
+		String fromM = IntermediaryNamespaces.intermediary(project);
 		Path[] mcDeps = project.getConfigurations().getByName(Constants.Configurations.LOADER_DEPENDENCIES).getFiles()
 				.stream().map(File::toPath).toArray(Path[]::new);
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		MemoryMappingTree mappings = (fromM.equals("srg") || toM.equals("srg")) && extension.isForge() ? mappingsProvider.getMappingsWithSrg() : mappingsProvider.getMappings();
+		TinyMappingsService mappingsService = mappingConfiguration.getMappingsService(serviceManager);
+		MemoryMappingTree mappings = (fromM.equals("srg") || toM.equals("srg")) && extension.isForge() ? mappingsService.getMappingTreeWithSrg() : mappingsService.getMappingTree();
 		LoggerFilter.replaceSystemOut();
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
 				.logger(project.getLogger()::lifecycle)
@@ -133,7 +169,7 @@ public class ModProcessor {
 				.withMappings(TinyRemapperHelper.create(mappings, fromM, toM, false))
 				.renameInvalidLocals(false);
 
-		final KotlinClasspathService kotlinClasspathService = KotlinClasspathService.getOrCreateIfRequired(project);
+		final KotlinClasspathService kotlinClasspathService = KotlinClasspathService.getOrCreateIfRequired(serviceManager, project);
 		KotlinRemapperClassloader kotlinRemapperClassloader = null;
 
 		if (kotlinClasspathService != null) {
@@ -204,7 +240,7 @@ public class ModProcessor {
 			}
 		}
 
-		project.getLogger().lifecycle(":remapped " + remapList.size() + " mods (TinyRemapper, " + fromM + " -> " + toM + ") in " + stopwatch.stop());
+		project.getLogger().lifecycle(":remapped {} mods ({} -> {}) in {}", remapList.size(), fromM, toM, stopwatch.stop());
 
 		for (ModDependency dependency : remapList) {
 			outputConsumerMap.get(dependency).close();

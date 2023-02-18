@@ -6,8 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -18,8 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import net.fabricmc.loom.util.function.CollectionUtil;
 
-public final class QuiltModJson implements ModMetadataFile {
+public final class QuiltModJson implements JsonBackedModMetadataFile {
+	public static final String FILE_NAME = "quilt.mod.json";
 	private static final Logger LOGGER = LoggerFactory.getLogger(QuiltModJson.class);
 	private static final String ACCESS_WIDENER_KEY = "access_widener";
 	private static final String MIXIN_KEY = "mixin";
@@ -51,31 +55,41 @@ public final class QuiltModJson implements ModMetadataFile {
 	}
 
 	@Override
-	public @Nullable String getAccessWidener() {
+	public JsonObject getJson() {
+		return json;
+	}
+
+	@Override
+	public @Nullable String getId() {
+		JsonObject quiltLoader = json.getAsJsonObject("quilt_loader");
+
+		if (quiltLoader != null && quiltLoader.has("id")) {
+			return quiltLoader.get("id").getAsString();
+		}
+
+		return null;
+	}
+
+	@Override
+	public Set<String> getAccessWideners() {
 		if (json.has(ACCESS_WIDENER_KEY)) {
 			if (json.get(ACCESS_WIDENER_KEY).isJsonArray()) {
 				JsonArray array = json.get(ACCESS_WIDENER_KEY).getAsJsonArray();
-
-				// TODO (1.1): Support multiple access wideners in Quilt mods
-				if (array.size() != 1) {
-					throw new UnsupportedOperationException("Loom does not support multiple access wideners in one mod!");
-				}
-
-				return array.get(0).getAsString();
+				return CollectionUtil.mapTo(array, new LinkedHashSet<>(), JsonElement::getAsString);
 			} else {
-				return json.get(ACCESS_WIDENER_KEY).getAsString();
+				return Set.of(json.get(ACCESS_WIDENER_KEY).getAsString());
 			}
 		} else {
-			return null;
+			return Set.of();
 		}
 	}
 
 	@Override
 	public List<InterfaceInjectionProcessor.InjectedInterface> getInjectedInterfaces(@Nullable String modId) {
 		try {
-			modId = Objects.requireNonNullElseGet(modId, () -> json.getAsJsonObject("quilt_loader").get("id").getAsString());
+			modId = Objects.requireNonNullElse(getId(), modId);
 		} catch (NullPointerException e) {
-			throw new IllegalArgumentException("Could not determine mod ID for Quilt mod and no fallback provided");
+			throw new IllegalArgumentException("Could not determine mod ID for Quilt mod and no fallback provided", e);
 		}
 
 		// Quilt injected interfaces have the same format as architectury.common.json
@@ -92,6 +106,7 @@ public final class QuiltModJson implements ModMetadataFile {
 		return List.of();
 	}
 
+	@Override
 	public List<String> getMixinConfigs() {
 		// RFC 0002: The `mixin` field:
 		//   Type: Array/String
@@ -116,5 +131,31 @@ public final class QuiltModJson implements ModMetadataFile {
 		}
 
 		return List.of();
+	}
+
+	/**
+	 * {@return {@value #FILE_NAME}}.
+	 */
+	@Override
+	public String getFileName() {
+		return FILE_NAME;
+	}
+
+	@Override
+	public @Nullable JsonElement getCustomValue(String key) {
+		// Quilt Loader allows reading any field from the quilt.mod.json as
+		// custom values (under the name "loader values").
+		// See https://github.com/QuiltMC/quilt-loader/blob/7da975c7/src/main/java/org/quiltmc/loader/api/ModMetadata.java#L150-L152
+		return json.get(key);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this == obj || obj instanceof QuiltModJson qmj && qmj.json.equals(json);
+	}
+
+	@Override
+	public int hashCode() {
+		return json.hashCode();
 	}
 }

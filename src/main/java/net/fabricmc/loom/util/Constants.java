@@ -24,7 +24,6 @@
 
 package net.fabricmc.loom.util;
 
-import org.eclipse.jdt.core.JavaCore;
 import org.objectweb.asm.Opcodes;
 
 public class Constants {
@@ -36,8 +35,6 @@ public class Constants {
 	public static final String FABRIC_REPOSITORY = "https://maven.fabricmc.net/";
 
 	public static final int ASM_VERSION = Opcodes.ASM9;
-	public static final String MERCURY_SOURCE_VERSION = JavaCore.VERSION_15;
-	// TODO: once we update Mercury: public static final String MERCURY_SOURCE_VERSION = JavaCore.VERSION_17;
 
 	private Constants() {
 	}
@@ -126,13 +123,13 @@ public class Constants {
 		 * Constants for versions of dependencies.
 		 */
 		public static final class Versions {
-			public static final String MIXIN_COMPILE_EXTENSIONS = "0.5.0";
+			public static final String MIXIN_COMPILE_EXTENSIONS = "0.6.0";
 			public static final String DEV_LAUNCH_INJECTOR = "0.2.1+build.8";
 			public static final String TERMINAL_CONSOLE_APPENDER = "1.2.0";
-			public static final String JETBRAINS_ANNOTATIONS = "23.0.0";
+			public static final String JETBRAINS_ANNOTATIONS = "24.0.0";
 			public static final String NATIVE_SUPPORT_VERSION = "1.0.1";
 			public static final String JAVAX_ANNOTATIONS = "3.0.2";
-			public static final String FORGE_RUNTIME = "1.1.3";
+			public static final String FORGE_RUNTIME = "1.1.4";
 			public static final String ACCESS_TRANSFORMERS = "3.0.1";
 			public static final String ACCESS_TRANSFORMERS_NEW = "8.0.5";
 			public static final String UNPROTECT = "1.2.0";
@@ -174,6 +171,13 @@ public class Constants {
 	public static final class CustomModJsonKeys {
 		public static final String INJECTED_INTERFACE = "loom:injected_interfaces";
 		public static final String PROVIDED_JAVADOC = "loom:provided_javadoc";
+	}
+
+	public static final class Properties {
+		public static final String MULTI_PROJECT_OPTIMISATION = "fabric.loom.multiProjectOptimisation";
+		public static final String DONT_REMAP = "fabric.loom.dontRemap";
+		public static final String DISABLE_REMAPPED_VARIANTS = "fabric.loom.disableRemappedVariants";
+		public static final String DISABLE_PROJECT_DEPENDENT_MODS = "fabric.loom.disableProjectDependentMods";
 	}
 
 	public static final class Forge {

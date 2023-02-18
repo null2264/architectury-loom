@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2022 FabricMC
+ * Copyright (c) 2022-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,18 +33,23 @@ import codechicken.diffpatch.cli.CliOperation;
 import codechicken.diffpatch.cli.PatchOperation;
 import codechicken.diffpatch.util.LoggingOutputStream;
 import codechicken.diffpatch.util.PatchMode;
+import dev.architectury.loom.util.TempFiles;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.jetbrains.annotations.Nullable;
 
+import net.fabricmc.loom.configuration.processors.MinecraftJarProcessorManager;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpExecutor;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.ConstantLogic;
 import net.fabricmc.loom.configuration.sources.ForgeSourcesRemapper;
 import net.fabricmc.loom.util.SourceRemapper;
+import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
+import net.fabricmc.loom.util.service.SharedServiceManager;
 
 public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 	/**
@@ -72,16 +77,25 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 
 	@TaskAction
 	public void run() throws IOException {
-		Path cache = Files.createTempDirectory("loom-decompilation");
-		// Step 1: decompile and patch with MCP patches
-		Path rawDecompiled = decompileAndPatch(cache);
-		// Step 2: patch with Forge patches
-		getLogger().lifecycle(":applying Forge patches");
-		Path patched = sourcePatch(cache, rawDecompiled);
-		// Step 3: remap
-		remap(patched);
-		// Step 4: add Forge's own sources
-		ForgeSourcesRemapper.addForgeSources(getProject(), getOutputJar().get().getAsFile().toPath());
+		// Check that the jar is not processed
+		final @Nullable MinecraftJarProcessorManager jarProcessorManager = MinecraftJarProcessorManager.create(getProject());
+
+		if (jarProcessorManager != null) {
+			throw new UnsupportedOperationException("Cannot run Forge's patched decompilation with a processed Minecraft jar");
+		}
+
+		try (var tempFiles = new TempFiles(); var serviceManager = new ScopedSharedServiceManager()) {
+			Path cache = tempFiles.directory("loom-decompilation");
+			// Step 1: decompile and patch with MCP patches
+			Path rawDecompiled = decompileAndPatch(cache);
+			// Step 2: patch with Forge patches
+			getLogger().lifecycle(":applying Forge patches");
+			Path patched = sourcePatch(cache, rawDecompiled);
+			// Step 3: remap
+			remap(patched, serviceManager);
+			// Step 4: add Forge's own sources
+			ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, getOutputJar().get().getAsFile().toPath());
+		}
 	}
 
 	private Path decompileAndPatch(Path cache) throws IOException {
@@ -128,8 +142,8 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 		return output;
 	}
 
-	private void remap(Path input) {
-		SourceRemapper remapper = new SourceRemapper(getProject(), "srg", "named");
+	private void remap(Path input, SharedServiceManager serviceManager) {
+		SourceRemapper remapper = new SourceRemapper(getProject(), serviceManager, "srg", "named");
 		remapper.scheduleRemapSources(input.toFile(), getOutputJar().get().getAsFile(), false, true, () -> {
 		});
 		remapper.remapAll();

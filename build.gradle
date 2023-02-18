@@ -9,14 +9,8 @@ plugins {
 	id 'jacoco'
 	id 'codenarc'
 	id "org.jetbrains.kotlin.jvm" version "1.6.10" // Must match the version included with gradle.
-	id "com.diffplug.spotless" version "6.8.0"
-	id "org.gradle.test-retry" version "1.4.1"
-}
-
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
+	id "com.diffplug.spotless" version "6.13.0"
+	id "org.gradle.test-retry" version "1.5.1"
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -31,7 +25,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 
 group = "dev.architectury"
 archivesBaseName = project.name
-def baseVersion = '1.0'
+def baseVersion = '1.1'
 
 def ENV = System.getenv()
 def runNumber = ENV.GITHUB_RUN_NUMBER ?: "9999"
@@ -81,14 +75,14 @@ dependencies {
 
 	// libraries
 	implementation ('commons-io:commons-io:2.11.0')
-	implementation ('com.google.code.gson:gson:2.9.0')
-	implementation ('com.fasterxml.jackson.core:jackson-databind:2.13.3')
+	implementation ('com.google.code.gson:gson:2.10.1')
+	implementation ('com.fasterxml.jackson.core:jackson-databind:2.14.1')
 	implementation ('com.google.guava:guava:31.1-jre')
-	implementation ('org.ow2.asm:asm:9.3')
-	implementation ('org.ow2.asm:asm-analysis:9.3')
-	implementation ('org.ow2.asm:asm-commons:9.3')
-	implementation ('org.ow2.asm:asm-tree:9.3')
-	implementation ('org.ow2.asm:asm-util:9.3')
+	implementation ('org.ow2.asm:asm:9.4')
+	implementation ('org.ow2.asm:asm-analysis:9.4')
+	implementation ('org.ow2.asm:asm-commons:9.4')
+	implementation ('org.ow2.asm:asm-tree:9.4')
+	implementation ('org.ow2.asm:asm-util:9.4')
 	implementation ('me.tongfei:progressbar:0.9.0')
 
 	// game handling utils
@@ -108,14 +102,14 @@ dependencies {
 	implementation "dev.architectury:refmap-remapper:1.0.5"
 
 	// decompilers
-	implementation ('net.fabricmc:fabric-fernflower:1.5.0')
-	implementation ('net.fabricmc:cfr:0.1.1')
+	implementation ('net.fabricmc:fabric-fernflower:2.0.0')
+	implementation ('net.fabricmc:cfr:0.2.0')
 
 	// source code remapping
-	implementation ('dev.architectury:mercury:0.1.1.11')
+	implementation ('dev.architectury:mercury:0.1.2.15')
 
 	// Kotlin
-	implementation('org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.4.2') {
+	implementation('org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.5.0') {
 		transitive = false
 	}
 
@@ -132,18 +126,17 @@ dependencies {
 
 	// Testing
 	testImplementation(gradleTestKit())
-	testImplementation('org.spockframework:spock-core:2.1-groovy-3.0') {
+	testImplementation('org.spockframework:spock-core:2.3-groovy-3.0') {
 		exclude module: 'groovy-all'
 	}
-	testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
-	testImplementation ('io.javalin:javalin:4.6.1') {
+	testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+	testImplementation ('io.javalin:javalin:5.3.1') {
 		exclude group: 'org.jetbrains.kotlin'
 	}
-	testImplementation 'net.fabricmc:fabric-installer:0.9.0'
-	testImplementation 'org.mockito:mockito-core:4.6.1'
+	testImplementation 'org.mockito:mockito-core:5.0.0'
 
-	compileOnly 'org.jetbrains:annotations:23.0.0'
-	testCompileOnly 'org.jetbrains:annotations:23.0.0'
+	compileOnly 'org.jetbrains:annotations:24.0.0'
+	testCompileOnly 'org.jetbrains:annotations:24.0.0'
 
 	testCompileOnly ('net.fabricmc:sponge-mixin:0.11.4+mixin.0.8.5') {
 		transitive = false
@@ -156,6 +149,13 @@ jar {
 	}
 
 	from configurations.bootstrap.collect { it.isDirectory() ? it : zipTree(it) }
+}
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 17
 }
 
 java {
@@ -183,11 +183,11 @@ spotless {
 
 checkstyle {
 	configFile = file('checkstyle.xml')
-	toolVersion = '10.3.1'
+	toolVersion = '10.6.0'
 }
 
 codenarc {
-	toolVersion = "3.1.0"
+	toolVersion = "3.2.0"
 	configFile = file("codenarc.groovy")
 }
 
@@ -201,7 +201,7 @@ gradlePlugin {
 }
 
 jacoco {
-	toolVersion = "0.8.7"
+	toolVersion = "0.8.8"
 }
 
 // Run to get test coverage.
@@ -216,6 +216,7 @@ jacocoTestReport {
 
 test {
 	maxHeapSize = "2560m"
+	jvmArgs "-XX:+HeapDumpOnOutOfMemoryError"
 	useJUnitPlatform()
 
 	// Forward system prop onto tests.
@@ -238,17 +239,10 @@ import org.w3c.dom.Node
 
 publishing {
 	publications {
-		plugin(MavenPublication) { publication ->
-			groupId project.group
-			artifactId project.archivesBaseName
-			version project.version
-
-			from components.java
-		}
-
 		if (isSnapshot) return
 
-		mavenSnapshot(MavenPublication) { publication ->
+		// Also publish a snapshot so people can use the latest version if they wish
+		snapshot(MavenPublication) { publication ->
 			groupId project.group
 			artifactId project.archivesBaseName
 			version baseVersion + '-SNAPSHOT'
@@ -256,7 +250,8 @@ publishing {
 			from components.java
 		}
 
-		pluginSnapshot(MavenPublication) {
+		// Manually crate the plugin marker for snapshot versions
+		snapshotPlugin(MavenPublication) {
 			groupId 'dev.architectury.loom'
 			artifactId 'dev.architectury.loom.gradle.plugin'
 			version baseVersion + '-SNAPSHOT'
@@ -385,6 +380,6 @@ class PrintActionsTestName extends DefaultTask {
 	@TaskAction
 	def run() {
 		def sanitised = testName.replace('*', '_')
-		println "::set-output name=test::$sanitised"
+		new File(System.getenv().GITHUB_OUTPUT) << "\ntest=$sanitised"
 	}
 }

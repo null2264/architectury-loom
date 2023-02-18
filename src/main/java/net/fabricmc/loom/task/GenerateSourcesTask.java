@@ -65,9 +65,9 @@ import net.fabricmc.loom.api.decompilers.DecompilationMetadata;
 import net.fabricmc.loom.api.decompilers.DecompilerOptions;
 import net.fabricmc.loom.api.decompilers.LoomDecompiler;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
-import net.fabricmc.loom.configuration.accesswidener.TransitiveAccessWidenerMappingsProcessor;
-import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
-import net.fabricmc.loom.configuration.processors.ModJavadocProcessor;
+import net.fabricmc.loom.configuration.ConfigContextImpl;
+import net.fabricmc.loom.configuration.processors.MappingProcessorContextImpl;
+import net.fabricmc.loom.configuration.processors.MinecraftJarProcessorManager;
 import net.fabricmc.loom.configuration.sources.ForgeSourcesRemapper;
 import net.fabricmc.loom.decompilers.LineNumberRemapper;
 import net.fabricmc.loom.decompilers.linemap.LineMapClassFilter;
@@ -81,6 +81,7 @@ import net.fabricmc.loom.util.gradle.ThreadedSimpleProgressLogger;
 import net.fabricmc.loom.util.gradle.WorkerDaemonClientsManagerHelper;
 import net.fabricmc.loom.util.ipc.IPCClient;
 import net.fabricmc.loom.util.ipc.IPCServer;
+import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.Tiny2Writer;
@@ -153,7 +154,9 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 		// Inject Forge's own sources
 		if (getExtension().isForge()) {
-			ForgeSourcesRemapper.addForgeSources(getProject(), getOutputJar().get().getAsFile().toPath());
+			try (var serviceManager = new ScopedSharedServiceManager()) {
+				ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, getOutputJar().get().getAsFile().toPath());
+			}
 		}
 	}
 
@@ -355,7 +358,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	}
 
 	private Path getMappings() {
-		Path inputMappings = getExtension().isForge() ? getExtension().getMappingsProvider().tinyMappingsWithSrg : getExtension().getMappingsProvider().tinyMappings;
+		Path inputMappings = getExtension().isForge() ? getExtension().getMappingConfiguration().tinyMappingsWithSrg : getExtension().getMappingConfiguration().tinyMappings;
 
 		MemoryMappingTree mappingTree = new MemoryMappingTree();
 
@@ -367,18 +370,15 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 		final List<MappingsProcessor> mappingsProcessors = new ArrayList<>();
 
-		if (getExtension().getEnableTransitiveAccessWideners().get()) {
-			mappingsProcessors.add(new TransitiveAccessWidenerMappingsProcessor(getProject()));
-		}
+		MinecraftJarProcessorManager minecraftJarProcessorManager = MinecraftJarProcessorManager.create(getProject());
 
-		if (getExtension().getInterfaceInjection().isEnabled()) {
-			mappingsProcessors.add(new InterfaceInjectionProcessor(getProject()));
-		}
-
-		final ModJavadocProcessor javadocProcessor = ModJavadocProcessor.create(getProject());
-
-		if (javadocProcessor != null) {
-			mappingsProcessors.add(javadocProcessor);
+		if (minecraftJarProcessorManager != null) {
+			mappingsProcessors.add(mappings -> {
+				try (var serviceManager = new ScopedSharedServiceManager()) {
+					final var configContext = new ConfigContextImpl(getProject(), serviceManager, getExtension());
+					return minecraftJarProcessorManager.processMappings(mappings, new MappingProcessorContextImpl(configContext));
+				}
+			});
 		}
 
 		if (mappingsProcessors.isEmpty()) {

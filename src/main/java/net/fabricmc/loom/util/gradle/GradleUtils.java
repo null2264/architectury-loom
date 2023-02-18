@@ -24,7 +24,13 @@
 
 package net.fabricmc.loom.util.gradle;
 
+import java.util.function.Consumer;
+
 import org.gradle.api.Project;
+import org.gradle.api.invocation.Gradle;
+import org.gradle.api.provider.Provider;
+
+import net.fabricmc.loom.util.Constants;
 
 public final class GradleUtils {
 	private GradleUtils() {
@@ -40,5 +46,31 @@ public final class GradleUtils {
 
 			afterEvaluate.run();
 		});
+	}
+
+	public static void allLoomProjects(Gradle gradle, Consumer<Project> consumer) {
+		gradle.allprojects(project -> {
+			if (isLoomProject(project)) {
+				consumer.accept(project);
+			}
+		});
+	}
+
+	public static boolean isLoomProject(Project project) {
+		return project.getPluginManager().hasPlugin(Constants.PLUGIN_ID);
+	}
+
+	public static Provider<Boolean> getBooleanPropertyProvider(Project project, String key) {
+		return project.getProviders().gradleProperty(key).map(string -> {
+			try {
+				return Boolean.parseBoolean(string);
+			} catch (final IllegalArgumentException ex) {
+				return false;
+			}
+		});
+	}
+
+	public static boolean getBooleanProperty(Project project, String key) {
+		return getBooleanPropertyProvider(project, key).getOrElse(false);
 	}
 }

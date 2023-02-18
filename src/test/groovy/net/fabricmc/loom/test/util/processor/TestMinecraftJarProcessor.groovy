@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2018-2022 FabricMC
+ * Copyright (c) 2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,40 +22,36 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.build;
+package net.fabricmc.loom.test.util.processor
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import groovy.transform.Immutable
+import net.fabricmc.loom.api.processor.MinecraftJarProcessor
+import net.fabricmc.loom.api.processor.ProcessorContext
+import net.fabricmc.loom.api.processor.SpecContext
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import org.jetbrains.annotations.NotNull;
+import java.nio.file.Path
 
-public final class MixinRefmapHelper {
-	private MixinRefmapHelper() { }
+@Immutable
+class TestMinecraftJarProcessor implements MinecraftJarProcessor<Spec> {
+    String input
 
-	private static final String FABRIC_MOD_JSON = "fabric.mod.json";
+    final String name = "TestProcessor"
 
-	@NotNull
-	public static Collection<String> getMixinConfigurationFiles(JsonObject fabricModJson) {
-		JsonArray mixins = fabricModJson.getAsJsonArray("mixins");
+    @Override
+    Spec buildSpec(SpecContext context) {
+        if (input == null) {
+            return null
+        }
 
-		if (mixins == null) {
-			return Collections.emptyList();
-		}
+        return new Spec(input)
+    }
 
-		return StreamSupport.stream(mixins.spliterator(), false)
-				.map(e -> {
-					if (e instanceof JsonPrimitive str) {
-						return str.getAsString();
-					} else if (e instanceof JsonObject obj) {
-						return obj.get("config").getAsString();
-					} else {
-						throw new RuntimeException("Incorrect fabric.mod.json format");
-					}
-				}).collect(Collectors.toSet());
-	}
+    @Immutable
+    class Spec implements MinecraftJarProcessor.Spec {
+        String input
+    }
+
+    @Override
+    void processJar(Path jar, Spec spec, ProcessorContext context) throws IOException {
+    }
 }

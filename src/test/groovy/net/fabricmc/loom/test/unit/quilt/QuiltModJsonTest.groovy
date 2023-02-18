@@ -25,6 +25,7 @@
 package net.fabricmc.loom.test.unit.quilt
 
 import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import dev.architectury.loom.metadata.QuiltModJson
 import spock.lang.Specification
 import spock.lang.TempDir
@@ -44,14 +45,14 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(bytes)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from String"() {
         when:
             def qmj = QuiltModJson.of(OF_TEST_INPUT)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from File"() {
@@ -61,7 +62,7 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(file)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from Path"() {
@@ -71,7 +72,7 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(path)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "create from JsonObject"() {
@@ -81,21 +82,22 @@ class QuiltModJsonTest extends Specification {
         when:
             def qmj = QuiltModJson.of(json)
         then:
-            qmj.accessWidener == 'foo.accesswidener'
+            qmj.accessWideners == ['foo.accesswidener'] as Set
     }
 
     def "read access widener"() {
         given:
             def qmj = QuiltModJson.of(jsonText)
         when:
-            def accessWidenerName = qmj.accessWidener
+            def accessWidenerNames = qmj.accessWideners
         then:
-            accessWidenerName == expectedAw
+            accessWidenerNames == expectedAw as Set
         where:
             jsonText                                   | expectedAw
-            '{}'                                       | null
-            '{"access_widener":"foo.accesswidener"}'   | 'foo.accesswidener'
-            '{"access_widener":["bar.accesswidener"]}' | 'bar.accesswidener'
+            '{}'                                       | []
+            '{"access_widener":"foo.accesswidener"}'   | ['foo.accesswidener']
+            '{"access_widener":["bar.accesswidener"]}' | ['bar.accesswidener']
+            '{"access_widener":["foo.accesswidener","bar.accesswidener"]}' | ['foo.accesswidener', 'bar.accesswidener']
     }
 
     def "read injected interfaces"() {
@@ -127,5 +129,43 @@ class QuiltModJsonTest extends Specification {
             '{}' | []
             '{"mixin":"foo.mixins.json"}' | ['foo.mixins.json']
             '{"mixin":["foo.mixins.json","bar.mixins.json"]}' | ['foo.mixins.json', 'bar.mixins.json']
+    }
+
+    def "read mod id"() {
+        given:
+            def qmj = QuiltModJson.of(jsonText)
+        when:
+            def id = qmj.id
+        then:
+            id == expected
+        where:
+            jsonText | expected
+            '{}' | null
+            '{"quilt_loader":{"id":"foo"}}' | 'foo'
+    }
+
+    def "get file name"() {
+        given:
+            def qmj = QuiltModJson.of(jsonText)
+        when:
+            def fileName = qmj.fileName
+        then:
+            fileName == 'quilt.mod.json'
+        where:
+            jsonText << ['{}', '{"quilt_loader":{"id":"foo"}}', '{"mixin":"foo.mixins.json"}']
+    }
+
+    def "read custom value"() {
+        given:
+            def qmj = QuiltModJson.of('{"schema_version":1,"quilt_loom":{}}')
+        when:
+            def customValue = qmj.getCustomValue(key)
+        then:
+            customValue == expectedValue
+        where:
+            key              | expectedValue
+            'unknown'        | null
+            'quilt_loom'     | new JsonObject()
+            'schema_version' | new JsonPrimitive(1)
     }
 }

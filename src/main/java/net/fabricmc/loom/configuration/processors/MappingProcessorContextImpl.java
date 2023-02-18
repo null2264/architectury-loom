@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2016-2021 FabricMC
+ * Copyright (c) 2022-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,18 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.configuration.providers.mappings;
+package net.fabricmc.loom.configuration.processors;
 
-import java.io.File;
-import java.nio.file.Path;
+import dev.architectury.tinyremapper.TinyRemapper;
 
-public interface MappingsProvider {
-	Path mappingsWorkingDir();
+import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.api.processor.MappingProcessorContext;
+import net.fabricmc.loom.configuration.ConfigContext;
+import net.fabricmc.loom.util.LazyCloseable;
 
-	File intermediaryTinyFile();
+public record MappingProcessorContextImpl(ConfigContext configContext) implements MappingProcessorContext {
+	@Override
+	public LazyCloseable<TinyRemapper> createRemapper(MappingsNamespace from, MappingsNamespace to) {
+		return ContextImplHelper.createRemapper(configContext, from, to);
+	}
 }

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -18,7 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
-public final class ArchitecturyCommonJson implements ModMetadataFile {
+public final class ArchitecturyCommonJson implements JsonBackedModMetadataFile {
+	public static final String FILE_NAME = "architectury.common.json";
 	private static final String ACCESS_WIDENER_KEY = "accessWidener";
 
 	private final JsonObject json;
@@ -48,11 +50,21 @@ public final class ArchitecturyCommonJson implements ModMetadataFile {
 	}
 
 	@Override
-	public @Nullable String getAccessWidener() {
+	public JsonObject getJson() {
+		return json;
+	}
+
+	@Override
+	public @Nullable String getId() {
+		return null;
+	}
+
+	@Override
+	public Set<String> getAccessWideners() {
 		if (json.has(ACCESS_WIDENER_KEY)) {
-			return json.get(ACCESS_WIDENER_KEY).getAsString();
+			return Set.of(json.get(ACCESS_WIDENER_KEY).getAsString());
 		} else {
-			return null;
+			return Set.of();
 		}
 	}
 
@@ -85,5 +97,28 @@ public final class ArchitecturyCommonJson implements ModMetadataFile {
 		}
 
 		return Collections.emptyList();
+	}
+
+	/**
+	 * {@return {@value #FILE_NAME}}.
+	 */
+	@Override
+	public String getFileName() {
+		return FILE_NAME;
+	}
+
+	@Override
+	public List<String> getMixinConfigs() {
+		return List.of();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this == obj || obj instanceof ArchitecturyCommonJson acj && acj.json.equals(json);
+	}
+
+	@Override
+	public int hashCode() {
+		return json.hashCode();
 	}
 }
