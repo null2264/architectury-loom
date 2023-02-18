@@ -29,8 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
-import javax.inject.Inject;
-
 import codechicken.diffpatch.cli.CliOperation;
 import codechicken.diffpatch.cli.PatchOperation;
 import codechicken.diffpatch.util.LoggingOutputStream;
@@ -38,11 +36,9 @@ import codechicken.diffpatch.util.PatchMode;
 import dev.architectury.loom.util.TempFiles;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.LogLevel;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.build.event.BuildEventsListenerRegistry;
 
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider;
@@ -50,7 +46,7 @@ import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpExecutor;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.steplogic.ConstantLogic;
 import net.fabricmc.loom.configuration.sources.ForgeSourcesRemapper;
 import net.fabricmc.loom.util.SourceRemapper;
-import net.fabricmc.loom.util.service.BuildSharedServiceManager;
+import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.loom.util.service.SharedServiceManager;
 
 public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
@@ -72,21 +68,14 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 	@OutputFile
 	public abstract RegularFileProperty getOutputJar();
 
-	@Inject
-	protected abstract BuildEventsListenerRegistry getBuildEventsListenerRegistry();
-
-	private final Provider<BuildSharedServiceManager> serviceManagerProvider;
-
 	public GenerateForgePatchedSourcesTask() {
 		getOutputs().upToDateWhen((o) -> false);
 		getOutputJar().fileProvider(getProject().provider(() -> GenerateSourcesTask.getMappedJarFileWithSuffix(getRuntimeJar(), "-sources.jar")));
-
-		serviceManagerProvider = BuildSharedServiceManager.createForTask(this, getBuildEventsListenerRegistry());
 	}
 
 	@TaskAction
 	public void run() throws IOException {
-		try (var tempFiles = new TempFiles()) {
+		try (var tempFiles = new TempFiles(); var serviceManager = new ScopedSharedServiceManager()) {
 			Path cache = tempFiles.directory("loom-decompilation");
 			// Step 1: decompile and patch with MCP patches
 			Path rawDecompiled = decompileAndPatch(cache);
@@ -94,9 +83,9 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 			getLogger().lifecycle(":applying Forge patches");
 			Path patched = sourcePatch(cache, rawDecompiled);
 			// Step 3: remap
-			remap(patched);
+			remap(patched, serviceManager);
 			// Step 4: add Forge's own sources
-			ForgeSourcesRemapper.addForgeSources(getProject(), serviceManagerProvider.get().get(), getOutputJar().get().getAsFile().toPath());
+			ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, getOutputJar().get().getAsFile().toPath());
 		}
 	}
 
@@ -144,8 +133,7 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 		return output;
 	}
 
-	private void remap(Path input) {
-		SharedServiceManager serviceManager = serviceManagerProvider.get().get();
+	private void remap(Path input, SharedServiceManager serviceManager) {
 		SourceRemapper remapper = new SourceRemapper(getProject(), serviceManager, "srg", "named");
 		remapper.scheduleRemapSources(input.toFile(), getOutputJar().get().getAsFile(), false, true, () -> {
 		});
