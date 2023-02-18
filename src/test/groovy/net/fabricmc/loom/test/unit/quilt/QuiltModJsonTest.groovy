@@ -25,6 +25,7 @@
 package net.fabricmc.loom.test.unit.quilt
 
 import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
 import dev.architectury.loom.metadata.QuiltModJson
 import spock.lang.Specification
 import spock.lang.TempDir
@@ -152,5 +153,19 @@ class QuiltModJsonTest extends Specification {
             fileName == 'quilt.mod.json'
         where:
             jsonText << ['{}', '{"quilt_loader":{"id":"foo"}}', '{"mixin":"foo.mixins.json"}']
+    }
+
+    def "read custom value"() {
+        given:
+            def qmj = QuiltModJson.of('{"schema_version":1,"quilt_loom":{}}')
+        when:
+            def customValue = qmj.getCustomValue(key)
+        then:
+            customValue == expectedValue
+        where:
+            key              | expectedValue
+            'unknown'        | null
+            'quilt_loom'     | new JsonObject()
+            'schema_version' | new JsonPrimitive(1)
     }
 }
