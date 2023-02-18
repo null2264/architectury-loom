@@ -24,14 +24,12 @@
 
 package net.fabricmc.loom.configuration;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import org.gradle.api.NamedDomainObjectProvider;
@@ -359,11 +357,7 @@ public final class CompileConfiguration {
 		}
 
 		if (extension.isForge()) {
-			Set<File> atFiles = AccessTransformerJarProcessor.getAccessTransformerFiles(configContext.project());
-
-			if (!atFiles.isEmpty()) {
-				extension.getGameJarProcessors().add(new AccessTransformerJarProcessor(configContext.project(), atFiles));
-			}
+			extension.addMinecraftJarProcessor(AccessTransformerJarProcessor.class, "loom:access-transformer", configContext.project(), extension.getForge().getAccessTransformers());
 		}
 	}
 
