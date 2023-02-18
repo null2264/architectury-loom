@@ -39,7 +39,9 @@ import org.gradle.api.logging.LogLevel;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
+import org.jetbrains.annotations.Nullable;
 
+import net.fabricmc.loom.configuration.processors.MinecraftJarProcessorManager;
 import net.fabricmc.loom.configuration.providers.forge.ForgeUserdevProvider;
 import net.fabricmc.loom.configuration.providers.forge.MinecraftPatchedProvider;
 import net.fabricmc.loom.configuration.providers.forge.mcpconfig.McpExecutor;
@@ -75,6 +77,13 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 
 	@TaskAction
 	public void run() throws IOException {
+		// Check that the jar is not processed
+		final @Nullable MinecraftJarProcessorManager jarProcessorManager = MinecraftJarProcessorManager.create(getProject());
+
+		if (jarProcessorManager != null) {
+			throw new UnsupportedOperationException("Cannot run Forge's patched decompilation with a processed Minecraft jar");
+		}
+
 		try (var tempFiles = new TempFiles(); var serviceManager = new ScopedSharedServiceManager()) {
 			Path cache = tempFiles.directory("loom-decompilation");
 			// Step 1: decompile and patch with MCP patches
