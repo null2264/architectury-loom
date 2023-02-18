@@ -49,12 +49,10 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.work.DisableCachingByDefault;
 import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
@@ -83,7 +81,6 @@ import net.fabricmc.loom.util.gradle.ThreadedSimpleProgressLogger;
 import net.fabricmc.loom.util.gradle.WorkerDaemonClientsManagerHelper;
 import net.fabricmc.loom.util.ipc.IPCClient;
 import net.fabricmc.loom.util.ipc.IPCServer;
-import net.fabricmc.loom.util.service.BuildSharedServiceManager;
 import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
@@ -119,11 +116,6 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	public abstract WorkerDaemonClientsManager getWorkerDaemonClientsManager();
 
 	@Inject
-	protected abstract BuildEventsListenerRegistry getBuildEventsListenerRegistry();
-
-	private final Provider<BuildSharedServiceManager> serviceManagerProvider;
-
-	@Inject
 	public GenerateSourcesTask(DecompilerOptions decompilerOptions) {
 		this.decompilerOptions = decompilerOptions;
 
@@ -132,8 +124,6 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 		dependsOn(decompilerOptions.getClasspath().getBuiltBy());
 
 		getOutputJar().fileProvider(getProject().provider(() -> getMappedJarFileWithSuffix("-sources.jar")));
-
-		serviceManagerProvider = BuildSharedServiceManager.createForTask(this, getBuildEventsListenerRegistry());
 	}
 
 	@TaskAction
@@ -164,7 +154,9 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 		// Inject Forge's own sources
 		if (getExtension().isForge()) {
-			ForgeSourcesRemapper.addForgeSources(getProject(), serviceManagerProvider.get().get(), getOutputJar().get().getAsFile().toPath());
+			try (var serviceManager = new ScopedSharedServiceManager()) {
+				ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, getOutputJar().get().getAsFile().toPath());
+			}
 		}
 	}
 
