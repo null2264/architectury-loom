@@ -55,7 +55,6 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.mods.dependency.ModDependency;
 import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
-import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.task.RemapJarTask;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.LoggerFilter;
@@ -160,8 +159,8 @@ public class ModProcessor {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		TinyMappingsService mappingsService = mappingConfiguration.getMappingsService(serviceManager);
-		MemoryMappingTree mappings = (fromM.equals("srg") || toM.equals("srg")) && extension.isForge() ? mappingsService.getMappingTreeWithSrg() : mappingsService.getMappingTree();
+		boolean srg = (fromM.equals("srg") || toM.equals("srg")) && extension.isForge();
+		MemoryMappingTree mappings = mappingConfiguration.getMappingsService(serviceManager, srg).getMappingTree();
 		LoggerFilter.replaceSystemOut();
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
 				.logger(project.getLogger()::lifecycle)

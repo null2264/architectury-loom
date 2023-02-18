@@ -27,9 +27,6 @@ package net.fabricmc.loom.configuration.providers.mappings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.function.Supplier;
-
-import com.google.common.base.Suppliers;
 
 import net.fabricmc.loom.util.service.SharedService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
@@ -38,36 +35,21 @@ import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public final class TinyMappingsService implements SharedService {
 	private final MemoryMappingTree mappingTree;
-	private final Supplier<MemoryMappingTree> mappingTreeWithSrg;
 
-	public TinyMappingsService(Path tinyMappings, Path tinyMappingsWithSrg) {
+	public TinyMappingsService(Path tinyMappings) {
 		try {
 			this.mappingTree = new MemoryMappingTree();
 			MappingReader.read(tinyMappings, mappingTree);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Failed to read mappings", e);
 		}
-
-		this.mappingTreeWithSrg = Suppliers.memoize(() -> {
-			try {
-				MemoryMappingTree tree = new MemoryMappingTree();
-				MappingReader.read(tinyMappingsWithSrg, tree);
-				return tree;
-			} catch (IOException e) {
-				throw new UncheckedIOException("Failed to read mappings", e);
-			}
-		});
 	}
 
-	public static synchronized TinyMappingsService create(SharedServiceManager serviceManager, Path tinyMappings, Path tinyMappingsWithSrg) {
-		return serviceManager.getOrCreateService("TinyMappingsService:" + tinyMappings.toAbsolutePath(), () -> new TinyMappingsService(tinyMappings, tinyMappingsWithSrg));
+	public static synchronized TinyMappingsService create(SharedServiceManager serviceManager, Path tinyMappings) {
+		return serviceManager.getOrCreateService("TinyMappingsService:" + tinyMappings.toAbsolutePath(), () -> new TinyMappingsService(tinyMappings));
 	}
 
 	public MemoryMappingTree getMappingTree() {
 		return mappingTree;
-	}
-
-	public MemoryMappingTree getMappingTreeWithSrg() {
-		return mappingTreeWithSrg.get();
 	}
 }

@@ -155,7 +155,23 @@ public class MappingConfiguration {
 	}
 
 	public TinyMappingsService getMappingsService(SharedServiceManager serviceManager) {
-		return TinyMappingsService.create(serviceManager, Objects.requireNonNull(tinyMappings), Objects.requireNonNull(tinyMappingsWithSrg));
+		return getMappingsService(serviceManager, false);
+	}
+
+	public TinyMappingsService getMappingsService(SharedServiceManager serviceManager, boolean withSrg) {
+		final Path tinyMappings;
+
+		if (withSrg) {
+			if (Files.notExists(this.tinyMappingsWithSrg)) {
+				throw new UnsupportedOperationException("Cannot get mappings service with SRG mappings without SRG enabled!");
+			}
+
+			tinyMappings = this.tinyMappingsWithSrg;
+		} else {
+			tinyMappings = this.tinyMappings;
+		}
+
+		return TinyMappingsService.create(serviceManager, Objects.requireNonNull(tinyMappings));
 	}
 
 	protected void setup(Project project, SharedServiceManager serviceManager, MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
@@ -213,8 +229,8 @@ public class MappingConfiguration {
 
 			if (Files.notExists(srgToNamedSrg) || extension.refreshDeps()) {
 				try (var serviceManager = new ScopedSharedServiceManager()) {
-					TinyMappingsService mappingsService = getMappingsService(serviceManager);
-					SrgNamedWriter.writeTo(project.getLogger(), srgToNamedSrg, mappingsService.getMappingTreeWithSrg(), "srg", "named");
+					TinyMappingsService mappingsService = getMappingsService(serviceManager, true);
+					SrgNamedWriter.writeTo(project.getLogger(), srgToNamedSrg, mappingsService.getMappingTree(), "srg", "named");
 				}
 			}
 		}

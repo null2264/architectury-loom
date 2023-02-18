@@ -201,8 +201,8 @@ public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvide
 
 		if (extension.isForgeAndOfficial()) {
 			try (var serviceManager = new ScopedSharedServiceManager()) {
-				TinyMappingsService mappingsService = extension.getMappingConfiguration().getMappingsService(serviceManager);
-				MemoryMappingTree mappingsWithSrg = mappingsService.getMappingTreeWithSrg();
+				TinyMappingsService mappingsService = extension.getMappingConfiguration().getMappingsService(serviceManager, true);
+				MemoryMappingTree mappingsWithSrg = mappingsService.getMappingTree();
 				RemapObjectHolderVisitor.remapObjectHolder(remappedJars.outputJar().getPath(), "net.minecraftforge.registries.ObjectHolderRegistry", mappingsWithSrg, "srg", "named");
 			}
 		}
