@@ -240,7 +240,7 @@ public class ModProcessor {
 			}
 		}
 
-		project.getLogger().lifecycle(":remapped " + remapList.size() + " mods (TinyRemapper, " + fromM + " -> " + toM + ") in " + stopwatch.stop());
+		project.getLogger().lifecycle(":remapped {} mods ({} -> {}) in {}", remapList.size(), fromM, toM, stopwatch.stop());
 
 		for (ModDependency dependency : remapList) {
 			outputConsumerMap.get(dependency).close();
