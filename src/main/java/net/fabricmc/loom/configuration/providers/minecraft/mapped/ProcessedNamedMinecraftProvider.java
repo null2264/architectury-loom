@@ -118,13 +118,14 @@ public abstract class ProcessedNamedMinecraftProvider<M extends MinecraftProvide
 	@Override
 	protected String getName(String name) {
 		final Project project = getProject();
+		final String jarPrefix = parentMinecraftProvider.getMinecraftProvider().getJarPrefix();
 
 		if (project.getRootProject() == project) {
-			return "minecraft-%s-project-root".formatted(name).toLowerCase(Locale.ROOT);
+			return jarPrefix + "minecraft-%s-project-root".formatted(name).toLowerCase(Locale.ROOT);
 		}
 
 		final String projectPath = project.getPath().replace(':', '@');
-		return "%sminecraft-%s-project-%s".formatted(parentMinecraftProvider.getMinecraftProvider().getJarPrefix(), name, projectPath).toLowerCase(Locale.ROOT);
+		return jarPrefix + "minecraft-%s-project-%s".formatted(name, projectPath).toLowerCase(Locale.ROOT);
 	}
 
 	@Override
