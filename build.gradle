@@ -239,17 +239,10 @@ import org.w3c.dom.Node
 
 publishing {
 	publications {
-		plugin(MavenPublication) { publication ->
-			groupId project.group
-			artifactId project.archivesBaseName
-			version project.version
-
-			from components.java
-		}
-
 		if (isSnapshot) return
 
-		mavenSnapshot(MavenPublication) { publication ->
+		// Also publish a snapshot so people can use the latest version if they wish
+		snapshot(MavenPublication) { publication ->
 			groupId project.group
 			artifactId project.archivesBaseName
 			version baseVersion + '-SNAPSHOT'
@@ -257,7 +250,8 @@ publishing {
 			from components.java
 		}
 
-		pluginSnapshot(MavenPublication) {
+		// Manually crate the plugin marker for snapshot versions
+		snapshotPlugin(MavenPublication) {
 			groupId 'dev.architectury.loom'
 			artifactId 'dev.architectury.loom.gradle.plugin'
 			version baseVersion + '-SNAPSHOT'
