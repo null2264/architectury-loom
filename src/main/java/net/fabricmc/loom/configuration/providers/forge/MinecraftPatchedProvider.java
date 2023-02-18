@@ -221,8 +221,8 @@ public class MinecraftPatchedProvider {
 
 	private TinyRemapper buildRemapper(SharedServiceManager serviceManager, Path input) throws IOException {
 		Path[] libraries = TinyRemapperHelper.getMinecraftDependencies(project);
-		TinyMappingsService mappingsService = getExtension().getMappingConfiguration().getMappingsService(serviceManager);
-		MemoryMappingTree mappingsWithSrg = mappingsService.getMappingTreeWithSrg();
+		TinyMappingsService mappingsService = getExtension().getMappingConfiguration().getMappingsService(serviceManager, true);
+		MemoryMappingTree mappingsWithSrg = mappingsService.getMappingTree();
 
 		TinyRemapper remapper = TinyRemapper.newRemapper()
 				.logger(logger::lifecycle)

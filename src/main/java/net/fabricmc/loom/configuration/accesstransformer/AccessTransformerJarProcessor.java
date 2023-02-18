@@ -54,15 +54,12 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.api.processor.MinecraftJarProcessor;
 import net.fabricmc.loom.api.processor.ProcessorContext;
 import net.fabricmc.loom.api.processor.SpecContext;
-import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.ExceptionUtil;
 import net.fabricmc.loom.util.ForgeToolExecutor;
 import net.fabricmc.loom.util.fmj.FabricModJson;
-import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
-import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class AccessTransformerJarProcessor implements MinecraftJarProcessor<AccessTransformerJarProcessor.Spec> {
 	private static final Logger LOGGER = Logging.getLogger(AccessTransformerJarProcessor.class);
@@ -128,7 +125,7 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 			LOGGER.lifecycle(":applying project access transformers");
 			final Path tempInput = tempFiles.file("input", ".jar");
 			Files.copy(jar, tempInput, StandardCopyOption.REPLACE_EXISTING);
-			final Path atPath = mergeAndRemapAccessTransformers(spec.accessTransformers());
+			final Path atPath = mergeAndRemapAccessTransformers(context, spec.accessTransformers());
 
 			executeAt(project, tempInput, jar, args -> {
 				args.add("--atFile");
@@ -139,7 +136,7 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 		}
 	}
 
-	private Path mergeAndRemapAccessTransformers(List<AccessTransformerEntry> accessTransformers) throws IOException {
+	private Path mergeAndRemapAccessTransformers(ProcessorContext context, List<AccessTransformerEntry> accessTransformers) throws IOException {
 		AccessTransformSet accessTransformSet = AccessTransformSet.create();
 
 		for (AccessTransformerEntry entry : accessTransformers) {
@@ -150,13 +147,7 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 			}
 		}
 
-		try (var serviceManager = new ScopedSharedServiceManager()) {
-			TinyMappingsService mappingsService = LoomGradleExtension.get(project).getMappingConfiguration().getMappingsService(serviceManager);
-			MemoryMappingTree mappings = mappingsService.getMappingTreeWithSrg();
-			accessTransformSet = accessTransformSet.remap(new TinyMappingsReader(mappings, MappingsNamespace.SRG.toString(), MappingsNamespace.NAMED.toString()).read());
-		} catch (IOException e) {
-			throw new IOException("Could not remap access transformers from srg to named", e);
-		}
+		accessTransformSet = accessTransformSet.remap(new TinyMappingsReader(context.getMappings(), MappingsNamespace.SRG.toString(), MappingsNamespace.NAMED.toString()).read());
 
 		final Path accessTransformerPath = tempFiles.file("accesstransformer-merged", ".cfg");
 

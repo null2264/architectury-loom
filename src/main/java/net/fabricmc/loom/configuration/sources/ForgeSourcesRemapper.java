@@ -202,8 +202,8 @@ public class ForgeSourcesRemapper {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		Mercury mercury = SourceRemapper.createMercuryWithClassPath(project, false);
 
-		TinyMappingsService mappingsService = extension.getMappingConfiguration().getMappingsService(serviceManager);
-		MappingSet mappings = new TinyMappingsReader(mappingsService.getMappingTreeWithSrg(), "srg", "named").read();
+		TinyMappingsService mappingsService = extension.getMappingConfiguration().getMappingsService(serviceManager, true);
+		MappingSet mappings = new TinyMappingsReader(mappingsService.getMappingTree(), "srg", "named").read();
 
 		for (Map.Entry<String, String> entry : TinyRemapperHelper.JSR_TO_JETBRAINS.entrySet()) {
 			mappings.getOrCreateClassMapping(entry.getKey()).setDeobfuscatedName(entry.getValue());
