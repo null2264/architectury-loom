@@ -1,11 +1,11 @@
 package dev.architectury.loom.metadata;
 
-import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import java.util.List;
+import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Set;
+import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
 // A no-op mod metadata file for Forge's mods.toml.
 public final class ModsToml implements ModMetadataFile {
