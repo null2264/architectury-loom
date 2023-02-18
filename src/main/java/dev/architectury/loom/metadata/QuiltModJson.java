@@ -148,4 +148,14 @@ public final class QuiltModJson implements JsonBackedModMetadataFile {
 		// See https://github.com/QuiltMC/quilt-loader/blob/7da975c7/src/main/java/org/quiltmc/loader/api/ModMetadata.java#L150-L152
 		return json.get(key);
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this == obj || obj instanceof QuiltModJson qmj && qmj.json.equals(json);
+	}
+
+	@Override
+	public int hashCode() {
+		return json.hashCode();
+	}
 }

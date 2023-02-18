@@ -122,4 +122,9 @@ public final class ModMetadataFabricModJson extends FabricModJson {
 				.stream()
 				.collect(Collectors.toMap(Function.identity(), path -> ModEnvironment.UNIVERSAL));
 	}
+
+	@Override
+	public int hashCode() {
+		return modMetadata.hashCode();
+	}
 }

@@ -111,4 +111,14 @@ public final class ArchitecturyCommonJson implements JsonBackedModMetadataFile {
 	public List<String> getMixinConfigs() {
 		return List.of();
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return this == obj || obj instanceof ArchitecturyCommonJson acj && acj.json.equals(json);
+	}
+
+	@Override
+	public int hashCode() {
+		return json.hashCode();
+	}
 }
