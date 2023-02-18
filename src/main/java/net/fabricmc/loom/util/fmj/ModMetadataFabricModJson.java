@@ -42,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public final class ModMetadataFabricModJson extends FabricModJson {
+	private static final int FABRIC_SCHEMA_VERSION = -1;
 	private final ModMetadataFile modMetadata;
 	private final FabricModJsonSource source;
 
@@ -99,7 +100,9 @@ public final class ModMetadataFabricModJson extends FabricModJson {
 
 	@Override
 	public int getVersion() {
-		throw new UnsupportedOperationException();
+		// Technically not correct since we're not a real fabric.mod.json,
+		// but this is needed for computing the hash code.
+		return FABRIC_SCHEMA_VERSION;
 	}
 
 	@Override
@@ -121,10 +124,5 @@ public final class ModMetadataFabricModJson extends FabricModJson {
 		return modMetadata.getAccessWideners()
 				.stream()
 				.collect(Collectors.toMap(Function.identity(), path -> ModEnvironment.UNIVERSAL));
-	}
-
-	@Override
-	public int hashCode() {
-		return modMetadata.hashCode();
 	}
 }

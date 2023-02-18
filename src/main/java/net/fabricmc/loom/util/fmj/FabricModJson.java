@@ -67,7 +67,7 @@ public abstract sealed class FabricModJson permits FabricModJsonV0, FabricModJso
 	}
 
 	@Override
-	public int hashCode() {
+	public final int hashCode() {
 		return Objects.hash(getId(), getVersion());
 	}
 
