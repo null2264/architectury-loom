@@ -27,6 +27,7 @@ package net.fabricmc.loom.configuration.accesstransformer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -43,7 +44,6 @@ import dev.architectury.loom.util.TempFiles;
 import org.cadixdev.at.AccessTransformSet;
 import org.cadixdev.at.io.AccessTransformFormats;
 import org.gradle.api.Project;
-import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
@@ -65,11 +65,10 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 	private static final Logger LOGGER = Logging.getLogger(AccessTransformerJarProcessor.class);
 	private final String name;
 	private final Project project;
-	private final ConfigurableFileCollection localAccessTransformers;
-	private final TempFiles tempFiles = new TempFiles();
+	private final Iterable<File> localAccessTransformers;
 
 	@Inject
-	public AccessTransformerJarProcessor(String name, Project project, ConfigurableFileCollection localAccessTransformers) {
+	public AccessTransformerJarProcessor(String name, Project project, Iterable<File> localAccessTransformers) {
 		this.name = name;
 		this.project = project;
 		this.localAccessTransformers = localAccessTransformers;
@@ -89,7 +88,7 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 				throw new UncheckedIOException("Could not compute AT hash", e);
 			}
 
-			entries.add(new AccessTransformerEntry(atPath, hash));
+			entries.add(new AccessTransformerEntry.Standalone(atPath, hash));
 		}
 
 		for (FabricModJson localMod : context.localMods()) {
@@ -104,16 +103,7 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 			}
 
 			final String hash = Hashing.sha256().hashBytes(bytes).toString();
-			final Path atPath;
-
-			try {
-				atPath = tempFiles.file("accesstransformer", ".cfg");
-				Files.write(atPath, bytes);
-			} catch (IOException e) {
-				throw ExceptionUtil.createDescriptiveWrapper(UncheckedIOException::new, "Could not create temporary AT file", e);
-			}
-
-			entries.add(new AccessTransformerEntry(atPath, hash));
+			entries.add(new AccessTransformerEntry.Mod(localMod, hash));
 		}
 
 		return !entries.isEmpty() ? new Spec(entries) : null;
@@ -121,11 +111,11 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 
 	@Override
 	public void processJar(Path jar, Spec spec, ProcessorContext context) throws IOException {
-		try (tempFiles) {
+		try (var tempFiles = new TempFiles()) {
 			LOGGER.lifecycle(":applying project access transformers");
 			final Path tempInput = tempFiles.file("input", ".jar");
 			Files.copy(jar, tempInput, StandardCopyOption.REPLACE_EXISTING);
-			final Path atPath = mergeAndRemapAccessTransformers(context, spec.accessTransformers());
+			final Path atPath = mergeAndRemapAccessTransformers(context, spec.accessTransformers(), tempFiles);
 
 			executeAt(project, tempInput, jar, args -> {
 				args.add("--atFile");
@@ -136,14 +126,14 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 		}
 	}
 
-	private Path mergeAndRemapAccessTransformers(ProcessorContext context, List<AccessTransformerEntry> accessTransformers) throws IOException {
+	private Path mergeAndRemapAccessTransformers(ProcessorContext context, List<AccessTransformerEntry> accessTransformers, TempFiles tempFiles) throws IOException {
 		AccessTransformSet accessTransformSet = AccessTransformSet.create();
 
 		for (AccessTransformerEntry entry : accessTransformers) {
-			try {
-				accessTransformSet.merge(AccessTransformFormats.FML.read(entry.path()));
+			try (Reader reader = entry.openReader()) {
+				accessTransformSet.merge(AccessTransformFormats.FML.read(reader));
 			} catch (IOException e) {
-				throw new IOException("Could not read access transformer " + entry.path(), e);
+				throw new IOException("Could not read access transformer " + entry, e);
 			}
 		}
 
@@ -192,8 +182,5 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 	}
 
 	public record Spec(List<AccessTransformerEntry> accessTransformers) implements MinecraftJarProcessor.Spec {
-	}
-
-	private record AccessTransformerEntry(Path path, String hash) {
 	}
 }
