@@ -124,6 +124,9 @@ dependencies {
 	implementation ('com.opencsv:opencsv:5.4')
 	implementation ('net.minecraftforge:DiffPatch:2.0.7')
 
+	// Forge mods.toml parsing
+	implementation ('com.electronwill.night-config:toml:3.6.6')
+
 	// Testing
 	testImplementation(gradleTestKit())
 	testImplementation('org.spockframework:spock-core:2.3-groovy-3.0') {

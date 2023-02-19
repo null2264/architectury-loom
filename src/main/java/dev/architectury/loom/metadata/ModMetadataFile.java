@@ -6,6 +6,7 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import net.fabricmc.loom.util.function.CollectionUtil;
 
 /**
  * The metadata file of a mod, such as {@link ArchitecturyCommonJson architectury.common.json} or
@@ -15,10 +16,16 @@ import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
  */
 public interface ModMetadataFile {
 	/**
+	 * {@return all mod IDs in this mod metadata file}.
+	 */
+	Set<String> getIds();
+
+	/**
 	 * {@return the mod ID in this mod metadata file, or {@code null} if absent}.
 	 */
-	// TODO: When we have mods.toml here, shouldn't it support multiple IDs + maybe a "first ID"?
-	@Nullable String getId();
+	default @Nullable String getId() {
+		return CollectionUtil.first(getIds()).orElse(null);
+	}
 
 	/**
 	 * {@return the paths to the access widener file of this mod, or an empty set if absent}.

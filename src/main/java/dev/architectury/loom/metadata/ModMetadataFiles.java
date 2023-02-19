@@ -21,7 +21,7 @@ public final class ModMetadataFiles {
 	private static final Map<String, Function<byte[], ModMetadataFile>> SINGLE_FILE_METADATA_TYPES = ImmutableMap.<String, Function<byte[], ModMetadataFile>>builder()
 			.put(ArchitecturyCommonJson.FILE_NAME, ArchitecturyCommonJson::of)
 			.put(QuiltModJson.FILE_NAME, QuiltModJson::of)
-			.put(ModsToml.FILE_PATH, bytes -> ModsToml.INSTANCE)
+			.put(ModsToml.FILE_PATH, ModsToml::of)
 			.build();
 
 	/**

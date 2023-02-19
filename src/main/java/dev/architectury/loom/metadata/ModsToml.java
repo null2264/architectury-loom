@@ -1,23 +1,69 @@
 package dev.architectury.loom.metadata;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
+import com.electronwill.nightconfig.core.Config;
+import com.electronwill.nightconfig.core.io.ParsingException;
+import com.electronwill.nightconfig.toml.TomlParser;
+import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
-// A no-op mod metadata file for Forge's mods.toml.
 public final class ModsToml implements ModMetadataFile {
 	public static final String FILE_PATH = "META-INF/mods.toml";
-	public static final ModsToml INSTANCE = new ModsToml();
+	private final Config config;
 
-	private ModsToml() {
+	private ModsToml(Config config) {
+		this.config = Objects.requireNonNull(config);
+	}
+
+	public static ModsToml of(byte[] utf8) {
+		return of(new String(utf8, StandardCharsets.UTF_8));
+	}
+
+	public static ModsToml of(String text) {
+		try {
+			return new ModsToml(new TomlParser().parse(text));
+		} catch (ParsingException e) {
+			throw new IllegalArgumentException("Could not parse mods.toml", e);
+		}
+	}
+
+	public static ModsToml of(Path path) throws IOException {
+		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+			return new ModsToml(new TomlParser().parse(reader));
+		} catch (ParsingException e) {
+			throw new IllegalArgumentException("Could not parse mods.toml", e);
+		}
+	}
+
+	public static ModsToml of(File file) throws IOException {
+		return of(file.toPath());
 	}
 
 	@Override
-	public @Nullable String getId() {
-		return null;
+	public Set<String> getIds() {
+		final Optional<List<Config>> mods = config.getOptional("mods");
+		if (mods.isEmpty()) return Set.of();
+
+		final ImmutableSet.Builder<String> modIds = ImmutableSet.builder();
+
+		for (final Config mod : mods.get()) {
+			final Optional<String> modId = mod.getOptional("modId");
+			modId.ifPresent(modIds::add);
+		}
+
+		return modIds.build();
 	}
 
 	@Override
@@ -38,5 +84,15 @@ public final class ModsToml implements ModMetadataFile {
 	@Override
 	public List<String> getMixinConfigs() {
 		return List.of();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj == this || obj instanceof ModsToml modsToml && modsToml.config.equals(config);
+	}
+
+	@Override
+	public int hashCode() {
+		return config.hashCode();
 	}
 }

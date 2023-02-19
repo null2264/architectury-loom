@@ -144,4 +144,22 @@ public final class CollectionUtil {
 
 		return Optional.of(single);
 	}
+
+	/**
+	 * Gets the first element of an iterable.
+	 *
+	 * @param iterable the iterable
+	 * @param <A> the element type
+	 * @return the first element, or empty if there are no elements
+	 */
+	public static <A> Optional<A> first(Iterable<? extends A> iterable) {
+		final Iterator<? extends A> iter = iterable.iterator();
+
+		// No elements
+		if (!iter.hasNext()) {
+			return Optional.empty();
+		}
+
+		return Optional.of(iter.next());
+	}
 }

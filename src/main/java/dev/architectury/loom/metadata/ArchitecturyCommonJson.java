@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
-public final class ArchitecturyCommonJson implements JsonBackedModMetadataFile {
+public final class ArchitecturyCommonJson implements JsonBackedModMetadataFile, SingleIdModMetadataFile {
 	public static final String FILE_NAME = "architectury.common.json";
 	private static final String ACCESS_WIDENER_KEY = "accessWidener";
 
