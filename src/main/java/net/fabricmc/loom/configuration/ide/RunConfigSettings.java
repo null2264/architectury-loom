@@ -325,15 +325,14 @@ public final class RunConfigSettings implements Named {
 	}
 
 	/**
-	 * Configure run config with the default server options.
+	 * Configure run config with the default data options.
+	 *
+	 * <p>This method can only be used on Forge.
 	 */
 	public void data() {
+		ModPlatform.assertPlatform(getExtension(), ModPlatform.FORGE, () -> "RunConfigSettings.data() is only usable on Forge.");
 		environment("data");
-		defaultMainClass(Constants.Knot.KNOT_SERVER);
-
-		if (getExtension().isForge()) {
-			forgeTemplate("data");
-		}
+		forgeTemplate("data");
 	}
 
 	/**
