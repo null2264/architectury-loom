@@ -36,6 +36,7 @@ import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.attributes.Usage;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.AbstractCopyTask;
@@ -122,7 +123,11 @@ public final class CompileConfiguration {
 			configurations.register(Constants.Configurations.FORGE_NAMED).configure(configuration -> configuration.setTransitive(false));
 			configurations.register(Constants.Configurations.FORGE_EXTRA).configure(configuration -> configuration.setTransitive(false));
 			configurations.register(Constants.Configurations.MCP_CONFIG).configure(configuration -> configuration.setTransitive(false));
-			configurations.register(Constants.Configurations.FORGE_RUNTIME_LIBRARY);
+			configurations.register(Constants.Configurations.FORGE_RUNTIME_LIBRARY).configure(configuration -> {
+				// Resolve for runtime usage
+				Usage javaRuntime = project.getObjects().named(Usage.class, Usage.JAVA_RUNTIME);
+				configuration.attributes(attributes -> attributes.attribute(Usage.USAGE_ATTRIBUTE, javaRuntime));
+			});
 
 			extendsFrom(Constants.Configurations.MINECRAFT_SERVER_DEPENDENCIES, Constants.Configurations.FORGE_DEPENDENCIES, project);
 
