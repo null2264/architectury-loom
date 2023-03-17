@@ -1,12 +1,12 @@
 package dev.architectury.loom.metadata;
 
-import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import java.util.List;
+import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import java.util.List;
-import java.util.Set;
+import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
 
 /**
  * A fallback mod metadata file that represents a non-fatal format error
