@@ -6,8 +6,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.google.common.collect.ImmutableMap;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,11 +21,23 @@ import net.fabricmc.loom.util.gradle.SourceSetHelper;
  * Utilities for reading mod metadata files.
  */
 public final class ModMetadataFiles {
+	private static final Logger LOGGER = Logging.getLogger(ModMetadataFiles.class);
 	private static final Map<String, Function<byte[], ModMetadataFile>> SINGLE_FILE_METADATA_TYPES = ImmutableMap.<String, Function<byte[], ModMetadataFile>>builder()
 			.put(ArchitecturyCommonJson.FILE_NAME, ArchitecturyCommonJson::of)
 			.put(QuiltModJson.FILE_NAME, QuiltModJson::of)
-			.put(ModsToml.FILE_PATH, ModsToml::of)
+			.put(ModsToml.FILE_PATH, onError(ModsToml::of, "Could not load mods.toml", () -> new ErroringModMetadataFile("mods.toml")))
 			.build();
+
+	private static <A, B> Function<A, B> onError(Function<A, B> fn, String message, Supplier<B> onError) {
+		return a -> {
+			try {
+				return fn.apply(a);
+			} catch (Exception e) {
+				LOGGER.warn(message, e);
+				return onError.get();
+			}
+		};
+	}
 
 	/**
 	 * Reads the mod metadata file from a jar.

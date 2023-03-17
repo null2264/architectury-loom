@@ -40,6 +40,11 @@ class ModsTomlTest extends Specification {
             |[[mods]]
             |modId="world"
             '''.stripMargin()
+    public static final String BROKEN_INPUT =
+        '''
+        |[[mods.${MOD_ID}]]
+        |modId = "hello_world"
+        '''.stripMargin()
 
     @TempDir
     Path tempDir
@@ -81,13 +86,8 @@ class ModsTomlTest extends Specification {
     }
 
     def "create from invalid string"() {
-        given:
-            def text = '''
-                [[mods.${MOD_ID}]]
-                modId = "hello_world"
-                '''.stripIndent()
         when:
-            ModsToml.of(text)
+            ModsToml.of(BROKEN_INPUT)
         then:
             def e = thrown(IllegalArgumentException)
             e.cause instanceof ParsingException

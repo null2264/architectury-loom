@@ -25,12 +25,15 @@
 package net.fabricmc.loom.test.unit.architectury
 
 import dev.architectury.loom.metadata.ArchitecturyCommonJson
+import dev.architectury.loom.metadata.ErroringModMetadataFile
 import dev.architectury.loom.metadata.ModMetadataFiles
 import dev.architectury.loom.metadata.QuiltModJson
+import net.fabricmc.loom.test.unit.forge.ModsTomlTest
 import net.fabricmc.loom.util.ZipUtils
 import spock.lang.Specification
 import spock.lang.TempDir
 
+import java.nio.file.Files
 import java.nio.file.Path
 
 class ModMetadataFilesTest extends Specification {
@@ -99,5 +102,16 @@ class ModMetadataFilesTest extends Specification {
             def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
         then:
             modMetadata instanceof ArchitecturyCommonJson
+    }
+
+    def "read broken mods.toml from directory"() {
+        given:
+            Files.createDirectories(workingDir.resolve('META-INF'))
+            workingDir.resolve('META-INF/mods.toml').text = ModsTomlTest.BROKEN_INPUT
+        when:
+            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
+        then:
+            modMetadata instanceof ErroringModMetadataFile
+            modMetadata.fileName == 'mods.toml [erroring]'
     }
 }
