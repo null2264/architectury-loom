@@ -34,6 +34,7 @@ import net.fabricmc.accesswidener.AccessWidenerReader;
 import net.fabricmc.accesswidener.AccessWidenerRemapper;
 import net.fabricmc.accesswidener.AccessWidenerWriter;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.fmj.FabricModJson;
 import net.fabricmc.loom.util.fmj.FabricModJsonFactory;
 
@@ -56,8 +57,8 @@ public class AccessWidenerUtils {
 		return writer.write();
 	}
 
-	public static AccessWidenerData readAccessWidenerData(Path inputJar) throws IOException {
-		if (!FabricModJsonFactory.isModJar(inputJar)) {
+	public static AccessWidenerData readAccessWidenerData(Path inputJar, ModPlatform platform) throws IOException {
+		if (!FabricModJsonFactory.isModJar(inputJar, platform)) {
 			return null;
 		}
 
