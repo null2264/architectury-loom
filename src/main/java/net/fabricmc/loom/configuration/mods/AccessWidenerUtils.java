@@ -57,13 +57,11 @@ public class AccessWidenerUtils {
 	}
 
 	public static AccessWidenerData readAccessWidenerData(Path inputJar) throws IOException {
-		final FabricModJson fabricModJson = FabricModJsonFactory.createFromZipNullable(inputJar);
-
-		// ARCH: Having no mod metadata is just fine.
-		if (fabricModJson == null) {
+		if (!FabricModJsonFactory.isModJar(inputJar)) {
 			return null;
 		}
 
+		final FabricModJson fabricModJson = FabricModJsonFactory.createFromZip(inputJar);
 		final List<String> classTweakers = List.copyOf(fabricModJson.getClassTweakers().keySet());
 
 		if (classTweakers.isEmpty()) {
