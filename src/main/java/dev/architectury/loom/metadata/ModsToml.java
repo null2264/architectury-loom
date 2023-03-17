@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import net.fabricmc.loom.util.ExceptionUtil;
 
 public final class ModsToml implements ModMetadataFile {
 	public static final String FILE_PATH = "META-INF/mods.toml";
@@ -35,7 +36,7 @@ public final class ModsToml implements ModMetadataFile {
 		try {
 			return new ModsToml(new TomlParser().parse(text));
 		} catch (ParsingException e) {
-			throw new IllegalArgumentException("Could not parse mods.toml", e);
+			throw ExceptionUtil.createDescriptiveWrapper(IllegalArgumentException::new, "Could not parse mods.toml", e);
 		}
 	}
 
@@ -43,7 +44,7 @@ public final class ModsToml implements ModMetadataFile {
 		try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
 			return new ModsToml(new TomlParser().parse(reader));
 		} catch (ParsingException e) {
-			throw new IllegalArgumentException("Could not parse mods.toml", e);
+			throw ExceptionUtil.createDescriptiveWrapper(IllegalArgumentException::new, "Could not parse mods.toml", e);
 		}
 	}
 

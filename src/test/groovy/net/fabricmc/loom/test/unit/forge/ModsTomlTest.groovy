@@ -24,6 +24,7 @@
 
 package net.fabricmc.loom.test.unit.forge
 
+import com.electronwill.nightconfig.core.io.ParsingException
 import dev.architectury.loom.metadata.ModsToml
 import spock.lang.Specification
 import spock.lang.TempDir
@@ -77,5 +78,18 @@ class ModsTomlTest extends Specification {
             def modsToml = ModsToml.of(path)
         then:
             modsToml.ids == ['hello', 'world'] as Set
+    }
+
+    def "create from invalid string"() {
+        given:
+            def text = '''
+                [[mods.${MOD_ID}]]
+                modId = "hello_world"
+                '''.stripIndent()
+        when:
+            ModsToml.of(text)
+        then:
+            def e = thrown(IllegalArgumentException)
+            e.cause instanceof ParsingException
     }
 }
