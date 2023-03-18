@@ -40,11 +40,13 @@ class ModsTomlTest extends Specification {
             |[[mods]]
             |modId="world"
             '''.stripMargin()
+    // codenarc-disable GStringExpressionWithinString
     public static final String BROKEN_INPUT =
         '''
         |[[mods.${MOD_ID}]]
         |modId = "hello_world"
         '''.stripMargin()
+    // codenarc-enable GStringExpressionWithinString
 
     @TempDir
     Path tempDir
