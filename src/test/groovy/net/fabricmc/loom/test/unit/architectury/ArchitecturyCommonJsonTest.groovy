@@ -24,115 +24,121 @@
 
 package net.fabricmc.loom.test.unit.architectury
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
+
 import com.google.gson.JsonObject
 import dev.architectury.loom.metadata.ArchitecturyCommonJson
 import spock.lang.Specification
 import spock.lang.TempDir
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
-
 class ArchitecturyCommonJsonTest extends Specification {
-    private static final String OF_TEST_INPUT = '{"accessWidener":"foo.accesswidener"}'
+	private static final String OF_TEST_INPUT = '{"accessWidener":"foo.accesswidener"}'
 
-    @TempDir
-    Path tempDir
+	@TempDir
+	Path tempDir
 
-    def "create from byte[]"() {
-        given:
-            def bytes = OF_TEST_INPUT.getBytes(StandardCharsets.UTF_8)
-        when:
-            def acj = ArchitecturyCommonJson.of(bytes)
-        then:
-            acj.accessWideners == ['foo.accesswidener'] as Set
-    }
+	def "create from byte[]"() {
+		given:
+		def bytes = OF_TEST_INPUT.getBytes(StandardCharsets.UTF_8)
+		when:
+		def acj = ArchitecturyCommonJson.of(bytes)
+		then:
+		acj.accessWideners == ['foo.accesswidener'] as Set
+	}
 
-    def "create from String"() {
-        when:
-            def acj = ArchitecturyCommonJson.of(OF_TEST_INPUT)
-        then:
-            acj.accessWideners == ['foo.accesswidener'] as Set
-    }
+	def "create from String"() {
+		when:
+		def acj = ArchitecturyCommonJson.of(OF_TEST_INPUT)
+		then:
+		acj.accessWideners == ['foo.accesswidener'] as Set
+	}
 
-    def "create from File"() {
-        given:
-            def file = new File(tempDir.toFile(), 'architectury.common.json')
-            file.text = OF_TEST_INPUT
-        when:
-            def acj = ArchitecturyCommonJson.of(file)
-        then:
-            acj.accessWideners == ['foo.accesswidener'] as Set
-    }
+	def "create from File"() {
+		given:
+		def file = new File(tempDir.toFile(), 'architectury.common.json')
+		file.text = OF_TEST_INPUT
+		when:
+		def acj = ArchitecturyCommonJson.of(file)
+		then:
+		acj.accessWideners == ['foo.accesswidener'] as Set
+	}
 
-    def "create from Path"() {
-        given:
-            def path = tempDir.resolve('architectury.common.json')
-            path.text = OF_TEST_INPUT
-        when:
-            def acj = ArchitecturyCommonJson.of(path)
-        then:
-            acj.accessWideners == ['foo.accesswidener'] as Set
-    }
+	def "create from Path"() {
+		given:
+		def path = tempDir.resolve('architectury.common.json')
+		path.text = OF_TEST_INPUT
+		when:
+		def acj = ArchitecturyCommonJson.of(path)
+		then:
+		acj.accessWideners == ['foo.accesswidener'] as Set
+	}
 
-    def "create from JsonObject"() {
-        given:
-            def json = new JsonObject()
-            json.addProperty('accessWidener', 'foo.accesswidener')
-        when:
-            def acj = ArchitecturyCommonJson.of(json)
-        then:
-            acj.accessWideners == ['foo.accesswidener'] as Set
-    }
+	def "create from JsonObject"() {
+		given:
+		def json = new JsonObject()
+		json.addProperty('accessWidener', 'foo.accesswidener')
+		when:
+		def acj = ArchitecturyCommonJson.of(json)
+		then:
+		acj.accessWideners == ['foo.accesswidener'] as Set
+	}
 
-    def "read access widener"() {
-        given:
-            def acj = ArchitecturyCommonJson.of(jsonText)
-        when:
-            def accessWidenerNames = acj.accessWideners
-        then:
-            accessWidenerNames == expectedAw as Set
-        where:
-            jsonText                                | expectedAw
-            '{}'                                    | []
-            '{"accessWidener":"foo.accesswidener"}' | ['foo.accesswidener']
-    }
+	def "read access widener"() {
+		given:
+		def acj = ArchitecturyCommonJson.of(jsonText)
+		when:
+		def accessWidenerNames = acj.accessWideners
+		then:
+		accessWidenerNames == expectedAw as Set
+		where:
+		jsonText                                | expectedAw
+		'{}'                                    | []
+		'{"accessWidener":"foo.accesswidener"}' | ['foo.accesswidener']
+	}
 
-    def "read injected interfaces"() {
-        given:
-            def acj = ArchitecturyCommonJson.of(jsonText)
-        when:
-            def injectedInterfaces = acj.getInjectedInterfaces('foo')
-            Map<String, List<String>> itfMap = [:]
-            for (def entry : injectedInterfaces) {
-                itfMap.computeIfAbsent(entry.className()) { [] }.add(entry.ifaceName())
-            }
-        then:
-            itfMap == expected
-        where:
-            jsonText | expected
-            '{}' | [:]
-            '{"injected_interfaces":{"target/class/Here":["my/Interface","another/Itf"]}}' | ['target/class/Here': ['my/Interface', 'another/Itf']]
-    }
+	def "read injected interfaces"() {
+		given:
+		def acj = ArchitecturyCommonJson.of(jsonText)
+		when:
+		def injectedInterfaces = acj.getInjectedInterfaces('foo')
+		Map<String, List<String>> itfMap = [:]
+		for (def entry : injectedInterfaces) {
+			itfMap.computeIfAbsent(entry.className()) { [] }.add(entry.ifaceName())
+		}
+		then:
+		itfMap == expected
+		where:
+		jsonText | expected
+		'{}' | [:]
+		'{"injected_interfaces":{"target/class/Here":["my/Interface","another/Itf"]}}' | ['target/class/Here': ['my/Interface', 'another/Itf']]
+	}
 
-    def "read mod id"() {
-        given:
-            def acj = ArchitecturyCommonJson.of(jsonText)
-        when:
-            def id = acj.id
-        then:
-            id == null
-        where:
-            jsonText << ['{}', '{"accessWidener":"foo.accesswidener"}']
-    }
+	def "read mod id"() {
+		given:
+		def acj = ArchitecturyCommonJson.of(jsonText)
+		when:
+		def id = acj.id
+		then:
+		id == null
+		where:
+		jsonText << [
+			'{}',
+			'{"accessWidener":"foo.accesswidener"}'
+		]
+	}
 
-    def "get file name"() {
-        given:
-            def acj = ArchitecturyCommonJson.of(jsonText)
-        when:
-            def fileName = acj.fileName
-        then:
-            fileName == 'architectury.common.json'
-        where:
-            jsonText << ['{}', '{"accessWidener":"foo.accesswidener"}']
-    }
+	def "get file name"() {
+		given:
+		def acj = ArchitecturyCommonJson.of(jsonText)
+		when:
+		def fileName = acj.fileName
+		then:
+		fileName == 'architectury.common.json'
+		where:
+		jsonText << [
+			'{}',
+			'{"accessWidener":"foo.accesswidener"}'
+		]
+	}
 }

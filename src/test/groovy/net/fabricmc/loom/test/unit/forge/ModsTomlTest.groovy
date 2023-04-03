@@ -24,74 +24,74 @@
 
 package net.fabricmc.loom.test.unit.forge
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
+
 import com.electronwill.nightconfig.core.io.ParsingException
 import dev.architectury.loom.metadata.ModsToml
 import spock.lang.Specification
 import spock.lang.TempDir
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Path
-
 class ModsTomlTest extends Specification {
-    private static final String OF_TEST_INPUT =
-            '''
+	private static final String OF_TEST_INPUT =
+	'''
             |[[mods]]
             |modId="hello"
             |[[mods]]
             |modId="world"
             '''.stripMargin()
-    // codenarc-disable GStringExpressionWithinString
-    public static final String BROKEN_INPUT =
-        '''
+	// codenarc-disable GStringExpressionWithinString
+	public static final String BROKEN_INPUT =
+	'''
         |[[mods.${MOD_ID}]]
         |modId = "hello_world"
         '''.stripMargin()
-    // codenarc-enable GStringExpressionWithinString
+	// codenarc-enable GStringExpressionWithinString
 
-    @TempDir
-    Path tempDir
+	@TempDir
+	Path tempDir
 
-    def "create from byte[]"() {
-        given:
-            def bytes = OF_TEST_INPUT.getBytes(StandardCharsets.UTF_8)
-        when:
-            def modsToml = ModsToml.of(bytes)
-        then:
-            modsToml.ids == ['hello', 'world'] as Set
-    }
+	def "create from byte[]"() {
+		given:
+		def bytes = OF_TEST_INPUT.getBytes(StandardCharsets.UTF_8)
+		when:
+		def modsToml = ModsToml.of(bytes)
+		then:
+		modsToml.ids == ['hello', 'world'] as Set
+	}
 
-    def "create from String"() {
-        when:
-            def modsToml = ModsToml.of(OF_TEST_INPUT)
-        then:
-            modsToml.ids == ['hello', 'world'] as Set
-    }
+	def "create from String"() {
+		when:
+		def modsToml = ModsToml.of(OF_TEST_INPUT)
+		then:
+		modsToml.ids == ['hello', 'world'] as Set
+	}
 
-    def "create from File"() {
-        given:
-            def file = new File(tempDir.toFile(), 'mods.toml')
-            file.text = OF_TEST_INPUT
-        when:
-            def modsToml = ModsToml.of(file)
-        then:
-            modsToml.ids == ['hello', 'world'] as Set
-    }
+	def "create from File"() {
+		given:
+		def file = new File(tempDir.toFile(), 'mods.toml')
+		file.text = OF_TEST_INPUT
+		when:
+		def modsToml = ModsToml.of(file)
+		then:
+		modsToml.ids == ['hello', 'world'] as Set
+	}
 
-    def "create from Path"() {
-        given:
-            def path = tempDir.resolve('mods.toml')
-            path.text = OF_TEST_INPUT
-        when:
-            def modsToml = ModsToml.of(path)
-        then:
-            modsToml.ids == ['hello', 'world'] as Set
-    }
+	def "create from Path"() {
+		given:
+		def path = tempDir.resolve('mods.toml')
+		path.text = OF_TEST_INPUT
+		when:
+		def modsToml = ModsToml.of(path)
+		then:
+		modsToml.ids == ['hello', 'world'] as Set
+	}
 
-    def "create from invalid string"() {
-        when:
-            ModsToml.of(BROKEN_INPUT)
-        then:
-            def e = thrown(IllegalArgumentException)
-            e.cause instanceof ParsingException
-    }
+	def "create from invalid string"() {
+		when:
+		ModsToml.of(BROKEN_INPUT)
+		then:
+		def e = thrown(IllegalArgumentException)
+		e.cause instanceof ParsingException
+	}
 }

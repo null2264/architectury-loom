@@ -24,21 +24,22 @@
 
 package net.fabricmc.loom.test.integration.forge
 
-import net.fabricmc.loom.test.util.GradleProjectTestTrait
 import spock.lang.Specification
+
+import net.fabricmc.loom.test.util.GradleProjectTestTrait
 
 import static net.fabricmc.loom.test.LoomTestConstants.DEFAULT_GRADLE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class ExternalModDependencyTest extends Specification implements GradleProjectTestTrait {
-    def "build"() {
-        setup:
-        	def gradle = gradleProject(project: "forge/externalModDependency", version: DEFAULT_GRADLE)
+	def "build"() {
+		setup:
+		def gradle = gradleProject(project: "forge/externalModDependency", version: DEFAULT_GRADLE)
 
-        when:
-        	def result = gradle.run(task: "build")
+		when:
+		def result = gradle.run(task: "build")
 
-        then:
-        	result.task(":build").outcome == SUCCESS
-    }
+		then:
+		result.task(":build").outcome == SUCCESS
+	}
 }

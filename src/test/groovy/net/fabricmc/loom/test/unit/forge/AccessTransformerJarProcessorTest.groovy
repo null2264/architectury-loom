@@ -24,38 +24,39 @@
 
 package net.fabricmc.loom.test.unit.forge
 
-import net.fabricmc.loom.api.processor.SpecContext
-import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarProcessor
-import net.fabricmc.loom.util.fmj.FabricModJsonFactory
+import java.nio.file.Files
+import java.nio.file.Path
+
 import org.gradle.api.Project
 import spock.lang.Specification
 import spock.lang.TempDir
 
-import java.nio.file.Files
-import java.nio.file.Path
+import net.fabricmc.loom.api.processor.SpecContext
+import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarProcessor
+import net.fabricmc.loom.util.fmj.FabricModJsonFactory
 
 class AccessTransformerJarProcessorTest extends Specification {
-    private static final String TEST_ACCESS_TRANSFORMER = 'public-f net.minecraft.world.level.block.IronBarsBlock m_54217_(Lnet/minecraft/world/level/block/state/BlockState;Z)Z'
+	private static final String TEST_ACCESS_TRANSFORMER = 'public-f net.minecraft.world.level.block.IronBarsBlock m_54217_(Lnet/minecraft/world/level/block/state/BlockState;Z)Z'
 
-    @TempDir
-    Path tempDir
+	@TempDir
+	Path tempDir
 
-    def "consistent spec hash"() {
-        given:
-            // Set up mods.toml and access transformer
-            def metaInf = tempDir.resolve('META-INF')
-            Files.createDirectory(metaInf)
-            metaInf.resolve('accesstransformer.cfg').text = TEST_ACCESS_TRANSFORMER
-            metaInf.resolve('mods.toml').text = '[[mods]]\nmodId="hello"'
+	def "consistent spec hash"() {
+		given:
+		// Set up mods.toml and access transformer
+		def metaInf = tempDir.resolve('META-INF')
+		Files.createDirectory(metaInf)
+		metaInf.resolve('accesstransformer.cfg').text = TEST_ACCESS_TRANSFORMER
+		metaInf.resolve('mods.toml').text = '[[mods]]\nmodId="hello"'
 
-            // Create processor and context
-            def processor = new AccessTransformerJarProcessor('at', Mock(Project), [])
-            def modJson = FabricModJsonFactory.createFromDirectory(tempDir)
-            def context = Mock(SpecContext)
-            context.localMods() >> [modJson]
-        when:
-            def spec = processor.buildSpec(context)
-        then:
-            spec.hashCode() == 1575235360
-    }
+		// Create processor and context
+		def processor = new AccessTransformerJarProcessor('at', Mock(Project), [])
+		def modJson = FabricModJsonFactory.createFromDirectory(tempDir)
+		def context = Mock(SpecContext)
+		context.localMods() >> [modJson]
+		when:
+		def spec = processor.buildSpec(context)
+		then:
+		spec.hashCode() == 1575235360
+	}
 }

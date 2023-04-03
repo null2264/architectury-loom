@@ -24,21 +24,22 @@
 
 package net.fabricmc.loom.test.integration.forge
 
-import net.fabricmc.loom.test.util.GradleProjectTestTrait
 import spock.lang.Specification
+
+import net.fabricmc.loom.test.util.GradleProjectTestTrait
 
 import static net.fabricmc.loom.test.LoomTestConstants.DEFAULT_GRADLE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class AccessTransformerTest extends Specification implements GradleProjectTestTrait {
-    def "build"() {
+	def "build"() {
 		setup:
-			def gradle = gradleProject(project: "forge/accessTransformer", version: DEFAULT_GRADLE)
+		def gradle = gradleProject(project: "forge/accessTransformer", version: DEFAULT_GRADLE)
 
 		when:
-			def result = gradle.run(task: "build")
+		def result = gradle.run(task: "build")
 
 		then:
-			result.task(":build").outcome == SUCCESS
-    }
+		result.task(":build").outcome == SUCCESS
+	}
 }

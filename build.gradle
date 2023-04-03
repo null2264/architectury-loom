@@ -181,6 +181,9 @@ spotless {
 	groovyGradle {
 		target 'src/**/*.gradle', '*.gradle'
 		greclipse()
+
+		// This file uses a @MAPPINGS@ token which is not valid Groovy
+		targetExclude('**/projects/forge/simple/build.gradle')
 	}
 
 	kotlin {
@@ -251,14 +254,14 @@ publishing {
 	publications {
 		if (isSnapshot) return
 
-		// Also publish a snapshot so people can use the latest version if they wish
-		snapshot(MavenPublication) { publication ->
-			groupId project.group
-			artifactId project.archivesBaseName
-			version baseVersion + '-SNAPSHOT'
+			// Also publish a snapshot so people can use the latest version if they wish
+			snapshot(MavenPublication) { publication ->
+				groupId project.group
+				artifactId project.archivesBaseName
+				version baseVersion + '-SNAPSHOT'
 
-			from components.java
-		}
+				from components.java
+			}
 
 		// Manually crate the plugin marker for snapshot versions
 		snapshotPlugin(MavenPublication) {
@@ -328,9 +331,9 @@ task writeActionsTestMatrix() {
 				if (className.endsWith("DecompileTest")) return
 
 					// Disabled for CI as it hangs.
-				if (className.endsWith("FabricAPITest")) return
+					if (className.endsWith("FabricAPITest")) return
 
-				testMatrix.add("net.fabricmc.loom.test.integration.${className}")
+					testMatrix.add("net.fabricmc.loom.test.integration.${className}")
 			}
 		}
 

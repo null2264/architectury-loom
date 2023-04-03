@@ -24,94 +24,95 @@
 
 package net.fabricmc.loom.test.unit.architectury
 
+import java.nio.file.Files
+import java.nio.file.Path
+
 import dev.architectury.loom.metadata.ArchitecturyCommonJson
 import dev.architectury.loom.metadata.ErroringModMetadataFile
 import dev.architectury.loom.metadata.ModMetadataFiles
 import dev.architectury.loom.metadata.QuiltModJson
-import net.fabricmc.loom.test.unit.forge.ModsTomlTest
-import net.fabricmc.loom.util.ZipUtils
 import spock.lang.Specification
 import spock.lang.TempDir
 
-import java.nio.file.Files
-import java.nio.file.Path
+import net.fabricmc.loom.test.unit.forge.ModsTomlTest
+import net.fabricmc.loom.util.ZipUtils
 
 class ModMetadataFilesTest extends Specification {
-    @TempDir
-    Path zipContents
+	@TempDir
+	Path zipContents
 
-    @TempDir
-    Path workingDir
+	@TempDir
+	Path workingDir
 
-    def "read nothing from jar"() {
-        given:
-            def jar = workingDir.resolve("my_mod.jar")
-            zipContents.resolve('foo.txt').text = 'hello'
-            ZipUtils.pack(zipContents, jar)
-        when:
-            def modMetadata = ModMetadataFiles.fromJar(jar)
-        then:
-            modMetadata == null
-    }
+	def "read nothing from jar"() {
+		given:
+		def jar = workingDir.resolve("my_mod.jar")
+		zipContents.resolve('foo.txt').text = 'hello'
+		ZipUtils.pack(zipContents, jar)
+		when:
+		def modMetadata = ModMetadataFiles.fromJar(jar)
+		then:
+		modMetadata == null
+	}
 
-    def "read nothing from directory"() {
-        given:
-            // unrelated file
-            workingDir.resolve('foo.txt').text = 'hello'
-        when:
-            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
-        then:
-            modMetadata == null
-    }
+	def "read nothing from directory"() {
+		given:
+		// unrelated file
+		workingDir.resolve('foo.txt').text = 'hello'
+		when:
+		def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
+		then:
+		modMetadata == null
+	}
 
-    def "read quilt.mod.json from jar"() {
-        given:
-            def jar = workingDir.resolve("my_mod.jar")
-            zipContents.resolve('quilt.mod.json').text = '{}'
-            ZipUtils.pack(zipContents, jar)
-        when:
-            def modMetadata = ModMetadataFiles.fromJar(jar)
-        then:
-            modMetadata instanceof QuiltModJson
-    }
+	def "read quilt.mod.json from jar"() {
+		given:
+		def jar = workingDir.resolve("my_mod.jar")
+		zipContents.resolve('quilt.mod.json').text = '{}'
+		ZipUtils.pack(zipContents, jar)
+		when:
+		def modMetadata = ModMetadataFiles.fromJar(jar)
+		then:
+		modMetadata instanceof QuiltModJson
+	}
 
-    def "read quilt.mod.json from directory"() {
-        given:
-            workingDir.resolve('quilt.mod.json').text = '{}'
-        when:
-            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
-        then:
-            modMetadata instanceof QuiltModJson
-    }
+	def "read quilt.mod.json from directory"() {
+		given:
+		workingDir.resolve('quilt.mod.json').text = '{}'
+		when:
+		def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
+		then:
+		modMetadata instanceof QuiltModJson
+	}
 
-    def "read architectury.common.json from jar"() {
-        given:
-            def jar = workingDir.resolve("my_mod.jar")
-            zipContents.resolve('architectury.common.json').text = '{}'
-            ZipUtils.pack(zipContents, jar)
-        when:
-            def modMetadata = ModMetadataFiles.fromJar(jar)
-        then:
-            modMetadata instanceof ArchitecturyCommonJson
-    }
+	def "read architectury.common.json from jar"() {
+		given:
+		def jar = workingDir.resolve("my_mod.jar")
+		zipContents.resolve('architectury.common.json').text = '{}'
+		ZipUtils.pack(zipContents, jar)
+		when:
+		def modMetadata = ModMetadataFiles.fromJar(jar)
+		then:
+		modMetadata instanceof ArchitecturyCommonJson
+	}
 
-    def "read architectury.common.json from directory"() {
-        given:
-            workingDir.resolve('architectury.common.json').text = '{}'
-        when:
-            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
-        then:
-            modMetadata instanceof ArchitecturyCommonJson
-    }
+	def "read architectury.common.json from directory"() {
+		given:
+		workingDir.resolve('architectury.common.json').text = '{}'
+		when:
+		def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
+		then:
+		modMetadata instanceof ArchitecturyCommonJson
+	}
 
-    def "read broken mods.toml from directory"() {
-        given:
-            Files.createDirectories(workingDir.resolve('META-INF'))
-            workingDir.resolve('META-INF/mods.toml').text = ModsTomlTest.BROKEN_INPUT
-        when:
-            def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
-        then:
-            modMetadata instanceof ErroringModMetadataFile
-            modMetadata.fileName == 'mods.toml [erroring]'
-    }
+	def "read broken mods.toml from directory"() {
+		given:
+		Files.createDirectories(workingDir.resolve('META-INF'))
+		workingDir.resolve('META-INF/mods.toml').text = ModsTomlTest.BROKEN_INPUT
+		when:
+		def modMetadata = ModMetadataFiles.fromDirectory(workingDir)
+		then:
+		modMetadata instanceof ErroringModMetadataFile
+		modMetadata.fileName == 'mods.toml [erroring]'
+	}
 }

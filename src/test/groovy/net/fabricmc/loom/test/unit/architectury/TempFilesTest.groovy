@@ -24,68 +24,68 @@
 
 package net.fabricmc.loom.test.unit.architectury
 
+import java.nio.file.Files
+
 import dev.architectury.loom.util.TempFiles
 import spock.lang.Specification
 
-import java.nio.file.Files
-
 class TempFilesTest extends Specification {
-    TempFiles tempFiles
+	TempFiles tempFiles
 
-    def setup() {
-        tempFiles = new TempFiles()
-    }
+	def setup() {
+		tempFiles = new TempFiles()
+	}
 
-    def cleanup() {
-        tempFiles.close()
-    }
+	def cleanup() {
+		tempFiles.close()
+	}
 
-    def "creating temp files"() {
-        when:
-            def file = tempFiles.file('foo', '.bar')
-        then:
-            def name = file.fileName.toString()
-            name.startsWith('foo')
-            name.endsWith('.bar')
-            Files.exists(file)
-            Files.isRegularFile(file)
-    }
+	def "creating temp files"() {
+		when:
+		def file = tempFiles.file('foo', '.bar')
+		then:
+		def name = file.fileName.toString()
+		name.startsWith('foo')
+		name.endsWith('.bar')
+		Files.exists(file)
+		Files.isRegularFile(file)
+	}
 
-    def "deleting temp files"() {
-        when:
-            def file = tempFiles.file('foo', '.bar')
-            tempFiles.close()
-        then:
-            Files.notExists(file)
-    }
+	def "deleting temp files"() {
+		when:
+		def file = tempFiles.file('foo', '.bar')
+		tempFiles.close()
+		then:
+		Files.notExists(file)
+	}
 
-    def "creating temp directories"() {
-        when:
-            def dir = tempFiles.directory('hello world')
-        then:
-            dir.fileName.toString().startsWith('hello world')
-            Files.exists(dir)
-            Files.isDirectory(dir)
-    }
+	def "creating temp directories"() {
+		when:
+		def dir = tempFiles.directory('hello world')
+		then:
+		dir.fileName.toString().startsWith('hello world')
+		Files.exists(dir)
+		Files.isDirectory(dir)
+	}
 
-    def "deleting temp directories"() {
-        when:
-            def dir = tempFiles.directory('hello')
-            Files.writeString(dir.resolve('test.txt'), 'hello world')
-            tempFiles.close()
-        then:
-            Files.notExists(dir)
-    }
+	def "deleting temp directories"() {
+		when:
+		def dir = tempFiles.directory('hello')
+		Files.writeString(dir.resolve('test.txt'), 'hello world')
+		tempFiles.close()
+		then:
+		Files.notExists(dir)
+	}
 
-    def "deleting temp files and directories"() {
-        when:
-            def dir = tempFiles.directory('hello')
-            def file = tempFiles.file('foo', '.bar')
-            Files.writeString(dir.resolve('test.txt'), 'hello world')
-            Files.writeString(file, 'goodbye world')
-            tempFiles.close()
-        then:
-            Files.notExists(dir)
-            Files.notExists(file)
-    }
+	def "deleting temp files and directories"() {
+		when:
+		def dir = tempFiles.directory('hello')
+		def file = tempFiles.file('foo', '.bar')
+		Files.writeString(dir.resolve('test.txt'), 'hello world')
+		Files.writeString(file, 'goodbye world')
+		tempFiles.close()
+		then:
+		Files.notExists(dir)
+		Files.notExists(file)
+	}
 }
