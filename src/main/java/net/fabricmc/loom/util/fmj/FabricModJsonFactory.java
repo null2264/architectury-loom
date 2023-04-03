@@ -175,7 +175,7 @@ public final class FabricModJsonFactory {
 		if (platform == ModPlatform.FORGE) {
 			return Files.exists(fs.getPath("META-INF/mods.toml"));
 		} else if (platform == ModPlatform.QUILT) {
-			return Files.exists(fs.getPath("quilt.mod.json")) || containsMod(fs, platform);
+			return Files.exists(fs.getPath("quilt.mod.json")) || containsMod(fs, ModPlatform.FABRIC);
 		}
 
 		return Files.exists(fs.getPath(FABRIC_MOD_JSON));
