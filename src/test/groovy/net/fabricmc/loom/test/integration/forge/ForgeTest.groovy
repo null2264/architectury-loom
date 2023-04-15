@@ -49,6 +49,8 @@ class ForgeTest extends Specification implements GradleProjectTestTrait {
 
 		where:
 		mcVersion | forgeVersion | mappings
+		'1.19.4'  | "45.0.43"    | "loom.officialMojangMappings()"
+		'1.19.4'  | "45.0.43"    | "'net.fabricmc:yarn:1.19.4+build.2:v2'"
 		'1.18.1'  | "39.0.63"    | "loom.officialMojangMappings()"
 		'1.18.1'  | "39.0.63"    | '"net.fabricmc:yarn:1.18.1+build.22:v2"'
 		'1.17.1'  | "37.0.67"    | "loom.officialMojangMappings()"
