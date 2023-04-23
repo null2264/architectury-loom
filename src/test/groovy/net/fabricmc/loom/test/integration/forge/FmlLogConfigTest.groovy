@@ -28,9 +28,9 @@ class FmlLogConfigTest extends Specification implements GradleProjectTestTrait {
 
         where:
         minecraft | forge
-        //'1.19.4'  | '45.0.43'
-        //'1.18.1'  | '39.0.63'
-        //'1.17.1'  | '37.0.67'
+        '1.19.4'  | '45.0.43'
+        '1.18.1'  | '39.0.63'
+        '1.17.1'  | '37.0.67'
         '1.16.5'  | '36.2.4'
         '1.14.4'  | '28.2.23'
     }
