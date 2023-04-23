@@ -25,7 +25,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 
 group = "dev.architectury"
 archivesBaseName = project.name
-def baseVersion = '1.1'
+def baseVersion = '1.2'
 
 def ENV = System.getenv()
 def runNumber = ENV.GITHUB_RUN_NUMBER ?: "9999"
@@ -326,14 +326,7 @@ task writeActionsTestMatrix() {
 
 				def className = it.path.toString().replace(".groovy", "")
 				className = className.substring(className.lastIndexOf("integration/") + "integration/".length()).replace('/', '.')
-
-				// Disabled for CI, as it fails too much.
-				if (className.endsWith("DecompileTest")) return
-
-					// Disabled for CI as it hangs.
-					if (className.endsWith("FabricAPITest")) return
-
-					testMatrix.add("net.fabricmc.loom.test.integration.${className}")
+				testMatrix.add("net.fabricmc.loom.test.integration.${className}")
 			}
 		}
 
