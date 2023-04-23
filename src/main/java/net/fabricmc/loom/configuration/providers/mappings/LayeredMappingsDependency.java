@@ -40,7 +40,6 @@ import java.util.Set;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.ExternalDependency;
 import org.gradle.api.artifacts.ExternalModuleDependency;
 import org.gradle.api.artifacts.ModuleIdentifier;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
@@ -66,6 +65,7 @@ import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.Tiny2Writer;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
+// TODO: Bring this closer to upsteram code.
 public class LayeredMappingsDependency extends AbstractModuleDependency implements SelfResolvingDependency, ExternalModuleDependency, FileCollectionDependency {
 	private static final String GROUP = "loom";
 	private static final String MODULE = "mappings";
@@ -206,11 +206,6 @@ public class LayeredMappingsDependency extends AbstractModuleDependency implemen
 	@Override
 	public boolean isForce() {
 		return false;
-	}
-
-	@Override
-	public ExternalDependency setForce(boolean b) {
-		return this;
 	}
 
 	@Override

@@ -48,7 +48,6 @@ import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ExceptionUtil;
 import net.fabricmc.loom.util.FileSystemUtil;
-import net.fabricmc.loom.util.OperatingSystem;
 import net.fabricmc.loom.util.PropertyUtil;
 import net.fabricmc.loom.util.srg.RemapObjectHolderVisitor;
 import net.fabricmc.loom.util.srg.SrgMerger;
@@ -153,7 +152,7 @@ public class ForgeLibrariesProvider {
 			}
 
 			// Copy sources when not running under CI.
-			if (!OperatingSystem.isCIBuild()) {
+			if (!ModConfigurationRemapper.isCIBuild()) {
 				final Path sourcesJar = ModConfigurationRemapper.findSources(project, artifact);
 
 				if (sourcesJar != null) {

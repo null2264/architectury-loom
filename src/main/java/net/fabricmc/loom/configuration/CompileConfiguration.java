@@ -54,6 +54,7 @@ import net.fabricmc.loom.build.mixin.ScalaApInvoker;
 import net.fabricmc.loom.configuration.accesstransformer.AccessTransformerJarProcessor;
 import net.fabricmc.loom.configuration.accesswidener.AccessWidenerJarProcessor;
 import net.fabricmc.loom.configuration.ifaceinject.InterfaceInjectionProcessor;
+import net.fabricmc.loom.configuration.mods.ModConfigurationRemapper;
 import net.fabricmc.loom.configuration.processors.MinecraftJarProcessorManager;
 import net.fabricmc.loom.configuration.processors.ModJavadocProcessor;
 import net.fabricmc.loom.configuration.providers.forge.DependencyProviders;
@@ -78,7 +79,6 @@ import net.fabricmc.loom.extension.MixinExtension;
 import net.fabricmc.loom.util.Checksum;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ExceptionUtil;
-import net.fabricmc.loom.util.OperatingSystem;
 import net.fabricmc.loom.util.gradle.GradleUtils;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
@@ -163,10 +163,11 @@ public final class CompileConfiguration {
 				configuration.attributes(attributes -> attributes.attribute(Usage.USAGE_ATTRIBUTE, javaRuntime));
 			});
 
-			extendsFrom(Constants.Configurations.MINECRAFT_SERVER_DEPENDENCIES, Constants.Configurations.FORGE_DEPENDENCIES);
+			extendsFrom(Configurations.MINECRAFT_COMPILE_LIBRARIES, Constants.Configurations.FORGE_DEPENDENCIES);
+			extendsFrom(Configurations.MINECRAFT_RUNTIME_LIBRARIES, Constants.Configurations.FORGE_DEPENDENCIES);
 
 			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.FORGE_DEPENDENCIES);
-			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.MINECRAFT_DEPENDENCIES);
+			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Configurations.MINECRAFT_RUNTIME_LIBRARIES);
 			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.FORGE_EXTRA);
 			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.FORGE_NAMED);
 			// Include any user-defined libraries on the runtime CP.
@@ -256,13 +257,10 @@ public final class CompileConfiguration {
 			configureDecompileTasks(configContext);
 
 			if (extension.isForge()) {
-				// (As of 0.12.0) Needs to be extended here since the source set is only created in aE.
-				extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, MinecraftSourceSets.get(project).getCombinedSourceSetName(), project);
-
 				// TODO: Find a better place for this?
 				//   This has to be after dependencyManager.handleDependencies() above
 				//   because of https://github.com/architectury/architectury-loom/issues/72.
-				if (!OperatingSystem.isCIBuild()) {
+				if (!ModConfigurationRemapper.isCIBuild()) {
 					try {
 						ForgeSourcesRemapper.addBaseForgeSources(project);
 					} catch (IOException e) {
