@@ -75,7 +75,7 @@ import net.fabricmc.loom.decompilers.linemap.LineMapVisitor;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.IOStringConsumer;
-import net.fabricmc.loom.util.OperatingSystem;
+import net.fabricmc.loom.util.Platform;
 import net.fabricmc.loom.util.gradle.ThreadedProgressLoggerConsumer;
 import net.fabricmc.loom.util.gradle.ThreadedSimpleProgressLogger;
 import net.fabricmc.loom.util.gradle.WorkerDaemonClientsManagerHelper;
@@ -128,11 +128,13 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 	@TaskAction
 	public void run() throws IOException {
-		if (!OperatingSystem.is64Bit()) {
+		final Platform platform = Platform.CURRENT;
+
+		if (!platform.getArchitecture().is64Bit()) {
 			throw new UnsupportedOperationException("GenSources task requires a 64bit JVM to run due to the memory requirements.");
 		}
 
-		if (!OperatingSystem.isUnixDomainSocketsSupported()) {
+		if (!platform.supportsUnixDomainSockets()) {
 			getProject().getLogger().warn("Decompile worker logging disabled as Unix Domain Sockets is not supported on your operating system.");
 
 			doWork(null);
@@ -178,7 +180,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 				params.getIPCPath().set(ipcServer.getPath().toFile());
 			}
 
-			params.getClassPath().setFrom(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_DEPENDENCIES));
+			params.getClassPath().setFrom(getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_COMPILE_LIBRARIES));
 
 			// Architectury
 			params.getForge().set(getExtension().isForge());
@@ -206,7 +208,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 		return getWorkerExecutor().processIsolation(spec -> {
 			spec.forkOptions(forkOptions -> {
-				forkOptions.setMinHeapSize("512m");
+				forkOptions.setMinHeapSize(String.format(Locale.ENGLISH, "%dm", Math.min(512, decompilerOptions.getMemory().get())));
 				forkOptions.setMaxHeapSize(String.format(Locale.ENGLISH, "%dm", decompilerOptions.getMemory().get()));
 				forkOptions.systemProperty(WorkerDaemonClientsManagerHelper.MARKER_PROP, jvmMarkerValue);
 			});
@@ -240,7 +242,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 	public abstract static class DecompileAction implements WorkAction<DecompileParams> {
 		@Override
 		public void execute() {
-			if (!getParameters().getIPCPath().isPresent() || !OperatingSystem.isUnixDomainSocketsSupported()) {
+			if (!getParameters().getIPCPath().isPresent() || !Platform.CURRENT.supportsUnixDomainSockets()) {
 				// Does not support unix domain sockets, print to sout.
 				doDecompile(System.out::println);
 				return;

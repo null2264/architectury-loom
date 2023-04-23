@@ -47,15 +47,24 @@ public class Constants {
 		public static final String MOD_COMPILE_CLASSPATH_MAPPED = "modCompileClasspathMapped";
 		public static final String INCLUDE = "include";
 		public static final String MINECRAFT = "minecraft";
+
+		public static final String MINECRAFT_COMPILE_LIBRARIES = "minecraftLibraries";
+		public static final String MINECRAFT_RUNTIME_LIBRARIES = "minecraftRuntimeLibraries";
+
 		/**
-		 * The server specific configuration will be empty when using a legacy (pre 21w38a server jar)
+		 * These configurations contain the minecraft client libraries.
+		 */
+		public static final String MINECRAFT_CLIENT_COMPILE_LIBRARIES = "minecraftClientLibraries";
+		public static final String MINECRAFT_CLIENT_RUNTIME_LIBRARIES = "minecraftClientRuntimeLibraries";
+
+		/**
+		 * The server specific configurations will be empty when using a legacy (pre 21w38a server jar)
 		 * find the client only dependencies on the "minecraftLibraries" config.
 		 */
-		public static final String MINECRAFT_SERVER_DEPENDENCIES = "minecraftServerLibraries";
-		public static final String MINECRAFT_DEPENDENCIES = "minecraftLibraries";
-		public static final String MINECRAFT_RUNTIME_DEPENDENCIES = "minecraftRuntimeOnlyLibraries";
+		public static final String MINECRAFT_SERVER_COMPILE_LIBRARIES = "minecraftServerLibraries";
+		public static final String MINECRAFT_SERVER_RUNTIME_LIBRARIES = "minecraftServerRuntimeLibraries";
 		/**
-		 * Not used on Minecraft 1.19-pre1 or later. Natives are all loaded from the classpath.
+		 * Before Minecraft 1.19-pre1 this contains libraries that need to be extracted otherwise this goes on the runtime classpath.
 		 */
 		public static final String MINECRAFT_NATIVES = "minecraftNatives";
 		public static final String MAPPINGS = "mappings";
@@ -126,7 +135,7 @@ public class Constants {
 			public static final String MIXIN_COMPILE_EXTENSIONS = "0.6.0";
 			public static final String DEV_LAUNCH_INJECTOR = "0.2.1+build.8";
 			public static final String TERMINAL_CONSOLE_APPENDER = "1.2.0";
-			public static final String JETBRAINS_ANNOTATIONS = "24.0.0";
+			public static final String JETBRAINS_ANNOTATIONS = "24.0.1";
 			public static final String NATIVE_SUPPORT_VERSION = "1.0.1";
 			public static final String JAVAX_ANNOTATIONS = "3.0.2";
 			public static final String FORGE_RUNTIME = "1.1.8";
@@ -178,6 +187,7 @@ public class Constants {
 		public static final String DONT_REMAP = "fabric.loom.dontRemap";
 		public static final String DISABLE_REMAPPED_VARIANTS = "fabric.loom.disableRemappedVariants";
 		public static final String DISABLE_PROJECT_DEPENDENT_MODS = "fabric.loom.disableProjectDependentMods";
+		public static final String LIBRARY_PROCESSORS = "fabric.loom.libraryProcessors";
 	}
 
 	public static final class Forge {

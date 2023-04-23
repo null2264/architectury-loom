@@ -44,7 +44,7 @@ import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ModPlatform;
-import net.fabricmc.loom.util.OperatingSystem;
+import net.fabricmc.loom.util.Platform;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public final class RunConfigSettings implements Named {
@@ -285,7 +285,7 @@ public final class RunConfigSettings implements Named {
 	 * Add the {@code -XstartOnFirstThread} JVM argument when on OSX.
 	 */
 	public void startFirstThread() {
-		if (OperatingSystem.CURRENT_OS.equals(OperatingSystem.MAC_OS)) {
+		if (Platform.CURRENT.getOperatingSystem().isMacOS()) {
 			vmArg("-XstartOnFirstThread");
 		}
 	}

@@ -155,7 +155,7 @@ public class ModProcessor {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
 		final MappingConfiguration mappingConfiguration = extension.getMappingConfiguration();
 		String fromM = IntermediaryNamespaces.intermediary(project);
-		Path[] mcDeps = project.getConfigurations().getByName(Constants.Configurations.LOADER_DEPENDENCIES).getFiles()
+		Path[] mcDeps = project.getConfigurations().getByName(Constants.Configurations.MINECRAFT_COMPILE_LIBRARIES).getFiles()
 				.stream().map(File::toPath).toArray(Path[]::new);
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
