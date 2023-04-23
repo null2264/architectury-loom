@@ -36,6 +36,7 @@ import org.gradle.api.plugins.JavaPlugin;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.gradle.GradleUtils;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public abstract class LoomConfigurations implements Runnable {
@@ -109,6 +110,12 @@ public abstract class LoomConfigurations implements Runnable {
 		getDependencies().add(Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES, Constants.Dependencies.TERMINAL_CONSOLE_APPENDER + Constants.Dependencies.Versions.TERMINAL_CONSOLE_APPENDER);
 		getDependencies().add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS);
 		getDependencies().add(JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS);
+
+		GradleUtils.afterSuccessfulEvaluation(getProject(), () -> {
+			if (extension.shouldGenerateSrgTiny()) {
+				registerNonTransitive(Constants.Configurations.SRG, Type.RESOLVABLE);
+			}
+		});
 
 		if (extension.isForge()) {
 			// Set up Forge configurations

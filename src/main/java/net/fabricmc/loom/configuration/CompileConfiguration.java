@@ -132,6 +132,12 @@ public abstract class CompileConfiguration implements Runnable {
 			configureDecompileTasks(configContext);
 
 			if (extension.isForge()) {
+				if (extension.isDataGenEnabled()) {
+					getProject().getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName("main").resources(files -> {
+						files.srcDir(getProject().file("src/generated/resources"));
+					});
+				}
+
 				// TODO: Find a better place for this?
 				//   This has to be after dependencyManager.handleDependencies() above
 				//   because of https://github.com/architectury/architectury-loom/issues/72.
