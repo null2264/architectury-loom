@@ -71,8 +71,8 @@ public final class ForgeLoggerConfig {
 	private record ArtifactCoordinates(String group, String name, @Nullable String classifier) {
 		boolean matches(String notation) {
 			final String[] parts = notation.split(":");
-			return group.equals(parts[0]) && name.equals(parts[1]) &&
-					(classifier == null || (parts.length >= 4 && classifier.equals(parts[3])));
+			return group.equals(parts[0]) && name.equals(parts[1])
+					&& (classifier == null || (parts.length >= 4 && classifier.equals(parts[3])));
 		}
 
 		@Override

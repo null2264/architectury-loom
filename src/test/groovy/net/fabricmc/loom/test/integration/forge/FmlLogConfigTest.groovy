@@ -13,7 +13,7 @@ class FmlLogConfigTest extends Specification implements GradleProjectTestTrait {
         setup:
         def gradle = gradleProject(project: 'forge/loggerConfig', version: DEFAULT_GRADLE)
         gradle.gradleProperties << """
-        
+
         minecraft_version=$minecraft
         forge_version=$forge
         """.stripIndent()
