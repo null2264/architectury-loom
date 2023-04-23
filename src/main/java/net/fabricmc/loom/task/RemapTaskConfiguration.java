@@ -100,16 +100,16 @@ public abstract class RemapTaskConfiguration implements Runnable {
 
 		trySetupSourceRemapping();
 
-		project.afterEvaluate(p -> {
+		getProject().afterEvaluate(p -> {
 			if (extension.isForge()) {
 				if (PropertyUtil.getAndFinalize(extension.getForge().getConvertAccessWideners())) {
-					Aw2At.setup(project, remapJarTask);
+					Aw2At.setup(getProject(), remapJarTask);
 				}
 
 				Set<String> mixinConfigs = PropertyUtil.getAndFinalize(extension.getForge().getMixinConfigs());
 
 				if (!mixinConfigs.isEmpty()) {
-					tasks.named(JavaPlugin.JAR_TASK_NAME, Jar.class, task -> {
+					getTasks().named(JavaPlugin.JAR_TASK_NAME, Jar.class, task -> {
 						task.manifest(manifest -> {
 							manifest.attributes(Map.of(Constants.Forge.MIXIN_CONFIGS_MANIFEST_KEY, String.join(",", mixinConfigs)));
 						});

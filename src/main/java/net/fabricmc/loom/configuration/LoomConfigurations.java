@@ -31,6 +31,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.attributes.Usage;
 import org.gradle.api.plugins.JavaPlugin;
 
 import net.fabricmc.loom.LoomGradleExtension;
@@ -108,6 +109,48 @@ public abstract class LoomConfigurations implements Runnable {
 		getDependencies().add(Constants.Configurations.LOOM_DEVELOPMENT_DEPENDENCIES, Constants.Dependencies.TERMINAL_CONSOLE_APPENDER + Constants.Dependencies.Versions.TERMINAL_CONSOLE_APPENDER);
 		getDependencies().add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS);
 		getDependencies().add(JavaPlugin.TEST_COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS);
+
+		if (extension.isForge()) {
+			// Set up Forge configurations
+			registerNonTransitive(Constants.Configurations.FORGE, Type.RESOLVABLE);
+			registerNonTransitive(Constants.Configurations.FORGE_USERDEV, Type.RESOLVABLE);
+			registerNonTransitive(Constants.Configurations.FORGE_INSTALLER, Type.RESOLVABLE);
+			registerNonTransitive(Constants.Configurations.FORGE_UNIVERSAL, Type.RESOLVABLE);
+			register(Constants.Configurations.FORGE_DEPENDENCIES, Type.BUCKET);
+			registerNonTransitive(Constants.Configurations.FORGE_NAMED, Type.BUCKET);
+			registerNonTransitive(Constants.Configurations.FORGE_EXTRA, Type.BUCKET);
+			registerNonTransitive(Constants.Configurations.MCP_CONFIG, Type.RESOLVABLE);
+			register(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Type.RESOLVABLE).configure(configuration -> {
+				// Resolve for runtime usage
+				Usage javaRuntime = getProject().getObjects().named(Usage.class, Usage.JAVA_RUNTIME);
+				configuration.attributes(attributes -> attributes.attribute(Usage.USAGE_ATTRIBUTE, javaRuntime));
+			});
+
+			extendsFrom(Constants.Configurations.MINECRAFT_COMPILE_LIBRARIES, Constants.Configurations.FORGE_DEPENDENCIES);
+			extendsFrom(Constants.Configurations.MINECRAFT_RUNTIME_LIBRARIES, Constants.Configurations.FORGE_DEPENDENCIES);
+
+			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.FORGE_DEPENDENCIES);
+			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.MINECRAFT_RUNTIME_LIBRARIES);
+			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.FORGE_EXTRA);
+			extendsFrom(Constants.Configurations.FORGE_RUNTIME_LIBRARY, Constants.Configurations.FORGE_NAMED);
+			// Include any user-defined libraries on the runtime CP.
+			// (All the other superconfigurations are already on there.)
+			extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_RUNTIME_LIBRARY);
+
+			extendsFrom(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED);
+			extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED);
+			extendsFrom(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED);
+			extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_NAMED);
+			extendsFrom(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_EXTRA);
+			extendsFrom(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_EXTRA);
+			extendsFrom(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_EXTRA);
+			extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_EXTRA);
+
+			// Add Forge dev-time dependencies
+			getDependencies().add(Constants.Configurations.FORGE_EXTRA, Constants.Dependencies.FORGE_RUNTIME + Constants.Dependencies.Versions.FORGE_RUNTIME);
+			getDependencies().add(Constants.Configurations.FORGE_EXTRA, Constants.Dependencies.UNPROTECT + Constants.Dependencies.Versions.UNPROTECT);
+			getDependencies().add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, Constants.Dependencies.JAVAX_ANNOTATIONS + Constants.Dependencies.Versions.JAVAX_ANNOTATIONS);
+		}
 	}
 
 	private NamedDomainObjectProvider<Configuration> register(String name, Type type) {
@@ -125,6 +168,7 @@ public abstract class LoomConfigurations implements Runnable {
 	}
 
 	enum Type {
+		BUCKET(false, false), // Gradle docs call this a "bucket of dependencies"
 		CONSUMABLE(true, false),
 		RESOLVABLE(false, true),
 		DEFAULT(true, true);

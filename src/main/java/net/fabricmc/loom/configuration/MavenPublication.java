@@ -100,7 +100,7 @@ public abstract class MavenPublication implements Runnable {
 
 				if (hasSoftwareComponent(publication) || EXCLUDED_PUBLICATIONS.contains(publication)) {
 					continue;
-				} else if (!reportedDeprecation.get() && !LoomGradleExtension.get(project).isForge()) {
+				} else if (!reportedDeprecation.get() && !LoomGradleExtension.get(getProject()).isForge()) {
 					DeprecationHelper deprecationHelper = LoomGradleExtension.get(getProject()).getDeprecationHelper();
 					deprecationHelper.warn("Loom is applying dependency data manually to publications instead of using a software component (from(components[\"java\"])). This is deprecated.");
 					reportedDeprecation.set(true);
