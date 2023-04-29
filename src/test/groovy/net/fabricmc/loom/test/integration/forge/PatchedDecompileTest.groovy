@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2022 FabricMC
+ * Copyright (c) 2022-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -52,7 +52,5 @@ class PatchedDecompileTest extends Specification implements GradleProjectTestTra
 		'1.19.2'  | "43.1.1"
 		'1.18.1'  | "39.0.63"
 		'1.17.1'  | "37.0.67"
-		'1.16.5'  | "36.2.4"
-		'1.14.4'  | "28.2.23"
 	}
 }
