@@ -51,7 +51,6 @@ import java.util.stream.Stream;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableList;
 import de.oceanlabs.mcp.mcinjector.adaptors.ParameterAnnotationFixer;
 import dev.architectury.loom.util.TempFiles;
 import dev.architectury.tinyremapper.InputTag;
@@ -360,17 +359,30 @@ public class MinecraftPatchedProvider {
 	}
 
 	private void accessTransformForge() throws IOException {
-		Stopwatch stopwatch = Stopwatch.createStarted();
-
-		logger.lifecycle(":access transforming minecraft");
-
 		Path input = minecraftPatchedSrgJar;
 		Path target = minecraftPatchedSrgAtJar;
+		accessTransform(project, input, target);
+	}
+
+	public static void accessTransform(Project project, Path input, Path target) throws IOException {
+		Stopwatch stopwatch = Stopwatch.createStarted();
+
+		project.getLogger().lifecycle(":access transforming minecraft");
+
+		LoomGradleExtension extension = LoomGradleExtension.get(project);
+		List<Path> atSources = List.of(
+				extension.getForgeUniversalProvider().getForge().toPath(),
+				extension.getForgeUserdevProvider().getUserdevJar().toPath(),
+				((ForgeMinecraftProvider) extension.getMinecraftProvider())
+						.getPatchedProvider()
+						.getMinecraftPatchedSrgJar()
+		);
+
 		Files.deleteIfExists(target);
 
 		try (var tempFiles = new TempFiles()) {
 			AccessTransformerJarProcessor.executeAt(project, input, target, args -> {
-				for (Path jar : ImmutableList.of(getForgeJar().toPath(), getExtension().getForgeUserdevProvider().getUserdevJar().toPath(), minecraftPatchedSrgJar)) {
+				for (Path jar : atSources) {
 					byte[] atBytes = ZipUtils.unpackNullable(jar, Constants.Forge.ACCESS_TRANSFORMER_PATH);
 
 					if (atBytes != null) {
@@ -383,7 +395,7 @@ public class MinecraftPatchedProvider {
 			});
 		}
 
-		logger.lifecycle(":access transformed minecraft in " + stopwatch.stop());
+		project.getLogger().lifecycle(":access transformed minecraft in " + stopwatch.stop());
 	}
 
 	private void remapPatchedJar(SharedServiceManager serviceManager) throws Exception {
