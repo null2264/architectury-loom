@@ -125,7 +125,7 @@ public class MappingConfiguration {
 		String mappingsIdentifier;
 
 		if (extension.isForge()) {
-			mappingsIdentifier = FieldMigratedMappingConfiguration.createForgeMappingsIdentifier(extension, mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
+			mappingsIdentifier = FieldMigratedMappingConfiguration.createForgeMappingsIdentifier(project, mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
 		} else {
 			mappingsIdentifier = createMappingsIdentifier(mappingsName, version, getMappingsClassifier(dependency, jarInfo.v2()), minecraftProvider.minecraftVersion());
 		}

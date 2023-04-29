@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2022 FabricMC
+ * Copyright (c) 2022-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,12 +38,6 @@ public final class MergedForgeMinecraftProvider extends MergedMinecraftProvider 
 	public MergedForgeMinecraftProvider(ConfigContext configContext) {
 		super(configContext);
 		this.patchedProvider = new MinecraftPatchedProvider(configContext.project(), this, MinecraftPatchedProvider.Type.MERGED);
-	}
-
-	@Override
-	public void provide() throws Exception {
-		super.provide();
-		patchedProvider.provide();
 	}
 
 	@Override

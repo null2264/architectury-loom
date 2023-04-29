@@ -77,9 +77,9 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 
 	@Override
 	protected void setup(Project project, SharedServiceManager serviceManager, MinecraftProvider minecraftProvider, Path inputJar) throws IOException {
-		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		PatchProvider patchProvider = extension.getPatchProvider();
-		migratedFieldsCache = patchProvider.getProjectCacheFolder().resolve("migrated-fields.json");
+		final Path forgeCache = ForgeProvider.getCurrentForgeCache(project);
+		Files.createDirectories(forgeCache);
+		migratedFieldsCache = forgeCache.resolve("migrated-fields.json");
 		migratedFields.clear();
 
 		if (minecraftProvider.refreshDeps()) {
@@ -99,8 +99,8 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 		super.setup(project, serviceManager, minecraftProvider, inputJar);
 	}
 
-	public static String createForgeMappingsIdentifier(LoomGradleExtension extension, String mappingsName, String version, String classifier, String minecraftVersion) {
-		return FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion) + "-forge-" + extension.getForgeProvider().getVersion().getCombined();
+	public static String createForgeMappingsIdentifier(Project project, String mappingsName, String version, String classifier, String minecraftVersion) {
+		return FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion) + "-forge-" + ForgeProvider.getCombinedForgeVersion(project);
 	}
 
 	@Override

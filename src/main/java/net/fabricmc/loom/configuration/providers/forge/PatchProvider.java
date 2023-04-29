@@ -39,7 +39,6 @@ import net.fabricmc.loom.util.FileSystemUtil;
 public class PatchProvider extends DependencyProvider {
 	public Path clientPatches;
 	public Path serverPatches;
-	public Path projectCacheFolder;
 
 	public PatchProvider(Project project) {
 		super(project);
@@ -62,7 +61,7 @@ public class PatchProvider extends DependencyProvider {
 	}
 
 	private void init(String forgeVersion) {
-		projectCacheFolder = getMinecraftProvider().dir("forge/" + forgeVersion).toPath();
+		final Path projectCacheFolder = ForgeProvider.getForgeCache(getProject(), forgeVersion);
 		clientPatches = projectCacheFolder.resolve("patches-client.lzma");
 		serverPatches = projectCacheFolder.resolve("patches-server.lzma");
 
@@ -71,10 +70,6 @@ public class PatchProvider extends DependencyProvider {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
-	}
-
-	public Path getProjectCacheFolder() {
-		return projectCacheFolder;
 	}
 
 	@Override
