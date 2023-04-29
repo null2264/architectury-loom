@@ -324,8 +324,10 @@ task writeActionsTestMatrix() {
 					return
 				}
 
-				// Disabled as it hangs
-				if (it.name.endsWith("FabricAPITest.groovy")) return
+				if (it.name.endsWith("FabricAPITest.groovy")) {
+					// Arch: Disabled as it hangs
+					return
+				}
 
 				def className = it.path.toString().replace(".groovy", "")
 				className = className.substring(className.lastIndexOf("integration/") + "integration/".length()).replace('/', '.')

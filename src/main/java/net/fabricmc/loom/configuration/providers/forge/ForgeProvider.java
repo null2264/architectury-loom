@@ -104,7 +104,7 @@ public class ForgeProvider extends DependencyProvider {
 	}
 
 	/**
-	 * {@return the Forge cache directory}
+	 * {@return the Forge cache directory}.
 	 *
 	 * @param project the project
 	 * @param version the Forge version
