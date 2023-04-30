@@ -81,7 +81,7 @@ public abstract class MinecraftProvider {
 		return true;
 	}
 
-	public void provideFirst() throws Exception {
+	public void provide() throws Exception {
 		final DependencyInfo dependency = DependencyInfo.create(getProject(), Constants.Configurations.MINECRAFT);
 		minecraftVersion = dependency.getDependency().getVersion();
 
@@ -102,9 +102,7 @@ public abstract class MinecraftProvider {
 		if (provideServer()) {
 			serverBundleMetadata = BundleMetadata.fromJar(minecraftServerJar.toPath());
 		}
-	}
 
-	public void provide() throws Exception {
 		libraryProvider = new MinecraftLibraryProvider(this, project);
 		libraryProvider.provide();
 	}
