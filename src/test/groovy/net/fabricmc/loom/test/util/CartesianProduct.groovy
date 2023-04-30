@@ -40,7 +40,7 @@ class CartesianProduct {
 	}
 
 	static <T> List<List<T>> addValuesToEach(List<? extends List<? extends T>> input, List<? extends T>... values) {
-		List<List<T>> result = input as List<List<T>>
+		List<List<T>> result = input
 
 		for (List<? extends T> valueList in values) {
 			result = addValuesToEach(result, valueList)
