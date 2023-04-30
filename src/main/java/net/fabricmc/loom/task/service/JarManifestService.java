@@ -41,6 +41,7 @@ import org.gradle.util.GradleVersion;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
+import net.fabricmc.loom.configuration.InstallerData;
 import net.fabricmc.loom.util.Constants;
 
 public abstract class JarManifestService implements BuildService<JarManifestService.Params> {
@@ -65,7 +66,7 @@ public abstract class JarManifestService implements BuildService<JarManifestServ
 				params.getMCEVersion().set(Constants.Dependencies.Versions.MIXIN_COMPILE_EXTENSIONS);
 				params.getMinecraftVersion().set(project.provider(() -> extension.getMinecraftProvider().minecraftVersion()));
 				params.getTinyRemapperVersion().set(tinyRemapperVersion.orElse("unknown"));
-				params.getFabricLoaderVersion().set(getLoaderVersion(project).orElse("unknown"));
+				params.getFabricLoaderVersion().set(project.provider(() -> Optional.ofNullable(extension.getInstallerData()).map(InstallerData::version).orElse("unknown")));
 				params.getMixinVersion().set(getMixinVersion(project));
 			});
 		});
@@ -96,18 +97,6 @@ public abstract class JarManifestService implements BuildService<JarManifestServ
 		for (Map.Entry<String, String> entry : extraValues.entrySet()) {
 			attributes.putValue(entry.getKey(), entry.getValue());
 		}
-	}
-
-	private static Optional<String> getLoaderVersion(Project project) {
-		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		if (extension.isForge()) return Optional.empty();
-
-		if (extension.getInstallerData() == null) {
-			project.getLogger().warn("Could not determine fabric loader version for jar manifest");
-			return Optional.empty();
-		}
-
-		return Optional.of(extension.getInstallerData().version());
 	}
 
 	private record MixinVersion(String group, String version) implements Serializable { }
