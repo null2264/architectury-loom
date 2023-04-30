@@ -134,7 +134,7 @@ public class MinecraftPatchedProvider {
 
 	private void initPatchedFiles() {
 		String forgeVersion = getExtension().getForgeProvider().getVersion().getCombined();
-		Path forgeWorkingDir = ForgeProvider.getForgeCache(project, forgeVersion);
+		Path forgeWorkingDir = ForgeProvider.getForgeCache(project);
 		String patchId = "forge-" + forgeVersion + "-";
 
 		minecraftProvider.setJarPrefix(patchId);

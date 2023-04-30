@@ -28,8 +28,6 @@ import java.io.File;
 import java.nio.file.Path;
 
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.DependencyInfo;
@@ -79,50 +77,15 @@ public class ForgeProvider extends DependencyProvider {
 	}
 
 	/**
-	 * Gets the full/combined Forge version <em>without</em> resolving dependencies
-	 * that haven't been resolved yet.
-	 *
-	 * @param project the Gradle project
-	 * @return the Forge version
-	 */
-	public static String getCombinedForgeVersion(Project project) {
-		final LoomGradleExtension extension = LoomGradleExtension.get(project);
-
-		if (extension.getDependencyProviders() != null) {
-			return extension.getForgeProvider().getVersion().getCombined();
-		}
-
-		final Configuration configuration = project.getConfigurations().getByName(Constants.Configurations.FORGE);
-
-		for (Dependency dependency : configuration.getDependencies()) {
-			if (dependency.getVersion() != null) {
-				return dependency.getVersion();
-			}
-		}
-
-		throw new RuntimeException("Could not find Forge version. Searched " + configuration.getDependencies().size() + " dependencies");
-	}
-
-	/**
 	 * {@return the Forge cache directory}.
 	 *
 	 * @param project the project
-	 * @param version the Forge version
 	 */
-	public static Path getForgeCache(Project project, String version) {
+	public static Path getForgeCache(Project project) {
+		final LoomGradleExtension extension = LoomGradleExtension.get(project);
+		final String version = extension.getForgeProvider().getVersion().getCombined();
 		return LoomGradleExtension.get(project).getMinecraftProvider()
 				.dir("forge/" + version).toPath();
-	}
-
-	/**
-	 * {@return the cache directory for the current Forge version}
-	 *
-	 * <p>This method is slower than {@link #getForgeCache} if you already know the Forge version.
-	 *
-	 * @param project the project
-	 */
-	public static Path getCurrentForgeCache(Project project) {
-		return getForgeCache(project, getCombinedForgeVersion(project));
 	}
 
 	public static final class ForgeVersion {

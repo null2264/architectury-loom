@@ -194,13 +194,13 @@ public abstract class CompileConfiguration implements Runnable {
 		extension.setMinecraftProvider(minecraftProvider);
 		minecraftProvider.provide();
 
-		final DependencyInfo mappingsDep = DependencyInfo.create(getProject(), Configurations.MAPPINGS);
-		final MappingConfiguration mappingConfiguration = MappingConfiguration.create(getProject(), configContext.serviceManager(), mappingsDep, minecraftProvider);
-		extension.setMappingConfiguration(mappingConfiguration);
-
 		// This needs to run after MinecraftProvider.initFiles and MinecraftLibraryProvider.provide
 		// but before MinecraftPatchedProvider.provide.
 		setupDependencyProviders(project, extension);
+
+		final DependencyInfo mappingsDep = DependencyInfo.create(getProject(), Configurations.MAPPINGS);
+		final MappingConfiguration mappingConfiguration = MappingConfiguration.create(getProject(), configContext.serviceManager(), mappingsDep, minecraftProvider);
+		extension.setMappingConfiguration(mappingConfiguration);
 
 		if (extension.isForge()) {
 			ForgeLibrariesProvider.provide(mappingConfiguration, project);

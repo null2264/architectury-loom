@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2020-2021 FabricMC
+ * Copyright (c) 2020-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ public class PatchProvider extends DependencyProvider {
 
 	@Override
 	public void provide(DependencyInfo dependency) throws Exception {
-		init(dependency.getDependency().getVersion());
+		init();
 
 		if (Files.notExists(clientPatches) || Files.notExists(serverPatches) || refreshDeps()) {
 			getProject().getLogger().info(":extracting forge patches");
@@ -60,8 +60,8 @@ public class PatchProvider extends DependencyProvider {
 		}
 	}
 
-	private void init(String forgeVersion) {
-		final Path projectCacheFolder = ForgeProvider.getForgeCache(getProject(), forgeVersion);
+	private void init() {
+		final Path projectCacheFolder = ForgeProvider.getForgeCache(getProject());
 		clientPatches = projectCacheFolder.resolve("patches-client.lzma");
 		serverPatches = projectCacheFolder.resolve("patches-server.lzma");
 
