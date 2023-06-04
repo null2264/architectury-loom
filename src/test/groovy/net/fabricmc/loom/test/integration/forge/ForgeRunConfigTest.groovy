@@ -45,7 +45,7 @@ class ForgeRunConfigTest extends Specification implements GradleProjectTestTrait
 			doLast {
 				loom.runs.each {
 					it.evaluateNow()
-					def expected = $mainClass
+					def expected = '$mainClass'
 					def found = it.mainClass.get()
 					if (expected != found) {
 						throw new AssertionError("\$it.name: found main class \$found, expected \$expected")
