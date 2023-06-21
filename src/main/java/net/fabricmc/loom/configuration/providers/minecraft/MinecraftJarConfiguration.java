@@ -93,7 +93,7 @@ public enum MinecraftJarConfiguration {
 			Function<ConfigContext, M> minecraftProviderFunction,
 			BiFunction<Project, M, IntermediaryMinecraftProvider<M>> intermediaryMinecraftProviderBiFunction,
 			BiFunction<Project, M, P> namedMinecraftProviderBiFunction,
-			BiFunction<ConfigContext, M, SrgMinecraftProvider<M>> srgMinecraftProviderBiFunction,
+			BiFunction<Project, M, SrgMinecraftProvider<M>> srgMinecraftProviderBiFunction,
 			BiFunction<P, MinecraftJarProcessorManager, ProcessedNamedMinecraftProvider<M, P>> processedNamedMinecraftProviderBiFunction,
 			BiFunction<ConfigContext, Q, DecompileConfiguration<?>> decompileConfigurationBiFunction,
 			List<String> supportedEnvironments

@@ -242,7 +242,7 @@ public abstract class CompileConfiguration implements Runnable {
 		if (extension.isForge()) {
 			final SrgMinecraftProvider<?> srgMinecraftProvider = jarConfiguration.getSrgMinecraftProviderBiFunction().apply(configContext, minecraftProvider);
 			extension.setSrgMinecraftProvider(srgMinecraftProvider);
-			srgMinecraftProvider.provide(true);
+			srgMinecraftProvider.provide(provideContext);
 		}
 	}
 

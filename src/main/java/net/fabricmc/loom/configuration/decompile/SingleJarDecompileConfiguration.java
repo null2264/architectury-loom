@@ -81,7 +81,7 @@ public class SingleJarDecompileConfiguration extends DecompileConfiguration<Mapp
 				task.setGroup(Constants.TaskGroup.FABRIC);
 
 				task.getInputJar().set(MinecraftPatchedProvider.get(project).getMinecraftSrgJar().toFile());
-				task.getRuntimeJar().set(inputJar);
+				task.getRuntimeJar().set(minecraftJar.toFile());
 			});
 		}
 	}
