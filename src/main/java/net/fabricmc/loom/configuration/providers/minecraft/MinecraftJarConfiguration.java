@@ -83,7 +83,7 @@ public enum MinecraftJarConfiguration {
 	private final Function<ConfigContext, MinecraftProvider> minecraftProviderFunction;
 	private final BiFunction<Project, MinecraftProvider, IntermediaryMinecraftProvider<?>> intermediaryMinecraftProviderBiFunction;
 	private final BiFunction<Project, MinecraftProvider, NamedMinecraftProvider<?>> namedMinecraftProviderBiFunction;
-	private final BiFunction<ConfigContext, MinecraftProvider, SrgMinecraftProvider<?>> srgMinecraftProviderBiFunction;
+	private final BiFunction<Project, MinecraftProvider, SrgMinecraftProvider<?>> srgMinecraftProviderBiFunction;
 	private final BiFunction<NamedMinecraftProvider<?>, MinecraftJarProcessorManager, ProcessedNamedMinecraftProvider<?, ?>> processedNamedMinecraftProviderBiFunction;
 	private final BiFunction<ConfigContext, MappedMinecraftProvider, DecompileConfiguration<?>> decompileConfigurationBiFunction;
 	private final List<String> supportedEnvironments;
@@ -101,7 +101,7 @@ public enum MinecraftJarConfiguration {
 		this.minecraftProviderFunction = (Function<ConfigContext, MinecraftProvider>) minecraftProviderFunction;
 		this.intermediaryMinecraftProviderBiFunction = (BiFunction<Project, MinecraftProvider, IntermediaryMinecraftProvider<?>>) (Object) intermediaryMinecraftProviderBiFunction;
 		this.namedMinecraftProviderBiFunction = (BiFunction<Project, MinecraftProvider, NamedMinecraftProvider<?>>) namedMinecraftProviderBiFunction;
-		this.srgMinecraftProviderBiFunction = (BiFunction<ConfigContext, MinecraftProvider, SrgMinecraftProvider<?>>) (Object) srgMinecraftProviderBiFunction;
+		this.srgMinecraftProviderBiFunction = (BiFunction<Project, MinecraftProvider, SrgMinecraftProvider<?>>) (Object) srgMinecraftProviderBiFunction;
 		this.processedNamedMinecraftProviderBiFunction = (BiFunction<NamedMinecraftProvider<?>, MinecraftJarProcessorManager, ProcessedNamedMinecraftProvider<?, ?>>) (Object) processedNamedMinecraftProviderBiFunction;
 		this.decompileConfigurationBiFunction = (BiFunction<ConfigContext, MappedMinecraftProvider, DecompileConfiguration<?>>) decompileConfigurationBiFunction;
 		this.supportedEnvironments = supportedEnvironments;
@@ -127,7 +127,7 @@ public enum MinecraftJarConfiguration {
 		return decompileConfigurationBiFunction;
 	}
 
-	public BiFunction<ConfigContext, MinecraftProvider, SrgMinecraftProvider<?>> getSrgMinecraftProviderBiFunction() {
+	public BiFunction<Project, MinecraftProvider, SrgMinecraftProvider<?>> getSrgMinecraftProviderBiFunction() {
 		return srgMinecraftProviderBiFunction;
 	}
 
