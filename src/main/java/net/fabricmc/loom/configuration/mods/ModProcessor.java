@@ -167,7 +167,8 @@ public class ModProcessor {
 				.logger(project.getLogger()::lifecycle)
 				.logUnknownInvokeDynamic(false)
 				.withMappings(TinyRemapperHelper.create(mappings, fromM, toM, false))
-				.renameInvalidLocals(false);
+				.renameInvalidLocals(false)
+				.extraAnalyzeVisitor(AccessWidenerAnalyzeVisitorProvider.createFromMods(fromM, remapList));
 
 		final KotlinClasspathService kotlinClasspathService = KotlinClasspathService.getOrCreateIfRequired(serviceManager, project);
 		KotlinRemapperClassloader kotlinRemapperClassloader = null;
