@@ -108,46 +108,6 @@ public class Constants {
 		}
 	}
 
-	/**
-	 * Constants related to dependencies.
-	 */
-	public static final class Dependencies {
-		public static final String MIXIN_COMPILE_EXTENSIONS = "net.fabricmc:fabric-mixin-compile-extensions:";
-		public static final String DEV_LAUNCH_INJECTOR = "net.fabricmc:dev-launch-injector:";
-		public static final String TERMINAL_CONSOLE_APPENDER = "net.minecrell:terminalconsoleappender:";
-		public static final String JETBRAINS_ANNOTATIONS = "org.jetbrains:annotations:";
-		public static final String NATIVE_SUPPORT = "net.fabricmc:fabric-loom-native-support:";
-		public static final String JAVAX_ANNOTATIONS = "com.google.code.findbugs:jsr305:"; // I hate that I have to add these.
-		public static final String FORGE_RUNTIME = "dev.architectury:architectury-loom-runtime:";
-		public static final String ACCESS_TRANSFORMERS = "net.minecraftforge:accesstransformers:";
-		public static final String UNPROTECT = "io.github.juuxel:unprotect:";
-		// Used to upgrade the ASM version for the AT tool.
-		public static final String ASM = "org.ow2.asm:asm:";
-
-		private Dependencies() {
-		}
-
-		/**
-		 * Constants for versions of dependencies.
-		 */
-		public static final class Versions {
-			public static final String MIXIN_COMPILE_EXTENSIONS = "0.6.0";
-			public static final String DEV_LAUNCH_INJECTOR = "0.2.1+build.8";
-			public static final String TERMINAL_CONSOLE_APPENDER = "1.2.0";
-			public static final String JETBRAINS_ANNOTATIONS = "24.0.1";
-			public static final String NATIVE_SUPPORT_VERSION = "1.0.1";
-			public static final String JAVAX_ANNOTATIONS = "3.0.2";
-			public static final String FORGE_RUNTIME = "1.1.8";
-			public static final String ACCESS_TRANSFORMERS = "3.0.1";
-			public static final String ACCESS_TRANSFORMERS_NEW = "8.0.5";
-			public static final String UNPROTECT = "1.2.0";
-			public static final String ASM = "9.3";
-
-			private Versions() {
-			}
-		}
-	}
-
 	public static final class MixinArguments {
 		public static final String IN_MAP_FILE_NAMED_INTERMEDIARY = "inMapFileNamedIntermediary";
 		public static final String OUT_MAP_FILE_NAMED_INTERMEDIARY = "outMapFileNamedIntermediary";

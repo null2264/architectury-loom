@@ -37,6 +37,7 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.SetProperty;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.SourceSet;
 import org.jetbrains.annotations.ApiStatus;
@@ -132,6 +133,8 @@ public interface LoomGradleExtensionAPI {
 	InterfaceInjectionExtensionAPI getInterfaceInjection();
 
 	Property<String> getCustomMinecraftManifest();
+
+	SetProperty<String> getKnownIndyBsms();
 
 	/**
 	 * Disables the deprecated POM generation for a publication.
