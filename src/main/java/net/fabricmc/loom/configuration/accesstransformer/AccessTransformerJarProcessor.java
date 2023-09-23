@@ -58,6 +58,7 @@ import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.ExceptionUtil;
 import net.fabricmc.loom.util.ForgeToolExecutor;
+import net.fabricmc.loom.util.LoomVersions;
 import net.fabricmc.loom.util.fmj.FabricModJson;
 import net.fabricmc.lorenztiny.TinyMappingsReader;
 
@@ -158,8 +159,8 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 	public static void executeAt(Project project, Path input, Path output, AccessTransformerConfiguration configuration) throws IOException {
 		boolean serverBundleMetadataPresent = LoomGradleExtension.get(project).getMinecraftProvider().getServerBundleMetadata() != null;
 		FileCollection classpath = new DependencyDownloader(project)
-				.add(Constants.Dependencies.ACCESS_TRANSFORMERS + (serverBundleMetadataPresent ? Constants.Dependencies.Versions.ACCESS_TRANSFORMERS_NEW : Constants.Dependencies.Versions.ACCESS_TRANSFORMERS))
-				.add(Constants.Dependencies.ASM + Constants.Dependencies.Versions.ASM)
+				.add((serverBundleMetadataPresent ? LoomVersions.ACCESS_TRANSFORMERS_NEW : LoomVersions.ACCESS_TRANSFORMERS).mavenNotation())
+				.add(LoomVersions.ASM.mavenNotation())
 				.download();
 		List<String> args = new ArrayList<>();
 		args.add("--inJar");

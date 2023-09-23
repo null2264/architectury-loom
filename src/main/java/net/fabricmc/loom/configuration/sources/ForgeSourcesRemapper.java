@@ -50,11 +50,11 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.task.GenerateSourcesTask;
-import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DeletingFileVisitor;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.ForgeToolExecutor;
+import net.fabricmc.loom.util.LoomVersions;
 import net.fabricmc.loom.util.SourceRemapper;
 import net.fabricmc.loom.util.ThreadingUtils;
 import net.fabricmc.loom.util.TinyRemapperHelper;
@@ -210,7 +210,7 @@ public class ForgeSourcesRemapper {
 		}
 
 		Set<File> files = project.getConfigurations()
-				.detachedConfiguration(project.getDependencies().create(Constants.Dependencies.JETBRAINS_ANNOTATIONS + Constants.Dependencies.Versions.JETBRAINS_ANNOTATIONS))
+				.detachedConfiguration(project.getDependencies().create(LoomVersions.JETBRAINS_ANNOTATIONS.mavenNotation()))
 				.resolve();
 
 		for (File file : files) {

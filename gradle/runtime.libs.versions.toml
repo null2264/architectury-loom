@@ -11,6 +11,14 @@ terminal-console-appender = "1.2.0"
 jetbrains-annotations = "24.0.1"
 native-support = "1.0.1"
 
+# Forge Runtime depedencies
+javax-annotations = "3.0.2"
+forge-runtime = "1.1.8"
+access-transformers = "3.0.1"
+access-transformers-new = "8.0.5"
+unprotect = "1.2.0"
+asm = "9.3"
+
 [libraries]
 # Decompilers
 fernflower = { module = "net.fabricmc:fabric-fernflower", version.ref = "fernflower" }
@@ -23,3 +31,11 @@ dev-launch-injector = { module = "net.fabricmc:dev-launch-injector", version.ref
 terminal-console-appender = { module = "net.minecrell:terminalconsoleappender", version.ref = "terminal-console-appender" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 native-support = { module = "net.fabricmc:fabric-loom-native-support", version.ref = "native-support" }
+
+# Forge Runtime depedencies
+javax-annotations = { module = "com.google.code.findbugs:jsr305", version.ref = "javax-annotations" }
+forge-runtime = { module = "dev.architectury:architectury-loom-runtime", version.ref = "forge-runtime" }
+access-transformers = { module = "net.minecraftforge:accesstransformers", version.ref = "access-transformers" }
+access-transformers-new = { module = "net.minecraftforge:accesstransformers", version.ref = "access-transformers-new" }
+unprotect = { module = "io.github.juuxel:unprotect", version.ref = "unprotect" }
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }

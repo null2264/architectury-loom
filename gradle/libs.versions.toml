@@ -7,11 +7,11 @@ jackson = "2.15.2"
 guava = "32.1.2-jre"
 
 stitch = "0.6.2"
-tiny-remapper = "0.8.9"
+tiny-remapper = "1.9.22"
 access-widener = "2.1.0"
 mapping-io = "0.4.2"
 lorenz-tiny = "4.0.2"
-mercury = "0.4.0"
+mercury = "0.1.2.15"
 kotlinx-metadata = "0.7.0"
 
 # Plugins
@@ -35,11 +35,11 @@ jackson = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref 
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 
 fabric-stitch = { module = "net.fabricmc:stitch", version.ref = "stitch" }
-fabric-tiny-remapper = { module = "net.fabricmc:tiny-remapper", version.ref = "tiny-remapper" }
+fabric-tiny-remapper = { module = "dev.architectury:tiny-remapper", version.ref = "tiny-remapper" }
 fabric-access-widener = { module = "net.fabricmc:access-widener", version.ref = "access-widener" }
 fabric-mapping-io = { module = "net.fabricmc:mapping-io", version.ref = "mapping-io" }
 fabric-lorenz-tiny = { module = "net.fabricmc:lorenz-tiny", version.ref = "lorenz-tiny" }
-fabric-mercury = { module = "net.fabricmc:mercury", version.ref = "mercury" }
+fabric-mercury = { module = "dev.architectury:mercury", version.ref = "mercury" }
 
 # Misc
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

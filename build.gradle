@@ -133,7 +133,6 @@ dependencies {
 	implementation libs.jackson
 	implementation libs.guava
 	implementation libs.bundles.asm
-	implementation libs.progressbar
 
 	// game handling utils
 	implementation (libs.fabric.stitch) {
