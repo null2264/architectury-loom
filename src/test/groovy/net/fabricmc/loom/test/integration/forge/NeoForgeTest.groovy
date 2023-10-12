@@ -24,15 +24,14 @@
 
 package net.fabricmc.loom.test.integration.forge
 
+import net.fabricmc.loom.test.util.GradleProjectTestTrait
 import spock.lang.Specification
 import spock.lang.Unroll
-
-import net.fabricmc.loom.test.util.GradleProjectTestTrait
 
 import static net.fabricmc.loom.test.LoomTestConstants.DEFAULT_GRADLE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-class ForgeTest extends Specification implements GradleProjectTestTrait {
+class NeoForgeTest extends Specification implements GradleProjectTestTrait {
 	@Unroll
 	def "build #mcVersion #forgeVersion #mappings"() {
 		setup:
@@ -40,8 +39,8 @@ class ForgeTest extends Specification implements GradleProjectTestTrait {
 		gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', mcVersion)
 				.replace('@FORGEVERSION@', forgeVersion)
 				.replace('@MAPPINGS@', mappings)
-				.replace('@REPOSITORIES@', '')
-				.replace('@PACKAGE@', 'net.minecraftforge:forge')
+				.replace('@REPOSITORIES@', 'maven { url "https://maven.neoforged.net/releases/" }')
+				.replace('@PACKAGE@', 'net.neoforged:forge')
 
 		when:
 		def result = gradle.run(task: "build")
@@ -51,18 +50,7 @@ class ForgeTest extends Specification implements GradleProjectTestTrait {
 
 		where:
 		mcVersion | forgeVersion | mappings
-		'1.20.1'  | "47.2.1"     | "loom.officialMojangMappings()"
-		'1.20.1'  | "47.2.1"     | "'net.fabricmc:yarn:1.19.4+build.2:v2'"
-		'1.19.4'  | "45.0.43"    | "loom.officialMojangMappings()"
-		'1.19.4'  | "45.0.43"    | "'net.fabricmc:yarn:1.19.4+build.2:v2'"
-		'1.18.1'  | "39.0.63"    | "loom.officialMojangMappings()"
-		'1.18.1'  | "39.0.63"    | '"net.fabricmc:yarn:1.18.1+build.22:v2"'
-		'1.17.1'  | "37.0.67"    | "loom.officialMojangMappings()"
-		'1.17.1'  | "37.0.67"    | '"net.fabricmc:yarn:1.17.1+build.61:v2"'
-		'1.16.5'  | "36.2.4"     | "loom.officialMojangMappings()"
-		'1.16.5'  | "36.2.4"     | '"net.fabricmc:yarn:1.16.5+build.5:v2"'
-		'1.16.5'  | '36.2.4'     | '"de.oceanlabs.mcp:mcp_snapshot:20210309-1.16.5"'
-		'1.14.4'  | "28.2.23"    | "loom.officialMojangMappings()"
-		'1.14.4'  | "28.2.23"    | '"net.fabricmc:yarn:1.14.4+build.18:v2"'
+		'1.20.1'  | "47.1.79"    | "loom.officialMojangMappings()"
+		'1.20.1'  | "47.1.79"    | "'net.fabricmc:yarn:1.20.1+build.1:v2'"
 	}
 }

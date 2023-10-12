@@ -24,13 +24,15 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+
+	@REPOSITORIES@
 }
 
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:$mcVersion"
 	mappings @MAPPINGS@
-	forge "net.minecraftforge:forge:$mcVersion-$forgeVersion"
+	forge "@PACKAGE@:$mcVersion-$forgeVersion"
 }
 
 tasks.withType(JavaCompile).configureEach {
