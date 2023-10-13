@@ -333,7 +333,7 @@ publishing {
 			// Also publish a snapshot so people can use the latest version if they wish
 			snapshot(MavenPublication) { publication ->
 				groupId project.group
-			artifactId project.base.archivesName.get()
+				artifactId project.base.archivesName.get()
 				version baseVersion + '-SNAPSHOT'
 
 				from components.java
