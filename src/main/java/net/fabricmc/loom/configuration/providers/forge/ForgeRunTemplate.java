@@ -62,6 +62,9 @@ public record ForgeRunTemplate(
 			String resolved = value.resolve(configValueResolver);
 			settings.getEnvironmentVariables().putIfAbsent(key, resolved);
 		});
+
+		// Add MOD_CLASSES, this is something that ForgeGradle does
+		settings.getEnvironmentVariables().computeIfAbsent("MOD_CLASSES", $ -> ConfigValue.of("{source_roots}").resolve(configValueResolver));
 	}
 
 	public static ForgeRunTemplate fromJson(JsonObject json) {
