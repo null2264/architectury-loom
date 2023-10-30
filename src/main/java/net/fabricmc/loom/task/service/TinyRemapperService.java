@@ -81,7 +81,7 @@ public class TinyRemapperService implements SharedService {
 
 		extension.getKnownIndyBsms().get().stream().sorted().forEach(joiner::add);
 
-		if (extension.isForge()) {
+		if (extension.isForgeLike()) {
 			joiner.add("forge");
 		}
 

@@ -35,6 +35,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,8 +69,9 @@ import net.fabricmc.mappingio.tree.MemoryMappingTree;
 public final class FieldMigratedMappingConfiguration extends MappingConfiguration {
 	private List<Map.Entry<FieldMember, String>> migratedFields = new ArrayList<>();
 	public Path migratedFieldsCache;
-	public Path rawTinyMappings;
-	public Path rawTinyMappingsWithSrg;
+	private Path rawTinyMappings;
+	private Path rawTinyMappingsWithSrg;
+	private Path rawTinyMappingsWithMojang; // TODO: Generate the migrated one
 
 	public FieldMigratedMappingConfiguration(String mappingsIdentifier, Path mappingsWorkingDir) {
 		super(mappingsIdentifier, mappingsWorkingDir);
@@ -100,7 +102,10 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 	}
 
 	public static String createForgeMappingsIdentifier(LoomGradleExtension extension, String mappingsName, String version, String classifier, String minecraftVersion) {
-		return FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion) + "-forge-" + extension.getForgeProvider().getVersion().getCombined();
+		final String base = FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion);
+		final String platform = extension.getPlatform().get().name().toLowerCase(Locale.ROOT);
+		final String forgeVersion = extension.getForgeProvider().getVersion().getCombined();
+		return base + "-" + platform + "-" + forgeVersion;
 	}
 
 	@Override
@@ -109,6 +114,7 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		this.rawTinyMappings = tinyMappings;
 		this.rawTinyMappingsWithSrg = tinyMappingsWithSrg;
+		this.rawTinyMappingsWithMojang = tinyMappingsWithMojang;
 
 		if (extension.shouldGenerateSrgTiny()) {
 			if (Files.notExists(rawTinyMappingsWithSrg) || extension.refreshDeps()) {
@@ -120,6 +126,7 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 
 		tinyMappings = mappingsWorkingDir().resolve("mappings-field-migrated.tiny");
 		tinyMappingsWithSrg = mappingsWorkingDir().resolve("mappings-srg-field-migrated.tiny");
+		tinyMappingsWithMojang = mappingsWorkingDir().resolve("mappings-mojang-field-migrated.tiny");
 
 		try {
 			updateFieldMigration(project);

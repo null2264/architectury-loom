@@ -345,7 +345,7 @@ public class RunConfigSettings implements Named {
 		environment("client");
 		defaultMainClass(Constants.Knot.KNOT_CLIENT);
 
-		if (getExtension().isForge()) {
+		if (getExtension().isForgeLike()) {
 			forgeTemplate("client");
 		}
 	}
@@ -358,7 +358,7 @@ public class RunConfigSettings implements Named {
 		environment("server");
 		defaultMainClass(Constants.Knot.KNOT_SERVER);
 
-		if (getExtension().isForge()) {
+		if (getExtension().isForgeLike()) {
 			forgeTemplate("server");
 		}
 	}
@@ -369,7 +369,7 @@ public class RunConfigSettings implements Named {
 	 * <p>This method can only be used on Forge.
 	 */
 	public void data() {
-		ModPlatform.assertPlatform(getExtension(), ModPlatform.FORGE, () -> "RunConfigSettings.data() is only usable on Forge.");
+		ModPlatform.assertForgeLike(getExtension(), () -> "RunConfigSettings.data() is only usable on Forge.");
 		environment("data");
 		forgeTemplate("data");
 	}
@@ -384,7 +384,7 @@ public class RunConfigSettings implements Named {
 	 * @since 1.0
 	 */
 	public void forgeTemplate(String templateName) {
-		ModPlatform.assertPlatform(getExtension(), ModPlatform.FORGE);
+		ModPlatform.assertForgeLike(getExtension());
 		defaultMainClass(Constants.Forge.UNDETERMINED_MAIN_CLASS);
 		// Evaluate later if Forge hasn't been resolved yet.
 		evaluateNowOrLater(() -> {
@@ -437,11 +437,11 @@ public class RunConfigSettings implements Named {
 	 * {@linkplain net.fabricmc.loom.api.LoomGradleExtensionAPI#getMods global container}
 	 * declared in the {@code loom} extension.
 	 *
-	 * <p>This method is currently only available on Forge.
+	 * <p>This method is currently only available on Forge and NeoForge.
 	 */
 	@ApiStatus.Experimental
 	public NamedDomainObjectContainer<ModSettings> getMods() {
-		ModPlatform.assertPlatform(project, ModPlatform.FORGE);
+		ModPlatform.assertForgeLike(extension);
 		return mods;
 	}
 

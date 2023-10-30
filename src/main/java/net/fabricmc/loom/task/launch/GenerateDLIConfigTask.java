@@ -75,7 +75,7 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.property("client", "org.lwjgl.librarypath", nativesPath);
 		}
 
-		if (!getExtension().isForge()) {
+		if (!getExtension().isForgeLike()) {
 			launchConfig
 					.argument("client", "--assetIndex")
 					.argument("client", getExtension().getMinecraftProvider().getVersionInfo().assetIndex().fabricId(getExtension().getMinecraftProvider().minecraftVersion()))
@@ -98,7 +98,7 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.argument("client", "Architectury Loom");
 		}
 
-		if (getExtension().isForge()) {
+		if (getExtension().isForgeLike()) {
 			// Find the mapping files for Unprotect to use for figuring out
 			// which classes are from Minecraft.
 			String unprotectMappings = getProject().getConfigurations()
@@ -110,7 +110,8 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 
 			launchConfig
 					// Should match YarnNamingService.PATH_TO_MAPPINGS in forge-runtime
-					.property("fabric.yarnWithSrg.path", getExtension().getMappingConfiguration().tinyMappingsWithSrg.toAbsolutePath().toString())
+					// TODO (Neo): Can we rename this property for Neo? It's not at all accurate.
+					.property("fabric.yarnWithSrg.path", getExtension().getPlatformMappingFile().toAbsolutePath().toString())
 					.property("unprotect.mappings", unprotectMappings)
 
 					.property("mixin.env.remapRefMap", "true");

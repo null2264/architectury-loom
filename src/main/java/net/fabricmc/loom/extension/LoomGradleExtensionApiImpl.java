@@ -134,7 +134,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 				.convention(true);
 		this.transitiveAccessWideners.finalizeValueOnRead();
 		this.modProvidedJavadoc = project.getObjects().property(Boolean.class)
-				.convention(project.provider(() -> !isForge()));
+				.convention(project.provider(() -> !isForgeLike()));
 		this.modProvidedJavadoc.finalizeValueOnRead();
 		this.intermediary = project.getObjects().property(String.class)
 				.convention("https://maven.fabricmc.net/net/fabricmc/intermediary/%1$s/intermediary-%1$s-v2.jar");
@@ -446,6 +446,14 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 	@Override
 	public void setGenerateSrgTiny(Boolean generateSrgTiny) {
+		if (isNeoForge()) {
+			// This is unsupported because supporting the full 2x2 combination of
+			//  [no extra NS] [SRG]
+			//  [mojang]      [SRG+mojang]
+			// is a bit verbose to support.
+			throw new UnsupportedOperationException("SRG is not supported on NeoForge.");
+		}
+
 		this.generateSrgTiny = generateSrgTiny;
 	}
 

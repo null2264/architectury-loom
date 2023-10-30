@@ -166,7 +166,7 @@ public class ModProcessor {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		boolean srg = (fromM.equals("srg") || toM.equals("srg")) && extension.isForge();
+		boolean srg = (fromM.equals("srg") || toM.equals("srg")) && extension.isForgeLike();
 		MemoryMappingTree mappings = mappingConfiguration.getMappingsService(serviceManager, srg).getMappingTree();
 		LoggerFilter.replaceSystemOut();
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
@@ -187,7 +187,7 @@ public class ModProcessor {
 
 		final TinyRemapper remapper = builder.build();
 
-		for (Path minecraftJar : extension.getMinecraftJars(extension.isForge() ? MappingsNamespace.SRG : MappingsNamespace.INTERMEDIARY)) {
+		for (Path minecraftJar : extension.getMinecraftJars(extension.isForgeLike() ? MappingsNamespace.SRG : MappingsNamespace.INTERMEDIARY)) {
 			remapper.readClassPathAsync(minecraftJar);
 		}
 
@@ -264,7 +264,7 @@ public class ModProcessor {
 			stripNestedJars(output);
 			remapJarManifestEntries(output);
 
-			if (extension.isForge()) {
+			if (extension.isForgeLike()) {
 				AtRemapper.remap(project.getLogger(), output, mappings);
 				CoreModClassRemapper.remapJar(output, mappings, project.getLogger());
 			}
