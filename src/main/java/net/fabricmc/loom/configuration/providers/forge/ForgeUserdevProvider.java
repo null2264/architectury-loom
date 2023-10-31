@@ -67,7 +67,11 @@ public class ForgeUserdevProvider extends DependencyProvider {
 		}
 
 		addDependency(json.get("mcp").getAsString(), Constants.Configurations.MCP_CONFIG);
-		addDependency(json.get("mcp").getAsString(), Constants.Configurations.SRG);
+
+		if (!getExtension().isNeoForge()) {
+			addDependency(json.get("mcp").getAsString(), Constants.Configurations.SRG);
+		}
+
 		addDependency(json.get("universal").getAsString(), Constants.Configurations.FORGE_UNIVERSAL);
 
 		if (Files.notExists(joinedPatches)) {
