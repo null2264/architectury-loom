@@ -181,15 +181,14 @@ dependencies {
 	compileOnly libs.kotlin.gradle.plugin
 
 	// Forge patches
-	implementation ('net.minecraftforge:installertools:1.2.0')
-	implementation ('org.cadixdev:lorenz:0.5.3')
-	implementation ('org.cadixdev:lorenz-asm:0.5.3')
-	implementation ('de.oceanlabs.mcp:mcinjector:3.8.0')
-	implementation ('com.opencsv:opencsv:5.4')
-	implementation ('net.minecraftforge:DiffPatch:2.0.7')
+	implementation libs.forge.installer.tools
+	implementation libs.lorenz
+	implementation libs.mcinjector
+	implementation libs.opencsv
+	implementation libs.forge.diffpatch
 
 	// Forge mods.toml parsing
-	implementation ('com.electronwill.night-config:toml:3.6.6')
+	implementation libs.night.config.toml
 
 	// Testing
 	testImplementation(gradleTestKit())

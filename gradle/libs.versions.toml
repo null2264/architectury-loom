@@ -21,6 +21,14 @@ checkstyle = "10.12.2"
 codenarc = "3.3.0"
 jacoco = "0.8.10"
 
+# Forge libraries
+forge-installer-tools = "1.2.0"
+lorenz = "0.5.3"
+mcinjector = "3.8.0"
+opencsv = "5.4"
+forge-diffpatch = "2.0.7"
+night-config = "3.6.6"
+
 [libraries]
 # Loom compile libraries
 asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
@@ -44,6 +52,14 @@ fabric-mercury = { module = "dev.architectury:mercury", version.ref = "mercury" 
 # Misc
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-metadata = { module = "org.jetbrains.kotlinx:kotlinx-metadata-jvm", version.ref = "kotlinx-metadata" }
+
+# Forge support
+forge-installer-tools = { module = "net.minecraftforge:installertools", version.ref = "forge-installer-tools" }
+lorenz = { module = "org.cadixdev:lorenz", version.ref = "lorenz" }
+mcinjector = { module = "de.oceanlabs.mcp:mcinjector", version.ref = "mcinjector" }
+opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
+forge-diffpatch = { module = "net.minecraftforge:DiffPatch", version.ref = "forge-diffpatch" }
+night-config-toml = { module = "com.electronwill.night-config:toml", version.ref = "night-config" }
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
