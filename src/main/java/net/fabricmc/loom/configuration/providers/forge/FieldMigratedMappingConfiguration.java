@@ -30,6 +30,7 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 	public Path migratedFieldsCache;
 	private Path rawTinyMappings;
 	private Path rawTinyMappingsWithSrg;
-	private Path rawTinyMappingsWithMojang; // TODO: Generate the migrated one
+	private Path rawTinyMappingsWithMojang;
 
 	public FieldMigratedMappingConfiguration(String mappingsIdentifier, Path mappingsWorkingDir) {
 		super(mappingsIdentifier, mappingsWorkingDir);
@@ -129,6 +130,13 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 
 		try {
 			updateFieldMigration(project);
+
+			if (extension.isNeoForge()) {
+				// TODO (Neo): Generate the real migrated one
+				if (Files.notExists(rawTinyMappingsWithMojang) || extension.refreshDeps()) {
+					Files.copy(rawTinyMappingsWithMojang, tinyMappingsWithMojang, StandardCopyOption.REPLACE_EXISTING);
+				}
+			}
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}

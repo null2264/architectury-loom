@@ -204,6 +204,18 @@ public class MappingConfiguration {
 
 	public void setupPost(Project project) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
+
+		if (extension.isNeoForge()) {
+			// Generate the Mojmap-merged mappings if needed.
+			// Note that this needs to happen before manipulateMappings for FieldMigratedMappingConfiguration.
+			if (Files.notExists(tinyMappingsWithMojang) || extension.refreshDeps()) {
+				final Stopwatch stopwatch = Stopwatch.createStarted();
+				final MappingContext context = new GradleMappingContext(project, "tmp-neoforge");
+				MojangMappingsMerger.mergeMojangMappings(context, tinyMappings, tinyMappingsWithMojang);
+				project.getLogger().info(":merged mojang mappings in {}", stopwatch.stop());
+			}
+		}
+
 		manipulateMappings(project, tinyMappingsJar);
 
 		if (extension.shouldGenerateSrgTiny()) {
@@ -213,15 +225,6 @@ public class MappingConfiguration {
 				SrgMerger.ExtraMappings extraMappings = SrgMerger.ExtraMappings.ofMojmapTsrg(getMojmapSrgFileIfPossible(project));
 				SrgMerger.mergeSrg(getRawSrgFile(project), tinyMappings, tinyMappingsWithSrg, extraMappings, true);
 				project.getLogger().info(":merged srg mappings in " + stopwatch.stop());
-			}
-		}
-
-		if (extension.isNeoForge()) {
-			if (Files.notExists(tinyMappingsWithMojang) || extension.refreshDeps()) {
-				Stopwatch stopwatch = Stopwatch.createStarted();
-				MappingContext context = new GradleMappingContext(project, "tmp-neoforge");
-				MojangMappingsMerger.mergeMojangMappings(context, tinyMappings, tinyMappingsWithSrg);
-				project.getLogger().info(":merged mojang mappings in {}", stopwatch.stop());
 			}
 		}
 	}
