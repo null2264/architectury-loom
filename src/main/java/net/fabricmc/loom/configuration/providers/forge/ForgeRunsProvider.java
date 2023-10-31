@@ -40,6 +40,7 @@ import com.google.common.collect.MultimapBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
+import dev.architectury.loom.forge.UserdevConfig;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.Project;
@@ -59,20 +60,12 @@ public class ForgeRunsProvider {
 	private final JsonObject json;
 	private final NamedDomainObjectSet<ForgeRunTemplate> templates;
 
-	public ForgeRunsProvider(Project project, JsonObject json) {
+	public ForgeRunsProvider(Project project, JsonObject json, UserdevConfig userdevConfig) {
 		this.project = project;
 		this.extension = LoomGradleExtension.get(project);
 		this.json = json;
 		this.templates = project.getObjects().namedDomainObjectSet(ForgeRunTemplate.class);
-		readTemplates();
-	}
-
-	private void readTemplates() {
-		final JsonObject runJson = json.getAsJsonObject("runs");
-		final Collection<ForgeRunTemplate> templates = ForgeRunTemplate.MAP_CODEC.parse(JsonOps.INSTANCE, runJson)
-				.getOrThrow(false, error -> project.getLogger().error("Couldn't read run config templates, {}", error))
-				.values();
-		this.templates.addAll(templates);
+		this.templates.addAll(userdevConfig.runs().values());
 	}
 
 	public NamedDomainObjectSet<ForgeRunTemplate> getTemplates() {
@@ -80,8 +73,8 @@ public class ForgeRunsProvider {
 	}
 
 	public static ForgeRunsProvider create(Project project) {
-		JsonObject json = LoomGradleExtension.get(project).getForgeUserdevProvider().getJson();
-		return new ForgeRunsProvider(project, json);
+		final ForgeUserdevProvider userdevProvider = LoomGradleExtension.get(project).getForgeUserdevProvider();
+		return new ForgeRunsProvider(project, userdevProvider.getJson(), userdevProvider.getConfig());
 	}
 
 	public ConfigValue.Resolver getResolver(@Nullable RunConfigSettings runConfig) {

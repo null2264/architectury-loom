@@ -115,7 +115,7 @@ public class ForgeSourcesRemapper {
 
 	public static void provideForgeSources(Project project, SharedServiceManager serviceManager, BiConsumer<String, byte[]> consumer) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		String sourceDependency = extension.getForgeUserdevProvider().getJson().getAsJsonPrimitive("sources").getAsString();
+		String sourceDependency = extension.getForgeUserdevProvider().getConfig().sources();
 		List<Path> forgeInstallerSources = new ArrayList<>();
 
 		for (File file : DependencyDownloader.download(project, sourceDependency)) {

@@ -137,7 +137,7 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 
 	private Path sourcePatch(Path cache, Path rawDecompiled) throws IOException {
 		ForgeUserdevProvider userdev = getExtension().getForgeUserdevProvider();
-		String patchPathInZip = userdev.getJson().getAsJsonPrimitive("patches").getAsString();
+		String patchPathInZip = userdev.getConfig().patches();
 		Path output = cache.resolve("patched.jar");
 		Path rejects = cache.resolve("rejects");
 
@@ -149,8 +149,8 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 				.outputPath(output)
 				.mode(PatchMode.ACCESS)
 				.rejectsPath(rejects)
-				.aPrefix(userdev.getJson().getAsJsonPrimitive("patchesOriginalPrefix").getAsString())
-				.bPrefix(userdev.getJson().getAsJsonPrimitive("patchesModifiedPrefix").getAsString())
+				.aPrefix(userdev.getConfig().patchesOriginalPrefix().orElseThrow())
+				.bPrefix(userdev.getConfig().patchesModifiedPrefix().orElseThrow())
 				.build()
 				.operate();
 
@@ -174,18 +174,18 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 
 		try (var tempFiles = new TempFiles()) {
 			final ForgeUserdevProvider userdevProvider = getExtension().getForgeUserdevProvider();
-			final JsonArray sass = userdevProvider.getJson().getAsJsonArray("sass");
+			final List<String> sass = userdevProvider.getConfig().sass();
 			final List<Path> sasPaths = new ArrayList<>();
 
 			try (FileSystemUtil.Delegate fs = FileSystemUtil.getJarFileSystem(userdevProvider.getUserdevJar(), false)) {
-				for (JsonElement sasPath : sass) {
+				for (String sasPath : sass) {
 					try {
-						final Path from = fs.getPath(sasPath.getAsString());
+						final Path from = fs.getPath(sasPath);
 						final Path to = tempFiles.file(null, ".sas");
 						Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
 						sasPaths.add(to);
 					} catch (IOException e) {
-						throw new IOException("Could not extract SAS " + sasPath.getAsString());
+						throw new IOException("Could not extract SAS " + sasPath);
 					}
 				}
 			}

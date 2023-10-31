@@ -52,6 +52,7 @@ import java.util.stream.Stream;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import de.oceanlabs.mcp.mcinjector.adaptors.ParameterAnnotationFixer;
+import dev.architectury.loom.forge.UserdevConfig;
 import dev.architectury.loom.util.MappingOption;
 import dev.architectury.loom.util.TempFiles;
 import dev.architectury.tinyremapper.InputTag;
@@ -451,7 +452,7 @@ public class MinecraftPatchedProvider {
 
 	private void patchJars(Path clean, Path output, Path patches) {
 		ForgeToolExecutor.exec(project, spec -> {
-			ForgeUserdevProvider.BinaryPatcherConfig config = getExtension().getForgeUserdevProvider().binaryPatcherConfig;
+			UserdevConfig.BinaryPatcherConfig config = getExtension().getForgeUserdevProvider().getConfig().binpatcher();
 			spec.classpath(DependencyDownloader.download(project, config.dependency()));
 			spec.getMainClass().set("net.minecraftforge.binarypatcher.ConsoleTool");
 

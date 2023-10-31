@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.hash.Hashing;
-import com.google.gson.JsonElement;
 import dev.architectury.loom.neoforge.MojangMappingsMerger;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
@@ -67,15 +66,15 @@ public class ForgeLibrariesProvider {
 		final List<Dependency> dependencies = new ArrayList<>();
 
 		// Collect all dependencies with possible relocations, such as Mixin.
-		for (JsonElement lib : extension.getForgeUserdevProvider().getJson().get("libraries").getAsJsonArray()) {
+		for (String lib : extension.getForgeUserdevProvider().getConfig().libraries()) {
 			String dep = null;
 
-			if (lib.getAsString().startsWith("org.spongepowered:mixin:")) {
+			if (lib.startsWith("org.spongepowered:mixin:")) {
 				if (PropertyUtil.getAndFinalize(extension.getForge().getUseCustomMixin())) {
-					if (lib.getAsString().contains("0.8.2")) {
+					if (lib.contains("0.8.2")) {
 						dep = "net.fabricmc:sponge-mixin:0.8.2+build.24";
 					} else {
-						String version = lib.getAsString().substring(lib.getAsString().lastIndexOf(":"));
+						String version = lib.substring(lib.lastIndexOf(":"));
 						// Used for the file extension, for example @jar
 						int atIndex = version.indexOf('@');
 
@@ -90,7 +89,7 @@ public class ForgeLibrariesProvider {
 			}
 
 			if (dep == null) {
-				dep = lib.getAsString();
+				dep = lib;
 			}
 
 			dependencies.add(project.getDependencies().create(dep));
