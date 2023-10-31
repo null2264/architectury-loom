@@ -177,7 +177,7 @@ public class MappingConfiguration {
 				throw new UnsupportedOperationException("Cannot get mappings service with Mojang mappings without Mojang merging enabled!");
 			}
 
-			yield this.tinyMappings;
+			yield this.tinyMappingsWithMojang;
 		}
 		default -> this.tinyMappings;
 		};
