@@ -101,6 +101,7 @@ public class MinecraftPatchedProvider {
 	private final MinecraftProvider minecraftProvider;
 	private final Type type;
 
+	// TODO (Neo): Rename all these srg -> "intermediate"
 	// Step 1: Remap Minecraft to SRG, merge if needed
 	private Path minecraftSrgJar;
 	// Step 2: Binary Patch
@@ -141,9 +142,10 @@ public class MinecraftPatchedProvider {
 
 		minecraftProvider.setJarPrefix(patchId);
 
-		minecraftSrgJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-srg.jar");
-		minecraftPatchedSrgJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-srg-patched.jar");
-		minecraftPatchedSrgAtJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-srg-at-patched.jar");
+		final String intermediateId = getExtension().isNeoForge() ? "mojang" : "srg";
+		minecraftSrgJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + ".jar");
+		minecraftPatchedSrgJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + "-patched.jar");
+		minecraftPatchedSrgAtJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + "-at-patched.jar");
 		minecraftPatchedJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-patched.jar");
 		minecraftClientExtra = forgeWorkingDir.resolve("client-extra.jar");
 	}
