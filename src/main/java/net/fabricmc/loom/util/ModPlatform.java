@@ -45,6 +45,13 @@ public enum ModPlatform {
 		this.experimental = experimental;
 	}
 
+	/**
+	 * {@return the lowercase ID of this mod platform}
+	 */
+	public String id() {
+		return name().toLowerCase(Locale.ROOT);
+	}
+
 	public boolean isExperimental() {
 		return experimental;
 	}
@@ -60,8 +67,8 @@ public enum ModPlatform {
 	public static void assertPlatform(LoomGradleExtensionAPI extension, ModPlatform platform) {
 		assertPlatform(extension, platform, () -> {
 			String msg = "Loom is not running on %s.%nYou can switch to it by adding 'loom.platform = %s' to your gradle.properties";
-			String name = platform.name().toLowerCase(Locale.ROOT);
-			return msg.formatted(name, name);
+			String id = platform.id();
+			return msg.formatted(id, id);
 		});
 	}
 

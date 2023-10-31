@@ -35,7 +35,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,7 +102,7 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 
 	public static String createForgeMappingsIdentifier(LoomGradleExtension extension, String mappingsName, String version, String classifier, String minecraftVersion) {
 		final String base = FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion);
-		final String platform = extension.getPlatform().get().name().toLowerCase(Locale.ROOT);
+		final String platform = extension.getPlatform().get().id();
 		final String forgeVersion = extension.getForgeProvider().getVersion().getCombined();
 		return base + "-" + platform + "-" + forgeVersion;
 	}
