@@ -46,6 +46,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.process.JavaExecSpec;
@@ -298,10 +300,18 @@ public final class McpExecutor {
 		}
 
 		@Override
-		public Path download(String url) throws IOException {
+		public Path downloadFile(String url) throws IOException {
 			Path path = getDownloadCache().resolve(Hashing.sha256().hashString(url, StandardCharsets.UTF_8).toString().substring(0, 24));
 			redirectAwareDownload(url, path);
 			return path;
+		}
+
+		@Override
+		public Path downloadDependency(String notation) {
+			final Dependency dependency = project.getDependencies().create(notation);
+			final Configuration configuration = project.getConfigurations().detachedConfiguration(dependency);
+			configuration.setTransitive(false);
+			return configuration.getSingleFile().toPath();
 		}
 
 		@Override
