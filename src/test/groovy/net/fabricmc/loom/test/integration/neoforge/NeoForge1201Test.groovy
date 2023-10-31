@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 FabricMC
+ * Copyright (c) 2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test.integration.forge
+package net.fabricmc.loom.test.integration.neoforge
 
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -32,7 +32,7 @@ import net.fabricmc.loom.test.util.GradleProjectTestTrait
 import static net.fabricmc.loom.test.LoomTestConstants.DEFAULT_GRADLE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
-class NeoForgeTest extends Specification implements GradleProjectTestTrait {
+class NeoForge1201Test extends Specification implements GradleProjectTestTrait {
 	@Unroll
 	def "build #mcVersion #forgeVersion #mappings"() {
 		setup:
