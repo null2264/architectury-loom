@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Map;
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -39,6 +39,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.JsonOps;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.Project;
@@ -67,10 +68,11 @@ public class ForgeRunsProvider {
 	}
 
 	private void readTemplates() {
-		for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject("runs").entrySet()) {
-			ForgeRunTemplate template = ForgeRunTemplate.fromJson(entry.getValue().getAsJsonObject());
-			templates.add(template);
-		}
+		final JsonObject runJson = json.getAsJsonObject("runs");
+		final Collection<ForgeRunTemplate> templates = ForgeRunTemplate.MAP_CODEC.parse(JsonOps.INSTANCE, runJson)
+				.getOrThrow(false, error -> project.getLogger().error("Couldn't read run config templates, {}", error))
+				.values();
+		this.templates.addAll(templates);
 	}
 
 	public NamedDomainObjectSet<ForgeRunTemplate> getTemplates() {

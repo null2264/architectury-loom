@@ -81,6 +81,7 @@ repositories {
 			excludeGroupByRegex "org\\.eclipse\\.?.*"
 		}
 	}
+	maven { url "https://libraries.minecraft.net/" }
 }
 
 configurations {
@@ -186,6 +187,7 @@ dependencies {
 	implementation libs.mcinjector
 	implementation libs.opencsv
 	implementation libs.forge.diffpatch
+	implementation 'com.mojang:datafixerupper:6.0.8'
 
 	// Forge mods.toml parsing
 	implementation libs.night.config.toml
