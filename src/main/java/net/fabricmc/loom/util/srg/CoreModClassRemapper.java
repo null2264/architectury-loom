@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2020-2021 FabricMC
+ * Copyright (c) 2020-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +40,10 @@ import java.util.regex.Pattern;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.function.CollectionUtil;
 import net.fabricmc.mappingio.tree.MappingTree;
@@ -54,7 +56,10 @@ import net.fabricmc.mappingio.tree.MappingTree;
 public final class CoreModClassRemapper {
 	private static final Pattern CLASS_NAME_PATTERN = Pattern.compile("^(.*')((?:com\\.mojang\\.|net\\.minecraft\\.)[A-Za-z0-9.-_$]+)('.*)$");
 
-	public static void remapJar(Path jar, MappingTree mappings, Logger logger) throws IOException {
+	public static void remapJar(Project project, Path jar, MappingTree mappings) throws IOException {
+		final Logger logger = project.getLogger();
+		final String sourceNamespace = IntermediaryNamespaces.intermediary(project);
+
 		try (FileSystemUtil.Delegate fs = FileSystemUtil.getJarFileSystem(jar, false)) {
 			Path coremodsJsonPath = fs.getPath("META-INF", "coremods.json");
 
@@ -75,7 +80,7 @@ public final class CoreModClassRemapper {
 
 				if (Files.exists(js)) {
 					logger.info(":remapping coremod '" + file + "'");
-					remap(js, mappings);
+					remap(js, mappings, sourceNamespace);
 				} else {
 					logger.warn("Coremod '" + file + "' listed in coremods.json but not found");
 				}
@@ -83,7 +88,7 @@ public final class CoreModClassRemapper {
 		}
 	}
 
-	public static void remap(Path js, MappingTree mappings) throws IOException {
+	public static void remap(Path js, MappingTree mappings, String sourceNamespace) throws IOException {
 		List<String> lines = Files.readAllLines(js);
 		List<String> output = new ArrayList<>(lines);
 
@@ -93,7 +98,7 @@ public final class CoreModClassRemapper {
 
 			if (matcher.matches()) {
 				String className = matcher.group(2).replace('.', '/');
-				String remapped = CollectionUtil.find(mappings.getClasses(), def -> def.getName("srg").equals(className))
+				String remapped = CollectionUtil.find(mappings.getClasses(), def -> def.getName(sourceNamespace).equals(className))
 						.map(def -> def.getName("named"))
 						.orElse(className);
 

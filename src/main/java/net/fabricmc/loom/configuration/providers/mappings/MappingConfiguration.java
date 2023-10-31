@@ -44,12 +44,8 @@ import java.util.Objects;
 
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonObject;
-
 import dev.architectury.loom.neoforge.MojangMappingsMerger;
-
-import net.fabricmc.loom.api.mappings.layered.MappingContext;
-import net.fabricmc.mappingio.adapter.MappingNsRenamer;
-
+import dev.architectury.loom.util.MappingOption;
 import org.apache.tools.ant.util.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -60,6 +56,7 @@ import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.LoomGradlePlugin;
+import net.fabricmc.loom.api.mappings.layered.MappingContext;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.configuration.providers.forge.FieldMigratedMappingConfiguration;
 import net.fabricmc.loom.configuration.providers.forge.SrgProvider;
@@ -146,7 +143,7 @@ public class MappingConfiguration {
 
 		MappingConfiguration mappingConfiguration;
 
-		if (extension.isForgeLike()) {
+		if (extension.isForge()) { // TODO (Neo): Field migration support
 			mappingConfiguration = new FieldMigratedMappingConfiguration(mappingsIdentifier, workingDir);
 		} else {
 			mappingConfiguration = new MappingConfiguration(mappingsIdentifier, workingDir);
@@ -163,22 +160,27 @@ public class MappingConfiguration {
 	}
 
 	public TinyMappingsService getMappingsService(SharedServiceManager serviceManager) {
-		return getMappingsService(serviceManager, false);
+		return getMappingsService(serviceManager, MappingOption.DEFAULT);
 	}
 
-	public TinyMappingsService getMappingsService(SharedServiceManager serviceManager, boolean withSrg) {
-		final Path tinyMappings;
-
-		// TODO (Neo): Needs a "with Mojang" option
-		if (withSrg) {
+	public TinyMappingsService getMappingsService(SharedServiceManager serviceManager, MappingOption mappingOption) {
+		final Path tinyMappings = switch (mappingOption) {
+		default -> this.tinyMappings;
+		case WITH_SRG -> {
 			if (Files.notExists(this.tinyMappingsWithSrg)) {
 				throw new UnsupportedOperationException("Cannot get mappings service with SRG mappings without SRG enabled!");
 			}
 
-			tinyMappings = this.tinyMappingsWithSrg;
-		} else {
-			tinyMappings = this.tinyMappings;
+			yield this.tinyMappingsWithSrg;
 		}
+		case WITH_MOJANG -> {
+			if (Files.notExists(this.tinyMappingsWithMojang)) {
+				throw new UnsupportedOperationException("Cannot get mappings service with Mojang mappings without Mojang merging enabled!");
+			}
+
+			yield this.tinyMappings;
+		}
+		};
 
 		return TinyMappingsService.create(serviceManager, Objects.requireNonNull(tinyMappings));
 	}
@@ -243,14 +245,14 @@ public class MappingConfiguration {
 
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 
-		if (extension.isForgeLike()) {
+		if (extension.isForge()) {
 			if (!extension.shouldGenerateSrgTiny()) {
 				throw new IllegalStateException("We have to generate srg tiny in a forge environment!");
 			}
 
 			if (Files.notExists(srgToNamedSrg) || extension.refreshDeps()) {
 				try (var serviceManager = new ScopedSharedServiceManager()) {
-					TinyMappingsService mappingsService = getMappingsService(serviceManager, true);
+					TinyMappingsService mappingsService = getMappingsService(serviceManager, MappingOption.WITH_SRG);
 					SrgNamedWriter.writeTo(project.getLogger(), srgToNamedSrg, mappingsService.getMappingTree(), "srg", "named");
 				}
 			}

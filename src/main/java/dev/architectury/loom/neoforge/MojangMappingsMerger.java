@@ -1,5 +1,12 @@
 package dev.architectury.loom.neoforge;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.function.UnaryOperator;
+
 import net.fabricmc.loom.api.mappings.layered.MappingContext;
 import net.fabricmc.loom.api.mappings.layered.MappingLayer;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
@@ -13,15 +20,17 @@ import net.fabricmc.mappingio.adapter.MappingNsRenamer;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.function.UnaryOperator;
-
 public final class MojangMappingsMerger {
 	public static void mergeMojangMappings(MappingContext context, Path raw, Path merged) {
+		try (MappingWriter writer = MappingWriter.create(merged, MappingFormat.TINY_2)) {
+			final MemoryMappingTree mappingTree = mergeMojangMappings(context, raw);
+			mappingTree.accept(writer);
+		} catch (IOException e) {
+			throw ExceptionUtil.createDescriptiveWrapper(UncheckedIOException::new, "Could not write Mojang-merged mappings", e);
+		}
+	}
+
+	public static MemoryMappingTree mergeMojangMappings(MappingContext context, Path raw) {
 		try {
 			var processor = new LayeredMappingsProcessor(null);
 			var inputLayer = new FileLayer(raw, MappingsNamespace.NAMED);
@@ -30,11 +39,7 @@ public final class MojangMappingsMerger {
 				Map<String, String> renames = Map.of(MappingsNamespace.NAMED.toString(), MappingsNamespace.MOJANG.toString());
 				return new MappingNsRenamer(next, renames);
 			});
-			MemoryMappingTree mappingTree = processor.getMappings(List.of(inputLayer, renamedMojangLayer));
-
-			try (MappingWriter writer = MappingWriter.create(merged, MappingFormat.TINY_2)) {
-				mappingTree.accept(writer);
-			}
+			return processor.getMappings(List.of(inputLayer, renamedMojangLayer));
 		} catch (IOException e) {
 			throw ExceptionUtil.createDescriptiveWrapper(UncheckedIOException::new, "Could not merge Mojang mappings", e);
 		}

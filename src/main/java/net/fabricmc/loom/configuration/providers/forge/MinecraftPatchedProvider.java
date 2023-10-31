@@ -52,11 +52,15 @@ import java.util.stream.Stream;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import de.oceanlabs.mcp.mcinjector.adaptors.ParameterAnnotationFixer;
+import dev.architectury.loom.util.MappingOption;
 import dev.architectury.loom.util.TempFiles;
 import dev.architectury.tinyremapper.InputTag;
 import dev.architectury.tinyremapper.NonClassCopyMode;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
+
+import net.fabricmc.loom.build.IntermediaryNamespaces;
+
 import org.gradle.api.Project;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
@@ -220,14 +224,16 @@ public class MinecraftPatchedProvider {
 
 	private TinyRemapper buildRemapper(SharedServiceManager serviceManager, Path input) throws IOException {
 		Path[] libraries = TinyRemapperHelper.getMinecraftCompileLibraries(project);
-		TinyMappingsService mappingsService = getExtension().getMappingConfiguration().getMappingsService(serviceManager, true);
-		MemoryMappingTree mappingsWithSrg = mappingsService.getMappingTree();
+		final MappingOption mappingOption = MappingOption.forPlatform(getExtension());
+		TinyMappingsService mappingsService = getExtension().getMappingConfiguration().getMappingsService(serviceManager, mappingOption);
+		final String sourceNamespace = IntermediaryNamespaces.intermediary(project);
+		MemoryMappingTree mappings = mappingsService.getMappingTree();
 
 		TinyRemapper remapper = TinyRemapper.newRemapper()
 				.logger(logger::lifecycle)
 				.logUnknownInvokeDynamic(false)
-				.withMappings(TinyRemapperHelper.create(mappingsWithSrg, "srg", "official", true))
-				.withMappings(InnerClassRemapper.of(InnerClassRemapper.readClassNames(input), mappingsWithSrg, "srg", "official"))
+				.withMappings(TinyRemapperHelper.create(mappings, sourceNamespace, "official", true))
+				.withMappings(InnerClassRemapper.of(InnerClassRemapper.readClassNames(input), mappings, sourceNamespace, "official"))
 				.renameInvalidLocals(true)
 				.rebuildSourceFilenames(true)
 				.build();

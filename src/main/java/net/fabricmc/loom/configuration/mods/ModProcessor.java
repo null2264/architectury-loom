@@ -41,10 +41,12 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonObject;
+import dev.architectury.loom.util.MappingOption;
 import dev.architectury.tinyremapper.InputTag;
 import dev.architectury.tinyremapper.NonClassCopyMode;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
+import dev.architectury.tinyremapper.extension.mixin.MixinExtension;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.attributes.Usage;
@@ -166,8 +168,15 @@ public class ModProcessor {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		boolean srg = (fromM.equals("srg") || toM.equals("srg")) && extension.isForgeLike();
-		MemoryMappingTree mappings = mappingConfiguration.getMappingsService(serviceManager, srg).getMappingTree();
+		MappingOption mappingOption = MappingOption.DEFAULT;
+
+		if ((fromM.equals(MappingsNamespace.SRG.toString()) || toM.equals(MappingsNamespace.SRG.toString())) && extension.isForge()) {
+			mappingOption = MappingOption.WITH_SRG;
+		} else if ((fromM.equals(MappingsNamespace.MOJANG.toString()) || toM.equals(MappingsNamespace.MOJANG.toString())) && extension.isNeoForge()) {
+			mappingOption = MappingOption.WITH_MOJANG;
+		}
+
+		MemoryMappingTree mappings = mappingConfiguration.getMappingsService(serviceManager, mappingOption).getMappingTree();
 		LoggerFilter.replaceSystemOut();
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
 				.withKnownIndyBsm(extension.getKnownIndyBsms().get())
@@ -183,6 +192,10 @@ public class ModProcessor {
 		if (kotlinClasspathService != null) {
 			kotlinRemapperClassloader = KotlinRemapperClassloader.create(kotlinClasspathService);
 			builder.extension(kotlinRemapperClassloader.getTinyRemapperExtension());
+		}
+
+		if (extension.isNeoForge()) {
+			builder.extension(new MixinExtension());
 		}
 
 		final TinyRemapper remapper = builder.build();
@@ -265,8 +278,8 @@ public class ModProcessor {
 			remapJarManifestEntries(output);
 
 			if (extension.isForgeLike()) {
-				AtRemapper.remap(project.getLogger(), output, mappings);
-				CoreModClassRemapper.remapJar(output, mappings, project.getLogger());
+				AtRemapper.remap(project, output, mappings);
+				CoreModClassRemapper.remapJar(project, output, mappings);
 			}
 
 			dependency.copyToCache(project, output, null);

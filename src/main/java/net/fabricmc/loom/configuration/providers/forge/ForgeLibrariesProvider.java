@@ -33,6 +33,12 @@ import java.util.List;
 
 import com.google.common.hash.Hashing;
 import com.google.gson.JsonElement;
+import dev.architectury.loom.neoforge.MojangMappingsMerger;
+
+import net.fabricmc.loom.api.mappings.layered.MappingContext;
+
+import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
+
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleDependency;
@@ -158,6 +164,10 @@ public class ForgeLibrariesProvider {
 				if (Files.exists(fs.get().getPath("net/minecraftforge/fml/common/asm/ObjectHolderDefinalize.class"))) {
 					remapObjectHolder(project, outputJar, mappingConfiguration);
 				}
+
+				if (Files.exists(fs.getPath("net/neoforged/fml/common/asm/ObjectHolderDefinalize.class"))) {
+					remapNeoForgeObjectHolder(project, outputJar, mappingConfiguration);
+				}
 			}
 
 			// Copy sources when not running under CI.
@@ -185,6 +195,24 @@ public class ForgeLibrariesProvider {
 			RemapObjectHolderVisitor.remapObjectHolder(
 					outputJar, "net.minecraftforge.fml.common.asm.ObjectHolderDefinalize", mappings,
 					MappingsNamespace.SRG.toString(), MappingsNamespace.NAMED.toString()
+			);
+		} catch (IOException e) {
+			throw new IOException("Could not remap object holders in " + outputJar, e);
+		}
+	}
+
+	private static void remapNeoForgeObjectHolder(Project project, Path outputJar, MappingConfiguration mappingConfiguration) throws IOException {
+		try {
+			// Merge Mojang mappings. The real Mojang mapping file hasn't been created yet since the usual Mojang merging
+			// process occurs after all Forge libraries have been provided.
+			// Forge libs are needed for MC, which is needed for the mappings.
+			final MappingContext context = new GradleMappingContext(project, "tmp-neoforge-libs");
+			final MemoryMappingTree mappings = MojangMappingsMerger.mergeMojangMappings(context, mappingConfiguration.tinyMappings);
+
+			// Remap the object holders.
+			RemapObjectHolderVisitor.remapObjectHolder(
+					outputJar, "net.neoforged.fml.common.asm.ObjectHolderDefinalize", mappings,
+					MappingsNamespace.MOJANG.toString(), MappingsNamespace.NAMED.toString()
 			);
 		} catch (IOException e) {
 			throw new IOException("Could not remap object holders in " + outputJar, e);

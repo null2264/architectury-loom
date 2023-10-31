@@ -36,8 +36,12 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.function.Function;
 
+import dev.architectury.loom.util.MappingOption;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
+
+import net.fabricmc.loom.build.IntermediaryNamespaces;
+
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
@@ -221,9 +225,19 @@ public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvide
 
 		if (extension.isForgeLikeAndOfficial()) {
 			try (var serviceManager = new ScopedSharedServiceManager()) {
-				TinyMappingsService mappingsService = extension.getMappingConfiguration().getMappingsService(serviceManager, true);
-				MemoryMappingTree mappingsWithSrg = mappingsService.getMappingTree();
-				RemapObjectHolderVisitor.remapObjectHolder(remappedJars.outputJar().getPath(), "net.minecraftforge.registries.ObjectHolderRegistry", mappingsWithSrg, "srg", "named");
+				final MappingOption mappingOption = MappingOption.forPlatform(extension);
+				final TinyMappingsService mappingsService = extension.getMappingConfiguration().getMappingsService(serviceManager, mappingOption);
+				final String className;
+
+				if (extension.isNeoForge()) {
+					className = "net.neoforged.neoforge.registries.ObjectHolderRegistry";
+				} else {
+					className = "net.minecraftforge.registries.ObjectHolderRegistry";
+				}
+
+				final String sourceNamespace = IntermediaryNamespaces.intermediary(project);
+				final MemoryMappingTree mappings = mappingsService.getMappingTree();
+				RemapObjectHolderVisitor.remapObjectHolder(remappedJars.outputJar().getPath(), className, mappings, sourceNamespace, "named");
 			}
 		}
 	}

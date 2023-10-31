@@ -36,6 +36,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import net.fabricmc.loom.build.IntermediaryNamespaces;
+
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.logging.configuration.ConsoleOutput;
 import org.gradle.api.tasks.TaskAction;
@@ -129,7 +131,8 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 			}
 
 			if (PropertyUtil.getAndFinalize(getExtension().getForge().getUseCustomMixin())) {
-				launchConfig.property("mixin.forgeloom.inject.mappings.srg-named", getExtension().getMappingConfiguration().getReplacedTarget(getExtension(), "srg").toAbsolutePath().toString());
+				final String intermediaryNs = IntermediaryNamespaces.intermediary(getProject());
+				launchConfig.property("mixin.forgeloom.inject.mappings.srg-named", getExtension().getMappingConfiguration().getReplacedTarget(getExtension(), intermediaryNs).toAbsolutePath().toString());
 			} else {
 				launchConfig.property("net.minecraftforge.gradle.GradleStart.srg.srg-mcp", getExtension().getMappingConfiguration().srgToNamedSrg.toAbsolutePath().toString());
 			}

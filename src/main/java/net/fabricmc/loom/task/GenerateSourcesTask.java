@@ -416,9 +416,12 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			if (Files.exists(linemap)) {
 				if (getParameters().getForge().get()) {
 					try {
-						// Remove Forge classes from linemap
+						// Remove Forge and NeoForge classes from linemap
 						// TODO: We should instead not decompile Forge's classes at all
-						LineMapVisitor.process(linemap, next -> new LineMapClassFilter(next, name -> !name.startsWith("net/minecraftforge/")));
+						LineMapVisitor.process(linemap, next -> new LineMapClassFilter(next, name -> {
+							// Skip both Forge and NeoForge classes.
+							return !name.startsWith("net/minecraftforge/") && !name.startsWith("net/neoforged/");
+						}));
 					} catch (IOException e) {
 						throw new UncheckedIOException("Failed to process linemap", e);
 					}

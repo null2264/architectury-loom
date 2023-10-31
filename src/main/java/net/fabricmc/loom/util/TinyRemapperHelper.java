@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableMap;
+import dev.architectury.loom.util.MappingOption;
 import dev.architectury.tinyremapper.IMappingProvider;
 import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
@@ -70,8 +71,9 @@ public final class TinyRemapperHelper {
 
 	public static TinyRemapper getTinyRemapper(Project project, SharedServiceManager serviceManager, String fromM, String toM, boolean fixRecords, Consumer<TinyRemapper.Builder> builderConsumer, Set<String> fromClassNames) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		boolean srg = (fromM.equals(MappingsNamespace.SRG.toString()) || toM.equals(MappingsNamespace.SRG.toString())) && extension.isForgeLike();
-		MemoryMappingTree mappingTree = extension.getMappingConfiguration().getMappingsService(serviceManager, srg).getMappingTree();
+		// TODO (Neo): Bring back the fromM.equals(srg) || toM.equals(srg) check, also for mojang ns?
+		final MappingOption mappingOption = MappingOption.forPlatform(extension);
+		MemoryMappingTree mappingTree = extension.getMappingConfiguration().getMappingsService(serviceManager, mappingOption).getMappingTree();
 
 		if (fixRecords && !mappingTree.getSrcNamespace().equals(fromM)) {
 			throw new IllegalStateException("Mappings src namespace must match remap src namespace");
