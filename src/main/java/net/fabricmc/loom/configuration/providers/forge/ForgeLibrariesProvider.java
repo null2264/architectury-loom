@@ -75,7 +75,16 @@ public class ForgeLibrariesProvider {
 					if (lib.getAsString().contains("0.8.2")) {
 						dep = "net.fabricmc:sponge-mixin:0.8.2+build.24";
 					} else {
-						dep = "dev.architectury:mixin-patched" + lib.getAsString().substring(lib.getAsString().lastIndexOf(":")) + ".+";
+						String version = lib.getAsString().substring(lib.getAsString().lastIndexOf(":"));
+						// Used for the file extension, for example @jar
+						int atIndex = version.indexOf('@');
+
+						if (atIndex >= 0) {
+							// Strip the file extension away
+							version = version.substring(0, atIndex);
+						}
+
+						dep = "dev.architectury:mixin-patched" + version + ".+";
 					}
 				}
 			}
