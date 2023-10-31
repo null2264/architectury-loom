@@ -20,6 +20,7 @@ test-retry = "1.5.4"
 checkstyle = "10.12.2"
 codenarc = "3.3.0"
 jacoco = "0.8.10"
+shadow = "8.1.1"
 
 # Forge libraries
 forge-installer-tools = "1.2.0"
@@ -28,6 +29,7 @@ mcinjector = "3.8.0"
 opencsv = "5.4"
 forge-diffpatch = "2.0.7"
 night-config = "3.6.6"
+datafixerupper = "6.0.8"
 
 [libraries]
 # Loom compile libraries
@@ -60,11 +62,13 @@ mcinjector = { module = "de.oceanlabs.mcp:mcinjector", version.ref = "mcinjector
 opencsv = { module = "com.opencsv:opencsv", version.ref = "opencsv" }
 forge-diffpatch = { module = "net.minecraftforge:DiffPatch", version.ref = "forge-diffpatch" }
 night-config-toml = { module = "com.electronwill.night-config:toml", version.ref = "night-config" }
+datafixerupper = { module = "com.mojang:datafixerupper", version.ref = "datafixerupper" }
 
 [plugins]
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 retry = { id = "org.gradle.test-retry", version.ref = "test-retry" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 
 [bundles]
 asm = ["asm", "asm-analysis", "asm-commons", "asm-tree", "asm-util"]

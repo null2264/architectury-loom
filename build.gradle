@@ -11,6 +11,7 @@ plugins {
 	alias(libs.plugins.kotlin) apply false // Delay this so we can perform magic 🪄 first.
 	alias(libs.plugins.spotless)
 	alias(libs.plugins.retry)
+	alias(libs.plugins.shadow)
 }
 
 /**
@@ -91,6 +92,13 @@ configurations {
 	compileClasspath.extendsFrom bootstrap
 	runtimeClasspath.extendsFrom bootstrap
 	testRuntimeClasspath.extendsFrom bootstrap
+	bundled {
+		transitive = false
+	}
+	compileClasspath.extendsFrom bundled
+	runtimeClasspath.extendsFrom bundled
+	testCompileClasspath.extendsFrom bundled
+	testRuntimeClasspath.extendsFrom bundled
 }
 
 configurations.all {
@@ -187,7 +195,7 @@ dependencies {
 	implementation libs.mcinjector
 	implementation libs.opencsv
 	implementation libs.forge.diffpatch
-	implementation 'com.mojang:datafixerupper:6.0.8'
+	bundled libs.datafixerupper
 
 	// Forge mods.toml parsing
 	implementation libs.night.config.toml
@@ -223,6 +231,13 @@ jar {
 	from sourceSets.cfr.output.classesDirs
 	from sourceSets.fernflower.output.classesDirs
 	from sourceSets.vineflower.output.classesDirs
+	archiveClassifier = "slim"
+}
+
+shadowJar {
+	archiveClassifier = ""
+	configurations = [project.configurations.bundled]
+	relocate 'com.mojang', 'dev.architectury.loom.relocated.com.mojang'
 }
 
 base {
@@ -334,14 +349,14 @@ publishing {
 	publications {
 		if (isSnapshot) return
 
-			// Also publish a snapshot so people can use the latest version if they wish
-			snapshot(MavenPublication) { publication ->
-				groupId project.group
-				artifactId project.base.archivesName.get()
-				version baseVersion + '-SNAPSHOT'
+		// Also publish a snapshot so people can use the latest version if they wish
+		snapshot(MavenPublication) { publication ->
+			groupId project.group
+			artifactId project.base.archivesName.get()
+			version baseVersion + '-SNAPSHOT'
 
-				from components.java
-			}
+			shadow.component(publication)
+		}
 
 		// Manually crate the plugin marker for snapshot versions
 		snapshotPlugin(MavenPublication) {
