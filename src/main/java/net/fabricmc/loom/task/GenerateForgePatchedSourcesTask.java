@@ -62,6 +62,7 @@ import net.fabricmc.loom.util.SourceRemapper;
 import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.loom.util.service.SharedServiceManager;
 
+// TODO: NeoForge support
 public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 	/**
 	 * The SRG Minecraft file produced by the MCP executor.
