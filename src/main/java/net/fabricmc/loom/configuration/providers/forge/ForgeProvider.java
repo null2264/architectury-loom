@@ -66,7 +66,7 @@ public class ForgeProvider extends DependencyProvider {
 
 	@Override
 	public String getTargetConfig() {
-		return Constants.Configurations.FORGE;
+		return platform == ModPlatform.NEOFORGE ? Constants.Configurations.NEOFORGE : Constants.Configurations.FORGE;
 	}
 
 	/**
