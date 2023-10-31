@@ -33,23 +33,23 @@ import static net.fabricmc.loom.test.LoomTestConstants.DEFAULT_GRADLE
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
 
 class SimpleNeoForgeTest extends Specification implements GradleProjectTestTrait {
-    @Unroll
-    def "build #mcVersion #neoforgeVersion #mappings"() {
-        setup:
-        def gradle = gradleProject(project: "neoforge/simple", version: DEFAULT_GRADLE)
-        gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', mcVersion)
-                .replace('@NEOFORGEVERSION@', neoforgeVersion)
-                .replace('@MAPPINGS@', mappings)
+	@Unroll
+	def "build #mcVersion #neoforgeVersion #mappings"() {
+		setup:
+		def gradle = gradleProject(project: "neoforge/simple", version: DEFAULT_GRADLE)
+		gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', mcVersion)
+				.replace('@NEOFORGEVERSION@', neoforgeVersion)
+				.replace('@MAPPINGS@', mappings)
 
-        when:
-        def result = gradle.run(task: "build")
+		when:
+		def result = gradle.run(task: "build")
 
-        then:
-        result.task(":build").outcome == SUCCESS
+		then:
+		result.task(":build").outcome == SUCCESS
 
-        where:
-        mcVersion | neoforgeVersion | mappings
-        '1.20.2'  | '20.2.5-beta' | 'loom.officialMojangMappings()'
-        '1.20.2'  | '20.2.5-beta' | '"net.fabricmc:yarn:1.20.1+build.1:v2"'
-    }
+		where:
+		mcVersion | neoforgeVersion | mappings
+		'1.20.2'  | '20.2.5-beta' | 'loom.officialMojangMappings()'
+		'1.20.2'  | '20.2.5-beta' | '"net.fabricmc:yarn:1.20.1+build.1:v2"'
+	}
 }

@@ -34,11 +34,6 @@ import java.util.List;
 import com.google.common.hash.Hashing;
 import com.google.gson.JsonElement;
 import dev.architectury.loom.neoforge.MojangMappingsMerger;
-
-import net.fabricmc.loom.api.mappings.layered.MappingContext;
-
-import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
-
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleDependency;
@@ -47,9 +42,11 @@ import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.ResolvedConfiguration;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.api.mappings.layered.MappingContext;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.mods.ModConfigurationRemapper;
 import net.fabricmc.loom.configuration.mods.dependency.LocalMavenHelper;
+import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
 import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ExceptionUtil;

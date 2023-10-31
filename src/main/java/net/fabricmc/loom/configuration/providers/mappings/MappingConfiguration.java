@@ -165,7 +165,6 @@ public class MappingConfiguration {
 
 	public TinyMappingsService getMappingsService(SharedServiceManager serviceManager, MappingOption mappingOption) {
 		final Path tinyMappings = switch (mappingOption) {
-		default -> this.tinyMappings;
 		case WITH_SRG -> {
 			if (Files.notExists(this.tinyMappingsWithSrg)) {
 				throw new UnsupportedOperationException("Cannot get mappings service with SRG mappings without SRG enabled!");
@@ -180,6 +179,7 @@ public class MappingConfiguration {
 
 			yield this.tinyMappings;
 		}
+		default -> this.tinyMappings;
 		};
 
 		return TinyMappingsService.create(serviceManager, Objects.requireNonNull(tinyMappings));

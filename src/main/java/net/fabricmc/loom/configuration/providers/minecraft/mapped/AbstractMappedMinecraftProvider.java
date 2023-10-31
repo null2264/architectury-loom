@@ -39,13 +39,11 @@ import java.util.function.Function;
 import dev.architectury.loom.util.MappingOption;
 import dev.architectury.tinyremapper.OutputConsumerPath;
 import dev.architectury.tinyremapper.TinyRemapper;
-
-import net.fabricmc.loom.build.IntermediaryNamespaces;
-
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.configuration.mods.dependency.LocalMavenHelper;
 import net.fabricmc.loom.configuration.providers.mappings.IntermediaryMappingsProvider;

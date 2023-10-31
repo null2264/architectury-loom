@@ -41,9 +41,6 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import dev.architectury.loom.util.MappingOption;
-
-import net.fabricmc.loom.build.IntermediaryNamespaces;
-
 import org.apache.commons.io.output.NullOutputStream;
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.mercury.Mercury;
@@ -52,6 +49,7 @@ import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
 import net.fabricmc.loom.task.GenerateSourcesTask;
 import net.fabricmc.loom.util.DeletingFileVisitor;

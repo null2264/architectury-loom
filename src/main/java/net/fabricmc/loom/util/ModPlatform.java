@@ -46,7 +46,7 @@ public enum ModPlatform {
 	}
 
 	/**
-	 * {@return the lowercase ID of this mod platform}
+	 * Returns the lowercase ID of this mod platform.
 	 */
 	public String id() {
 		return name().toLowerCase(Locale.ROOT);

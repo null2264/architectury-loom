@@ -5,8 +5,7 @@ import net.fabricmc.loom.api.LoomGradleExtensionAPI;
 public enum MappingOption {
 	DEFAULT,
 	WITH_SRG,
-	WITH_MOJANG,
-	;
+	WITH_MOJANG;
 
 	public static MappingOption forPlatform(LoomGradleExtensionAPI extension) {
 		return switch (extension.getPlatform().get()) {

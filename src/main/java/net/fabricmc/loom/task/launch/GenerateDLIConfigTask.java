@@ -36,12 +36,11 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
-import net.fabricmc.loom.build.IntermediaryNamespaces;
-
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.logging.configuration.ConsoleOutput;
 import org.gradle.api.tasks.TaskAction;
 
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 import net.fabricmc.loom.configuration.providers.forge.ForgeRunTemplate;
 import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;

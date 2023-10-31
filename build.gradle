@@ -254,8 +254,11 @@ spotless {
 		target 'src/**/*.gradle', '*.gradle'
 		greclipse()
 
-		// This file uses a @MAPPINGS@ token which is not valid Groovy
-		targetExclude('**/projects/forge/simple/build.gradle')
+		targetExclude(
+				// These files use a @MAPPINGS@ token which is not valid Groovy
+				'**/projects/forge/simple/build.gradle',
+				'**/projects/neoforge/simple/build.gradle'
+				)
 	}
 
 	kotlin {
