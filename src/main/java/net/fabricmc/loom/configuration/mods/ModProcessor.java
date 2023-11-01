@@ -200,7 +200,7 @@ public class ModProcessor {
 
 		final TinyRemapper remapper = builder.build();
 
-		for (Path minecraftJar : extension.getMinecraftJars(extension.isForgeLike() ? MappingsNamespace.SRG : MappingsNamespace.INTERMEDIARY)) {
+		for (Path minecraftJar : extension.getMinecraftJars(IntermediaryNamespaces.intermediaryNamespace(project))) {
 			remapper.readClassPathAsync(minecraftJar);
 		}
 

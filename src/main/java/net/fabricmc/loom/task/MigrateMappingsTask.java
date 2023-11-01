@@ -192,9 +192,13 @@ public abstract class MigrateMappingsTask extends AbstractLoomTask {
 			mercury.getClassPath().add(intermediaryJar);
 		}
 
-		if (extension.isForgeLike()) {
+		if (extension.isForge()) {
 			for (Path srgJar : extension.getMinecraftJars(MappingsNamespace.SRG)) {
 				mercury.getClassPath().add(srgJar);
+			}
+		} else if (extension.isNeoForge()) {
+			for (Path mojangJar : extension.getMinecraftJars(MappingsNamespace.MOJANG)) {
+				mercury.getClassPath().add(mojangJar);
 			}
 		}
 

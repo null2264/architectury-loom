@@ -34,11 +34,18 @@ public final class IntermediaryNamespaces {
 	 * Returns the intermediary namespace of the project.
 	 */
 	public static String intermediary(Project project) {
+		return intermediaryNamespace(project).toString();
+	}
+
+	/**
+	 * Returns the intermediary namespace of the project.
+	 */
+	public static MappingsNamespace intermediaryNamespace(Project project) {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		return switch (extension.getPlatform().get()) {
-		case FABRIC, QUILT -> MappingsNamespace.INTERMEDIARY.toString();
-		case FORGE -> MappingsNamespace.SRG.toString();
-		case NEOFORGE -> MappingsNamespace.MOJANG.toString();
+			case FABRIC, QUILT -> MappingsNamespace.INTERMEDIARY;
+			case FORGE -> MappingsNamespace.SRG;
+			case NEOFORGE -> MappingsNamespace.MOJANG;
 		};
 	}
 

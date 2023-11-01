@@ -221,8 +221,9 @@ public class ForgeSourcesRemapper {
 			mercury.getClassPath().add(file.toPath());
 		}
 
-		// Distinct and add the srg jar at the top, so it gets prioritized
-		mercury.getClassPath().addAll(0, extension.getMinecraftJars(MappingsNamespace.SRG));
+		// Distinct and add the srg/mojang jar at the top, so it gets prioritized
+		MappingsNamespace sourceNs = extension.isNeoForge() ? MappingsNamespace.MOJANG : MappingsNamespace.SRG;
+		mercury.getClassPath().addAll(0, extension.getMinecraftJars(sourceNs));
 
 		List<Path> newClassPath = mercury.getClassPath().stream()
 				.distinct()
