@@ -16,7 +16,9 @@ import net.fabricmc.loom.util.ExceptionUtil;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.MappingVisitor;
 import net.fabricmc.mappingio.MappingWriter;
+import net.fabricmc.mappingio.adapter.MappingNsCompleter;
 import net.fabricmc.mappingio.adapter.MappingNsRenamer;
+import net.fabricmc.mappingio.adapter.MappingSourceNsSwitch;
 import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
@@ -39,7 +41,13 @@ public final class MojangMappingsMerger {
 				Map<String, String> renames = Map.of(MappingsNamespace.NAMED.toString(), MappingsNamespace.MOJANG.toString());
 				return new MappingNsRenamer(next, renames);
 			});
-			return processor.getMappings(List.of(inputLayer, renamedMojangLayer));
+			MemoryMappingTree incomplete = processor.getMappings(List.of(inputLayer, renamedMojangLayer));
+			MemoryMappingTree result = new MemoryMappingTree();
+			MappingVisitor visitor = new MappingSourceNsSwitch(result, MappingsNamespace.OFFICIAL.toString());
+			Map<String, String> toComplete = Map.of(MappingsNamespace.INTERMEDIARY.toString(), MappingsNamespace.OFFICIAL.toString());
+			visitor = new MappingNsCompleter(visitor, toComplete);
+			incomplete.accept(visitor);
+			return result;
 		} catch (IOException e) {
 			throw ExceptionUtil.createDescriptiveWrapper(UncheckedIOException::new, "Could not merge Mojang mappings", e);
 		}
