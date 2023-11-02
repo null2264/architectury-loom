@@ -36,7 +36,7 @@ public final class MojangMappingsMerger {
 		try {
 			var processor = new LayeredMappingsProcessor(null);
 			var inputLayer = new FileLayer(raw, MappingsNamespace.NAMED);
-			var mojangLayer = new MojangMappingsSpec(true).createLayer(context);
+			var mojangLayer = new MojangMappingsSpec(() -> true, true).createLayer(context);
 			var renamedMojangLayer = new WrappedLayer(mojangLayer, next -> {
 				Map<String, String> renames = Map.of(MappingsNamespace.NAMED.toString(), MappingsNamespace.MOJANG.toString());
 				return new MappingNsRenamer(next, renames);
