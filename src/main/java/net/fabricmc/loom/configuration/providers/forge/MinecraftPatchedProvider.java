@@ -89,12 +89,14 @@ import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.function.FsPathConsumer;
 import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.loom.util.service.SharedServiceManager;
+import net.fabricmc.loom.util.srg.CoreModClassRemapper;
 import net.fabricmc.loom.util.srg.InnerClassRemapper;
+import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class MinecraftPatchedProvider {
 	private static final String LOOM_PATCH_VERSION_KEY = "Loom-Patch-Version";
-	private static final String CURRENT_LOOM_PATCH_VERSION = "8";
+	private static final String CURRENT_LOOM_PATCH_VERSION = "9";
 	private static final String NAME_MAPPING_SERVICE_PATH = "/inject/META-INF/services/cpw.mods.modlauncher.api.INameMappingService";
 
 	private final Project project;
@@ -434,7 +436,15 @@ public class MinecraftPatchedProvider {
 		}
 
 		copyUserdevFiles(forgeUserdevJar, mcOutput);
+		remapCoreMods(mcOutput, serviceManager);
 		applyLoomPatchVersion(mcOutput);
+	}
+
+	private void remapCoreMods(Path patchedJar, SharedServiceManager serviceManager) throws Exception {
+		final MappingOption mappingOption = MappingOption.forPlatform(getExtension());
+		final TinyMappingsService mappingsService = getExtension().getMappingConfiguration().getMappingsService(serviceManager, mappingOption);
+		final MappingTree mappings = mappingsService.getMappingTree();
+		CoreModClassRemapper.remapJar(project, patchedJar, mappings);
 	}
 
 	private void patchJars() throws Exception {
