@@ -44,7 +44,9 @@ public final class MojangMappingsMerger {
 			MemoryMappingTree incomplete = processor.getMappings(List.of(inputLayer, renamedMojangLayer));
 			MemoryMappingTree result = new MemoryMappingTree();
 			MappingVisitor visitor = new MappingSourceNsSwitch(result, MappingsNamespace.OFFICIAL.toString());
-			Map<String, String> toComplete = Map.of(MappingsNamespace.INTERMEDIARY.toString(), MappingsNamespace.OFFICIAL.toString());
+			// Run via intermediary first to drop any missing names.
+			visitor = new MappingSourceNsSwitch(visitor, MappingsNamespace.INTERMEDIARY.toString(), true);
+			Map<String, String> toComplete = Map.of(MappingsNamespace.MOJANG.toString(), MappingsNamespace.OFFICIAL.toString());
 			visitor = new MappingNsCompleter(visitor, toComplete);
 			incomplete.accept(visitor);
 			return result;
