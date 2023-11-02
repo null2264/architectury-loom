@@ -18,11 +18,6 @@ group = project.maven_group
 def mcVersion = "@MCVERSION@"
 def neoforgeVersion = "@NEOFORGEVERSION@"
 
-loom {
-	// TODO (Neo): Enable joined MC when it works
-	clientOnlyMinecraftJar()
-}
-
 repositories {
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
