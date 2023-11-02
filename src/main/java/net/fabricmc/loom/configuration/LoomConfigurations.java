@@ -157,10 +157,16 @@ public abstract class LoomConfigurations implements Runnable {
 			extendsFrom(JavaPlugin.TEST_COMPILE_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_EXTRA);
 			extendsFrom(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, Constants.Configurations.FORGE_EXTRA);
 
-			// Add Forge dev-time dependencies
-			getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.FORGE_RUNTIME.mavenNotation());
+			// Add Forge/NeoForge shared dev-time dependencies
+			getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.NAMING_SERVICE.mavenNotation());
 			getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.UNPROTECT.mavenNotation());
 			getDependencies().add(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME, LoomVersions.JAVAX_ANNOTATIONS.mavenNotation());
+
+			// Add Forge-only dev-time dependencies
+			if (extension.isForge()) {
+				getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.MIXIN_REMAPPER_SERVICE.mavenNotation());
+				getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.MCP_ANNOTATIONS.mavenNotation());
+			}
 		}
 	}
 

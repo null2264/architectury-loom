@@ -13,7 +13,7 @@ native-support = "1.0.1"
 
 # Forge Runtime depedencies
 javax-annotations = "3.0.2"
-forge-runtime = "1.1.8"
+forge-runtime = "2.0.9999"
 access-transformers = "3.0.1"
 access-transformers-new = "8.0.5"
 unprotect = "1.2.0"
@@ -34,7 +34,9 @@ native-support = { module = "net.fabricmc:fabric-loom-native-support", version.r
 
 # Forge Runtime depedencies
 javax-annotations = { module = "com.google.code.findbugs:jsr305", version.ref = "javax-annotations" }
-forge-runtime = { module = "dev.architectury:architectury-loom-runtime", version.ref = "forge-runtime" }
+mixin-remapper-service = { module = "dev.architectury:architectury-mixin-remapper-service", version.ref = "forge-runtime" }
+naming-service = { module = "dev.architectury:architectury-naming-service", version.ref = "forge-runtime" }
+mcp-annotations = { module = "dev.architectury:mcp-annotations", version.ref = "forge-runtime" }
 access-transformers = { module = "net.minecraftforge:accesstransformers", version.ref = "access-transformers" }
 access-transformers-new = { module = "net.minecraftforge:accesstransformers", version.ref = "access-transformers-new" }
 unprotect = { module = "io.github.juuxel:unprotect", version.ref = "unprotect" }

@@ -109,13 +109,14 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.map(File::getAbsolutePath)
 					.collect(Collectors.joining(File.pathSeparator));
 
-			launchConfig
-					// Should match YarnNamingService.PATH_TO_MAPPINGS in forge-runtime
-					// TODO (Neo): Can we rename this property for Neo? It's not at all accurate.
-					.property("fabric.yarnWithSrg.path", getExtension().getPlatformMappingFile().toAbsolutePath().toString())
-					.property("unprotect.mappings", unprotectMappings)
+			final String intermediateNs = IntermediaryNamespaces.intermediary(getProject());
+			final String mappingsPath = getExtension().getPlatformMappingFile().toAbsolutePath().toString();
 
-					.property("mixin.env.remapRefMap", "true");
+			launchConfig
+					.property("unprotect.mappings", unprotectMappings)
+					// See ArchitecturyNamingService in forge-runtime
+					.property("architectury.naming.sourceNamespace", intermediateNs)
+					.property("architectury.naming.mappingsPath", mappingsPath);
 
 			final List<String> dataGenMods = getExtension().getForge().getDataGenMods();
 
@@ -129,11 +130,17 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 						.argument("data", getProject().file("src/generated/resources").getAbsolutePath());
 			}
 
-			if (PropertyUtil.getAndFinalize(getExtension().getForge().getUseCustomMixin())) {
-				final String intermediaryNs = IntermediaryNamespaces.intermediary(getProject());
-				launchConfig.property("mixin.forgeloom.inject.mappings.srg-named", getExtension().getMappingConfiguration().getReplacedTarget(getExtension(), intermediaryNs).toAbsolutePath().toString());
-			} else {
-				launchConfig.property("net.minecraftforge.gradle.GradleStart.srg.srg-mcp", getExtension().getMappingConfiguration().srgToNamedSrg.toAbsolutePath().toString());
+			if (getExtension().isForge()) {
+				launchConfig.property("mixin.env.remapRefMap", "true");
+
+				if (PropertyUtil.getAndFinalize(getExtension().getForge().getUseCustomMixin())) {
+					// See mixin remapper service in forge-runtime
+					launchConfig
+							.property("architectury.mixinRemapper.sourceNamespace", intermediateNs)
+							.property("architectury.mixinRemapper.mappingsPath", mappingsPath);
+				} else {
+					launchConfig.property("net.minecraftforge.gradle.GradleStart.srg.srg-mcp", getExtension().getMappingConfiguration().srgToNamedSrg.toAbsolutePath().toString());
+				}
 			}
 
 			Set<String> mixinConfigs = PropertyUtil.getAndFinalize(getExtension().getForge().getMixinConfigs());
