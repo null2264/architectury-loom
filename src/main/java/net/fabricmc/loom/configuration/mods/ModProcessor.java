@@ -180,7 +180,7 @@ public class ModProcessor {
 		LoggerFilter.replaceSystemOut();
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
 				.withKnownIndyBsm(extension.getKnownIndyBsms().get())
-				.withMappings(TinyRemapperHelper.create(mappingConfiguration.getMappingsService(serviceManager).getMappingTree(), fromM, toM, false))
+				.withMappings(TinyRemapperHelper.create(mappings, fromM, toM, false))
 				.logger(project.getLogger()::lifecycle)
 				.logUnknownInvokeDynamic(false)
 				.renameInvalidLocals(false)
