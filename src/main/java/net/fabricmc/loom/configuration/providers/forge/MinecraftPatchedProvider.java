@@ -139,7 +139,9 @@ public class MinecraftPatchedProvider {
 	private void initPatchedFiles() {
 		String forgeVersion = getExtension().getForgeProvider().getVersion().getCombined();
 		Path forgeWorkingDir = ForgeProvider.getForgeCache(project);
-		String patchId = "forge-" + forgeVersion + "-";
+		// Note: strings used instead of platform id since FML requires one of these exact strings
+		// depending on the loader to recognise Minecraft.
+		String patchId = (getExtension().isNeoForge() ? "neoforge" : "forge") + "-" + forgeVersion + "-";
 
 		minecraftProvider.setJarPrefix(patchId);
 
