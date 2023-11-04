@@ -13,7 +13,7 @@ native-support = "1.0.1"
 
 # Forge Runtime depedencies
 javax-annotations = "3.0.2"
-forge-runtime = "2.0.9999"
+forge-runtime = "2.0.9"
 access-transformers = "3.0.1"
 access-transformers-new = "8.0.5"
 unprotect = "1.2.0"
