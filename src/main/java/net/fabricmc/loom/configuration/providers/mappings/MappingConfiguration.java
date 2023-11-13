@@ -218,8 +218,6 @@ public class MappingConfiguration {
 			}
 		}
 
-		manipulateMappings(project, tinyMappingsJar);
-
 		if (extension.shouldGenerateSrgTiny()) {
 			if (Files.notExists(tinyMappingsWithSrg) || extension.refreshDeps()) {
 				// Merge tiny mappings with srg
@@ -229,6 +227,8 @@ public class MappingConfiguration {
 				project.getLogger().info(":merged srg mappings in " + stopwatch.stop());
 			}
 		}
+
+		manipulateMappings(project, tinyMappingsJar);
 	}
 
 	public void applyToProject(Project project, DependencyInfo dependency) throws IOException {
