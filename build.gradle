@@ -81,7 +81,6 @@ repositories {
 			excludeGroupByRegex "org\\.eclipse\\.?.*"
 		}
 	}
-	maven { url "https://libraries.minecraft.net/" }
 }
 
 configurations {
