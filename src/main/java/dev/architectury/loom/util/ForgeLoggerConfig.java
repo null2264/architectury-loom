@@ -8,8 +8,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.StringJoiner;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import org.gradle.api.Project;
 import org.jetbrains.annotations.Nullable;
 

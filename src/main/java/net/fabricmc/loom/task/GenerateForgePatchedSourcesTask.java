@@ -37,8 +37,6 @@ import codechicken.diffpatch.cli.PatchOperation;
 import codechicken.diffpatch.util.LoggingOutputStream;
 import codechicken.diffpatch.util.PatchMode;
 import com.google.common.base.Stopwatch;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import dev.architectury.loom.forge.ForgeTools;
 import dev.architectury.loom.util.TempFiles;
 import org.gradle.api.file.FileCollection;
