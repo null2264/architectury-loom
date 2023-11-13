@@ -37,13 +37,7 @@ public final class MergedForgeMinecraftProvider extends MergedMinecraftProvider 
 
 	public MergedForgeMinecraftProvider(ConfigContext configContext) {
 		super(configContext);
-
-		// TODO (Neo): Remove this if the patches start targeting the renamed jar again.
-		if (configContext.extension().isNeoForge()) {
-			this.patchedProvider = new MinecraftPatchedProvider(configContext.project(), this, MinecraftPatchedProvider.Type.CLIENT_ONLY);
-		} else {
-			this.patchedProvider = new MinecraftPatchedProvider(configContext.project(), this, MinecraftPatchedProvider.Type.MERGED);
-		}
+		this.patchedProvider = new MinecraftPatchedProvider(configContext.project(), this, MinecraftPatchedProvider.Type.MERGED);
 	}
 
 	@Override
