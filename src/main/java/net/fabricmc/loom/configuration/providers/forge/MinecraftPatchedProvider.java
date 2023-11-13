@@ -104,13 +104,12 @@ public class MinecraftPatchedProvider {
 	private final MinecraftProvider minecraftProvider;
 	private final Type type;
 
-	// TODO (Neo): Rename all these srg -> "intermediate"
-	// Step 1: Remap Minecraft to SRG, merge if needed
-	private Path minecraftSrgJar;
+	// Step 1: Remap Minecraft to intermediate mappings, merge if needed
+	private Path minecraftIntermediateJar;
 	// Step 2: Binary Patch
-	private Path minecraftPatchedSrgJar;
+	private Path minecraftPatchedIntermediateJar;
 	// Step 3: Access Transform
-	private Path minecraftPatchedSrgAtJar;
+	private Path minecraftPatchedIntermediateAtJar;
 	// Step 4: Remap Patched AT & Forge to official
 	private Path minecraftPatchedJar;
 	private Path minecraftClientExtra;
@@ -148,9 +147,9 @@ public class MinecraftPatchedProvider {
 		minecraftProvider.setJarPrefix(patchId);
 
 		final String intermediateId = getExtension().isNeoForge() ? "mojang" : "srg";
-		minecraftSrgJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + ".jar");
-		minecraftPatchedSrgJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + "-patched.jar");
-		minecraftPatchedSrgAtJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + "-at-patched.jar");
+		minecraftIntermediateJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + ".jar");
+		minecraftPatchedIntermediateJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + "-patched.jar");
+		minecraftPatchedIntermediateAtJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-" + intermediateId + "-at-patched.jar");
 		minecraftPatchedJar = forgeWorkingDir.resolve("minecraft-" + type.id + "-patched.jar");
 		minecraftClientExtra = forgeWorkingDir.resolve("client-extra.jar");
 	}
@@ -163,9 +162,9 @@ public class MinecraftPatchedProvider {
 
 	private Path[] getGlobalCaches() {
 		Path[] files = {
-				minecraftSrgJar,
-				minecraftPatchedSrgJar,
-				minecraftPatchedSrgAtJar,
+				minecraftIntermediateJar,
+				minecraftPatchedIntermediateJar,
+				minecraftPatchedIntermediateAtJar,
 				minecraftPatchedJar,
 				minecraftClientExtra,
 		};
@@ -186,22 +185,22 @@ public class MinecraftPatchedProvider {
 
 		this.dirty = false;
 
-		if (Files.notExists(minecraftSrgJar)) {
+		if (Files.notExists(minecraftIntermediateJar)) {
 			this.dirty = true;
 
 			try (var tempFiles = new TempFiles()) {
 				McpExecutor executor = createMcpExecutor(tempFiles.directory("loom-mcp"));
 				Path output = executor.enqueue("rename").execute();
-				Files.copy(output, minecraftSrgJar);
+				Files.copy(output, minecraftIntermediateJar);
 			}
 		}
 
-		if (dirty || Files.notExists(minecraftPatchedSrgJar)) {
+		if (dirty || Files.notExists(minecraftPatchedIntermediateJar)) {
 			this.dirty = true;
 			patchJars();
 		}
 
-		if (dirty || Files.notExists(minecraftPatchedSrgAtJar)) {
+		if (dirty || Files.notExists(minecraftPatchedIntermediateAtJar)) {
 			this.dirty = true;
 			accessTransformForge();
 		}
@@ -370,8 +369,8 @@ public class MinecraftPatchedProvider {
 	}
 
 	private void accessTransformForge() throws IOException {
-		Path input = minecraftPatchedSrgJar;
-		Path target = minecraftPatchedSrgAtJar;
+		Path input = minecraftPatchedIntermediateJar;
+		Path target = minecraftPatchedIntermediateAtJar;
 		accessTransform(project, input, target);
 	}
 
@@ -386,7 +385,7 @@ public class MinecraftPatchedProvider {
 				extension.getForgeUserdevProvider().getUserdevJar().toPath(),
 				((ForgeMinecraftProvider) extension.getMinecraftProvider())
 						.getPatchedProvider()
-						.getMinecraftPatchedSrgJar()
+						.getMinecraftPatchedIntermediateJar()
 		);
 
 		Files.deleteIfExists(target);
@@ -411,7 +410,7 @@ public class MinecraftPatchedProvider {
 
 	private void remapPatchedJar(SharedServiceManager serviceManager) throws Exception {
 		logger.lifecycle(":remapping minecraft (TinyRemapper, srg -> official)");
-		Path mcInput = minecraftPatchedSrgAtJar;
+		Path mcInput = minecraftPatchedIntermediateAtJar;
 		Path mcOutput = minecraftPatchedJar;
 		Path forgeJar = getForgeJar().toPath();
 		Path forgeUserdevJar = getForgeUserdevJar().toPath();
@@ -450,13 +449,13 @@ public class MinecraftPatchedProvider {
 	private void patchJars() throws Exception {
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		logger.lifecycle(":patching jars");
-		patchJars(minecraftSrgJar, minecraftPatchedSrgJar, type.patches.apply(getExtension().getPatchProvider(), getExtension().getForgeUserdevProvider()));
+		patchJars(minecraftIntermediateJar, minecraftPatchedIntermediateJar, type.patches.apply(getExtension().getPatchProvider(), getExtension().getForgeUserdevProvider()));
 
-		copyMissingClasses(minecraftSrgJar, minecraftPatchedSrgJar);
-		deleteParameterNames(minecraftPatchedSrgJar);
+		copyMissingClasses(minecraftIntermediateJar, minecraftPatchedIntermediateJar);
+		deleteParameterNames(minecraftPatchedIntermediateJar);
 
 		if (getExtension().isForgeLikeAndNotOfficial()) {
-			fixParameterAnnotation(minecraftPatchedSrgJar);
+			fixParameterAnnotation(minecraftPatchedIntermediateJar);
 		}
 
 		logger.lifecycle(":patched jars in " + stopwatch.stop());
@@ -584,12 +583,12 @@ public class MinecraftPatchedProvider {
 		return new McpExecutor(project, minecraftProvider, cache, provider, type.mcpId);
 	}
 
-	public Path getMinecraftSrgJar() {
-		return minecraftSrgJar;
+	public Path getMinecraftIntermediateJar() {
+		return minecraftIntermediateJar;
 	}
 
-	public Path getMinecraftPatchedSrgJar() {
-		return minecraftPatchedSrgJar;
+	public Path getMinecraftPatchedIntermediateJar() {
+		return minecraftPatchedIntermediateJar;
 	}
 
 	public Path getMinecraftPatchedJar() {

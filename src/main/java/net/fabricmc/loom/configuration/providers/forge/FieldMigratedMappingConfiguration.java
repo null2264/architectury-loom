@@ -131,9 +131,9 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 			migratedFields.clear();
 
 			if (hasSrg) {
-				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedSrgJar(), MappingsNamespace.SRG.toString(), rawTinyMappingsWithSrg).entrySet());
+				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedIntermediateJar(), MappingsNamespace.SRG.toString(), rawTinyMappingsWithSrg).entrySet());
 			} else if (hasMojang) {
-				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedSrgJar(), MappingsNamespace.MOJANG.toString(), rawTinyMappingsWithMojang).entrySet());
+				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedIntermediateJar(), MappingsNamespace.MOJANG.toString(), rawTinyMappingsWithMojang).entrySet());
 			}
 
 			Map<String, String> map = new HashMap<>();
