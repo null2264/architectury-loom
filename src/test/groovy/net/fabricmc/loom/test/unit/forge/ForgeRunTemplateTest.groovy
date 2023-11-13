@@ -58,7 +58,7 @@ class ForgeRunTemplateTest extends Specification {
 
 		when:
 		def result = ForgeRunTemplate.CODEC.parse(JsonOps.INSTANCE, json.getAsJsonObject("runs").getAsJsonObject("client"))
-		def template = result.getOrThrow(false, {})
+		def template = result.getOrThrow(false) { }
 
 		then:
 		template.name == template.name() // check that the name gradle sees matches the name read from the json
