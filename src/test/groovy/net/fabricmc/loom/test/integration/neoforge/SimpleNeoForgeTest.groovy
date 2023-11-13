@@ -49,7 +49,7 @@ class SimpleNeoForgeTest extends Specification implements GradleProjectTestTrait
 
 		where:
 		mcVersion | neoforgeVersion | mappings
-		'1.20.2'  | '20.2.5-beta' | 'loom.officialMojangMappings()'
-		'1.20.2'  | '20.2.5-beta' | '"net.fabricmc:yarn:1.20.1+build.1:v2"'
+		'1.20.2'  | '20.2.51-beta' | 'loom.officialMojangMappings()'
+		'1.20.2'  | '20.2.51-beta' | '"net.fabricmc:yarn:1.20.2+build.4:v2"'
 	}
 }
