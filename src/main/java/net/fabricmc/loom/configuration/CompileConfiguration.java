@@ -370,8 +370,6 @@ public abstract class CompileConfiguration implements Runnable {
 		DependencyProviders dependencyProviders = new DependencyProviders();
 		extension.setDependencyProviders(dependencyProviders);
 
-		// TODO (Neo): Adapt this stuff
-
 		if (extension.isForgeLike()) {
 			dependencyProviders.addProvider(new ForgeProvider(project));
 			dependencyProviders.addProvider(new ForgeUserdevProvider(project));

@@ -158,7 +158,6 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 		return isForge() && !getForge().getDataGenMods().isEmpty();
 	}
 
-	// TODO (Neo): Is the official key present in Neo's data?
 	default boolean isForgeLikeAndOfficial() {
 		return isForgeLike() && getMcpConfigProvider().isOfficial();
 	}
