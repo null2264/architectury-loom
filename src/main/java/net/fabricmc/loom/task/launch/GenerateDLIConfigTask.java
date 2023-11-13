@@ -118,19 +118,19 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.property("architectury.naming.sourceNamespace", intermediateNs)
 					.property("architectury.naming.mappingsPath", mappingsPath);
 
-			final List<String> dataGenMods = getExtension().getForge().getDataGenMods();
-
-			// Only apply the hardcoded data arguments if the deprecated data generator API is being used.
-			if (!dataGenMods.isEmpty()) {
-				launchConfig
-						.argument("data", "--all")
-						.argument("data", "--mod")
-						.argument("data", String.join(",", getExtension().getForge().getDataGenMods()))
-						.argument("data", "--output")
-						.argument("data", getProject().file("src/generated/resources").getAbsolutePath());
-			}
-
 			if (getExtension().isForge()) {
+				final List<String> dataGenMods = getExtension().getForge().getDataGenMods();
+
+				// Only apply the hardcoded data arguments if the deprecated data generator API is being used.
+				if (!dataGenMods.isEmpty()) {
+					launchConfig
+							.argument("data", "--all")
+							.argument("data", "--mod")
+							.argument("data", String.join(",", getExtension().getForge().getDataGenMods()))
+							.argument("data", "--output")
+							.argument("data", getProject().file("src/generated/resources").getAbsolutePath());
+				}
+
 				launchConfig.property("mixin.env.remapRefMap", "true");
 
 				if (PropertyUtil.getAndFinalize(getExtension().getForge().getUseCustomMixin())) {
