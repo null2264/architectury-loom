@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import javax.inject.Inject;
 
 import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.AbstractCopyTask;
@@ -268,7 +269,15 @@ public abstract class CompileConfiguration implements Runnable {
 		}
 
 		if (extension.isForgeLike()) {
-			extension.addMinecraftJarProcessor(AccessTransformerJarProcessor.class, "loom:access-transformer", configContext.project(), extension.getForge().getAccessTransformers());
+			FileCollection accessTransformers;
+
+			if (extension.isNeoForge()) {
+				accessTransformers = extension.getNeoForge().getAccessTransformers();
+			} else {
+				accessTransformers = extension.getForge().getAccessTransformers();
+			}
+
+			extension.addMinecraftJarProcessor(AccessTransformerJarProcessor.class, "loom:access-transformer", configContext.project(), accessTransformers);
 		}
 	}
 

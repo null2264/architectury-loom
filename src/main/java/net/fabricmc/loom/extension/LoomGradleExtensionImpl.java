@@ -40,6 +40,7 @@ import org.gradle.api.provider.Provider;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.ForgeExtensionAPI;
+import net.fabricmc.loom.api.NeoForgeExtensionAPI;
 import net.fabricmc.loom.api.mappings.intermediate.IntermediateMappingsProvider;
 import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.configuration.InstallerData;
@@ -66,7 +67,6 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	private final MixinExtension mixinApExtension;
 	private final LoomFiles loomFiles;
 	private final ConfigurableFileCollection unmappedMods;
-	private final Supplier<ForgeExtensionAPI> forgeExtension;
 
 	private final List<AccessWidenerFile> transitiveAccessWideners = new ArrayList<>();
 
@@ -87,6 +87,8 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	// +-------------------+
 	private DependencyProviders dependencyProviders;
 	private ForgeRunsProvider forgeRunsProvider;
+	private final Supplier<ForgeExtensionAPI> forgeExtension;
+	private final Supplier<NeoForgeExtensionAPI> neoForgeExtension;
 
 	public LoomGradleExtensionImpl(Project project, LoomFiles files) {
 		super(project, files);
@@ -95,7 +97,8 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 		this.mixinApExtension = project.getObjects().newInstance(MixinExtensionImpl.class, project);
 		this.loomFiles = files;
 		this.unmappedMods = project.files();
-		this.forgeExtension = Suppliers.memoize(() -> isForgeLike() ? project.getObjects().newInstance(ForgeExtensionImpl.class, project, this) : null);
+		this.forgeExtension = Suppliers.memoize(() -> isForge() ? project.getObjects().newInstance(ForgeExtensionImpl.class, project, this) : null);
+		this.neoForgeExtension = Suppliers.memoize(() -> isNeoForge() ? project.getObjects().newInstance(NeoForgeExtensionImpl.class, project, this) : null);
 
 		// Setup the default intermediate mappings provider.
 		setIntermediateMappingsProvider(IntermediaryMappingsProvider.class, provider -> {
@@ -301,8 +304,14 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 
 	@Override
 	public ForgeExtensionAPI getForge() {
-		ModPlatform.assertForgeLike(this);
+		ModPlatform.assertPlatform(this, ModPlatform.FORGE);
 		return forgeExtension.get();
+	}
+
+	@Override
+	public NeoForgeExtensionAPI getNeoForge() {
+		ModPlatform.assertPlatform(this, ModPlatform.NEOFORGE);
+		return neoForgeExtension.get();
 	}
 
 	@Override

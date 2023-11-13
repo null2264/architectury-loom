@@ -54,6 +54,7 @@ import net.fabricmc.loom.api.InterfaceInjectionExtensionAPI;
 import net.fabricmc.loom.api.LoomGradleExtensionAPI;
 import net.fabricmc.loom.api.MixinExtensionAPI;
 import net.fabricmc.loom.api.ModSettings;
+import net.fabricmc.loom.api.NeoForgeExtensionAPI;
 import net.fabricmc.loom.api.RemapConfigurationSettings;
 import net.fabricmc.loom.api.decompilers.DecompilerOptions;
 import net.fabricmc.loom.api.mappings.intermediate.IntermediateMappingsProvider;
@@ -481,6 +482,11 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 		action.execute(getForge());
 	}
 
+	@Override
+	public void neoForge(Action<NeoForgeExtensionAPI> action) {
+		action.execute(getNeoForge());
+	}
+
 	// This is here to ensure that LoomGradleExtensionApiImpl compiles without any unimplemented methods
 	private final class EnsureCompile extends LoomGradleExtensionApiImpl {
 		private EnsureCompile() {
@@ -520,6 +526,11 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 		@Override
 		public ForgeExtensionAPI getForge() {
+			throw new RuntimeException("Yeah... something is really wrong");
+		}
+
+		@Override
+		public NeoForgeExtensionAPI getNeoForge() {
 			throw new RuntimeException("Yeah... something is really wrong");
 		}
 	}

@@ -268,9 +268,20 @@ public interface LoomGradleExtensionAPI {
 	 *
 	 * @return the Forge extension
 	 * @throws UnsupportedOperationException if running on another platform
-	 * @see #isForgeLike()
+	 * @see #isForge()
 	 */
 	ForgeExtensionAPI getForge();
 
 	void forge(Action<ForgeExtensionAPI> action);
+
+	/**
+	 * Gets the NeoForge extension used to configure NeoForge details.
+	 *
+	 * @return the NeoForge extension
+	 * @throws UnsupportedOperationException if running on another platform
+	 * @see #isNeoForge()
+	 */
+	NeoForgeExtensionAPI getNeoForge();
+
+	void neoForge(Action<NeoForgeExtensionAPI> action);
 }

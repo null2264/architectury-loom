@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 FabricMC
+ * Copyright (c) 2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,30 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.task.launch;
+package net.fabricmc.loom.extension;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import javax.inject.Inject;
 
-import dev.architectury.loom.util.ForgeLoggerConfig;
-import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.Project;
+import org.gradle.api.file.ConfigurableFileCollection;
 
-import net.fabricmc.loom.task.AbstractLoomTask;
+import net.fabricmc.loom.api.NeoForgeExtensionAPI;
 
-public abstract class GenerateLog4jConfigTask extends AbstractLoomTask {
-	@TaskAction
-	public void run() {
-		Path outputFile = getExtension().getFiles().getDefaultLog4jConfigFile().toPath();
+public class NeoForgeExtensionImpl implements NeoForgeExtensionAPI {
+	private final ConfigurableFileCollection accessTransformers;
 
-		if (getExtension().isForge() && getExtension().getForge().getUseForgeLoggerConfig().get()) {
-			ForgeLoggerConfig.copyToPath(getProject(), outputFile);
-			return;
-		}
+	@Inject
+	public NeoForgeExtensionImpl(Project project) {
+		accessTransformers = project.getObjects().fileCollection();
+	}
 
-		try (InputStream is = GenerateLog4jConfigTask.class.getClassLoader().getResourceAsStream("log4j2.fabric.xml")) {
-			Files.deleteIfExists(outputFile);
-			Files.copy(is, outputFile);
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to generate log4j config", e);
-		}
+	@Override
+	public ConfigurableFileCollection getAccessTransformers() {
+		return accessTransformers;
+	}
+
+	@Override
+	public void accessTransformer(Object file) {
+		accessTransformers.from(file);
 	}
 }
