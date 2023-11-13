@@ -30,7 +30,6 @@ import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -119,25 +118,24 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 		tinyMappingsWithMojang = mappingsWorkingDir().resolve("mappings-mojang-field-migrated.tiny");
 
 		try {
-			updateFieldMigration(project);
-
-			if (extension.isNeoForge()) {
-				// TODO (Neo): Generate the real migrated one
-				if (Files.notExists(rawTinyMappingsWithMojang) || extension.refreshDeps()) {
-					Files.copy(rawTinyMappingsWithMojang, tinyMappingsWithMojang, StandardCopyOption.REPLACE_EXISTING);
-				}
-			}
+			updateFieldMigration(project, extension.isNeoForge(), extension.shouldGenerateSrgTiny());
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
 
-		project.getLogger().info(":migrated srg fields in " + stopwatch.stop());
+		project.getLogger().info(":migrated {} fields in " + stopwatch.stop(), extension.getPlatform().get().id());
 	}
 
-	public void updateFieldMigration(Project project) throws IOException {
+	public void updateFieldMigration(Project project, boolean hasMojang, boolean hasSrg) throws IOException {
 		if (!Files.exists(migratedFieldsCache)) {
 			migratedFields.clear();
-			migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedSrgJar(), MappingsNamespace.SRG.toString(), rawTinyMappingsWithSrg).entrySet());
+
+			if (hasSrg) {
+				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedSrgJar(), MappingsNamespace.SRG.toString(), rawTinyMappingsWithSrg).entrySet());
+			} else if (hasMojang) {
+				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedSrgJar(), MappingsNamespace.MOJANG.toString(), rawTinyMappingsWithMojang).entrySet());
+			}
+
 			Map<String, String> map = new HashMap<>();
 			migratedFields.forEach(entry -> {
 				map.put(entry.getKey().owner + "#" + entry.getKey().field, entry.getValue());
@@ -145,9 +143,10 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 			Files.writeString(migratedFieldsCache, new Gson().toJson(map));
 			Files.deleteIfExists(tinyMappings);
 			Files.deleteIfExists(tinyMappingsWithSrg);
+			Files.deleteIfExists(tinyMappingsWithMojang);
 		}
 
-		if (Files.notExists(tinyMappings) || Files.notExists(tinyMappingsWithSrg)) {
+		if (Files.notExists(tinyMappings) || (hasSrg && Files.notExists(tinyMappingsWithSrg)) || (hasMojang && Files.notExists(tinyMappingsWithMojang))) {
 			Table<String, String, String> fieldDescriptorMap = HashBasedTable.create();
 
 			for (Map.Entry<FieldMember, String> entry : migratedFields) {
@@ -155,7 +154,12 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 			}
 
 			injectMigration(project, fieldDescriptorMap, rawTinyMappings, tinyMappings);
-			injectMigration(project, fieldDescriptorMap, rawTinyMappingsWithSrg, tinyMappingsWithSrg);
+
+			if (hasSrg) {
+				injectMigration(project, fieldDescriptorMap, rawTinyMappingsWithSrg, tinyMappingsWithSrg);
+			} else if (hasMojang) {
+				injectMigration(project, fieldDescriptorMap, rawTinyMappingsWithMojang, tinyMappingsWithMojang);
+			}
 		}
 	}
 

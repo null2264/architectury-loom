@@ -143,7 +143,7 @@ public class MappingConfiguration {
 
 		MappingConfiguration mappingConfiguration;
 
-		if (extension.isForge()) { // TODO (Neo): Field migration support
+		if (extension.isForgeLike()) {
 			mappingConfiguration = new FieldMigratedMappingConfiguration(mappingsIdentifier, workingDir);
 		} else {
 			mappingConfiguration = new MappingConfiguration(mappingsIdentifier, workingDir);
