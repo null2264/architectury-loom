@@ -71,8 +71,7 @@ public final class TinyRemapperHelper {
 
 	public static TinyRemapper getTinyRemapper(Project project, SharedServiceManager serviceManager, String fromM, String toM, boolean fixRecords, Consumer<TinyRemapper.Builder> builderConsumer, Set<String> fromClassNames) throws IOException {
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
-		// TODO (Neo): Bring back the fromM.equals(srg) || toM.equals(srg) check, also for mojang ns?
-		final MappingOption mappingOption = MappingOption.forPlatform(extension);
+		final MappingOption mappingOption = MappingOption.forPlatform(extension).forNamespaces(fromM, toM);
 		MemoryMappingTree mappingTree = extension.getMappingConfiguration().getMappingsService(serviceManager, mappingOption).getMappingTree();
 
 		if (fixRecords && !mappingTree.getSrcNamespace().equals(fromM)) {
