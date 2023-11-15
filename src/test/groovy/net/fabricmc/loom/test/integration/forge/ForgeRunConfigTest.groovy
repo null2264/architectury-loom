@@ -42,6 +42,7 @@ class ForgeRunConfigTest extends Specification implements GradleProjectTestTrait
 				.replace('@MAPPINGS@', 'loom.officialMojangMappings()')
 				.replace('@REPOSITORIES@', '')
 				.replace('@PACKAGE@', 'net.minecraftforge:forge')
+				.replace('@JAVA_VERSION@', javaVersion)
 		gradle.buildGradle << """
 		tasks.register('verifyRunConfigs') {
 			doLast {
@@ -64,12 +65,12 @@ class ForgeRunConfigTest extends Specification implements GradleProjectTestTrait
 		result.task(":verifyRunConfigs").outcome == SUCCESS
 
 		where:
-		mcVersion | forgeVersion | mainClass
-		'1.19.4'  | "45.0.43"    | 'cpw.mods.bootstraplauncher.BootstrapLauncher'
-		'1.18.1'  | "39.0.63"    | 'cpw.mods.bootstraplauncher.BootstrapLauncher'
-		'1.17.1'  | "37.0.67"    | 'cpw.mods.bootstraplauncher.BootstrapLauncher'
-		'1.16.5'  | "36.2.4"     | 'net.minecraftforge.userdev.LaunchTesting'
-		'1.14.4'  | "28.2.23"    | 'net.minecraftforge.userdev.LaunchTesting'
+		mcVersion | forgeVersion | javaVersion | mainClass
+		'1.19.4'  | "45.0.43"    | '17'        | 'cpw.mods.bootstraplauncher.BootstrapLauncher'
+		'1.18.1'  | "39.0.63"    | '17'        | 'cpw.mods.bootstraplauncher.BootstrapLauncher'
+		'1.17.1'  | "37.0.67"    | '16'        | 'cpw.mods.bootstraplauncher.BootstrapLauncher'
+		'1.16.5'  | "36.2.4"     | '8'         | 'net.minecraftforge.userdev.LaunchTesting'
+		'1.14.4'  | "28.2.23"    | '8'         | 'net.minecraftforge.userdev.LaunchTesting'
 	}
 
 	def "verify mod classes"() {
@@ -80,6 +81,7 @@ class ForgeRunConfigTest extends Specification implements GradleProjectTestTrait
 				.replace('@MAPPINGS@', 'loom.officialMojangMappings()')
 				.replace('@REPOSITORIES@', '')
 				.replace('@PACKAGE@', 'net.minecraftforge:forge')
+				.replace('@JAVA_VERSION@', '17')
 		gradle.buildGradle << '''
 		sourceSets {
 			testMod {}

@@ -42,6 +42,7 @@ class NeoForge1201Test extends Specification implements GradleProjectTestTrait {
 				.replace('@MAPPINGS@', mappings)
 				.replace('@REPOSITORIES@', 'maven { url "https://maven.neoforged.net/releases/" }')
 				.replace('@PACKAGE@', 'net.neoforged:forge')
+				.replace('@JAVA_VERSION@', '17')
 
 		when:
 		def result = gradle.run(task: "build")
