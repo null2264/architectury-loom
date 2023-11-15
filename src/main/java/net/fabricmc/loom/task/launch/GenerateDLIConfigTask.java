@@ -152,6 +152,13 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 				}
 			}
 
+			if (getExtension().isNeoForge()) {
+				launchConfig
+						// See ArchitecturyReflectionRedirectorPlugin in forge-runtime
+						.property("architectury.reflectionredirector.sourceNamespace", intermediateNs)
+						.property("architectury.reflectionredirector.mappingsPath", mappingsPath);
+			}
+
 			ForgeRunsProvider forgeRunsProvider = getExtension().getForgeRunsProvider();
 			ConfigValue.Resolver configResolver = forgeRunsProvider.getResolver(null);
 

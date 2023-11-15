@@ -167,6 +167,11 @@ public abstract class LoomConfigurations implements Runnable {
 				getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.MIXIN_REMAPPER_SERVICE.mavenNotation());
 				getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.MCP_ANNOTATIONS.mavenNotation());
 			}
+
+			// Add NeoForge-only dev-time dependencies
+			if (extension.isNeoForge()) {
+				getDependencies().add(Constants.Configurations.FORGE_EXTRA, LoomVersions.REFLECTION_REDIRECTOR.mavenNotation());
+			}
 		}
 	}
 
