@@ -40,6 +40,8 @@ class PatchedDecompileTest extends Specification implements GradleProjectTestTra
 		gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', mcVersion)
 				.replace('@FORGEVERSION@', forgeVersion)
 				.replace('@MAPPINGS@', 'loom.officialMojangMappings()')
+				.replace('@REPOSITORIES@', '')
+				.replace('@PACKAGE@', 'net.minecraftforge:forge')
 
 		when:
 		def result = gradle.run(task: "genForgePatchedSources")

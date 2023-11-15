@@ -40,6 +40,8 @@ class ForgeRunConfigTest extends Specification implements GradleProjectTestTrait
 		gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', mcVersion)
 				.replace('@FORGEVERSION@', forgeVersion)
 				.replace('@MAPPINGS@', 'loom.officialMojangMappings()')
+				.replace('@REPOSITORIES@', '')
+				.replace('@PACKAGE@', 'net.minecraftforge:forge')
 		gradle.buildGradle << """
 		tasks.register('verifyRunConfigs') {
 			doLast {
@@ -76,6 +78,8 @@ class ForgeRunConfigTest extends Specification implements GradleProjectTestTrait
 		gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', '1.19.4')
 				.replace('@FORGEVERSION@', "45.0.43")
 				.replace('@MAPPINGS@', 'loom.officialMojangMappings()')
+				.replace('@REPOSITORIES@', '')
+				.replace('@PACKAGE@', 'net.minecraftforge:forge')
 		gradle.buildGradle << '''
 		sourceSets {
 			testMod {}
