@@ -46,6 +46,7 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.ConfigContext;
 import net.fabricmc.loom.configuration.mods.dependency.LocalMavenHelper;
+import net.fabricmc.loom.configuration.providers.forge.minecraft.ForgeMinecraftProvider;
 import net.fabricmc.loom.configuration.providers.mappings.IntermediaryMappingsProvider;
 import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
 import net.fabricmc.loom.configuration.providers.mappings.TinyMappingsService;
@@ -176,6 +177,11 @@ public abstract class AbstractMappedMinecraftProvider<M extends MinecraftProvide
 			if (!getMavenHelper(remappedJar.name()).exists(null)) {
 				return false;
 			}
+		}
+
+		// Architectury: regenerate jars if patches have changed.
+		if (minecraftProvider instanceof ForgeMinecraftProvider withForge && withForge.getPatchedProvider().isDirty()) {
+			return false;
 		}
 
 		return true;

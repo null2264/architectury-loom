@@ -215,7 +215,6 @@ public class MinecraftPatchedProvider {
 			fillClientExtraJar();
 		}
 
-		this.dirty = false;
 		DependencyProvider.addDependency(project, minecraftClientExtra, Constants.Configurations.FORGE_EXTRA);
 	}
 
@@ -593,6 +592,13 @@ public class MinecraftPatchedProvider {
 
 	public Path getMinecraftPatchedJar() {
 		return minecraftPatchedJar;
+	}
+
+	/**
+	 * Checks whether the provider's state is dirty (regenerating jars).
+	 */
+	public boolean isDirty() {
+		return dirty;
 	}
 
 	public enum Type {
