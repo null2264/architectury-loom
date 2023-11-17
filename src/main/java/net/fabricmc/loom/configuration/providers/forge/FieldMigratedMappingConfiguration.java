@@ -66,8 +66,9 @@ import net.fabricmc.mappingio.tree.MemoryMappingTree;
 public final class FieldMigratedMappingConfiguration extends MappingConfiguration {
 	private List<Map.Entry<FieldMember, String>> migratedFields = new ArrayList<>();
 	public Path migratedFieldsCache;
-	public Path rawTinyMappings;
-	public Path rawTinyMappingsWithSrg;
+	private Path rawTinyMappings;
+	private Path rawTinyMappingsWithSrg;
+	private Path rawTinyMappingsWithMojang;
 
 	public FieldMigratedMappingConfiguration(String mappingsIdentifier, Path mappingsWorkingDir) {
 		super(mappingsIdentifier, mappingsWorkingDir);
@@ -98,7 +99,10 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 	}
 
 	public static String createForgeMappingsIdentifier(LoomGradleExtension extension, String mappingsName, String version, String classifier, String minecraftVersion) {
-		return FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion) + "-forge-" + extension.getForgeProvider().getVersion().getCombined();
+		final String base = FieldMigratedMappingConfiguration.createMappingsIdentifier(mappingsName, version, classifier, minecraftVersion);
+		final String platform = extension.getPlatform().get().id();
+		final String forgeVersion = extension.getForgeProvider().getVersion().getCombined();
+		return base + "-" + platform + "-" + forgeVersion;
 	}
 
 	@Override
@@ -107,23 +111,31 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		this.rawTinyMappings = tinyMappings;
 		this.rawTinyMappingsWithSrg = tinyMappingsWithSrg;
+		this.rawTinyMappingsWithMojang = tinyMappingsWithMojang;
 
 		tinyMappings = mappingsWorkingDir().resolve("mappings-field-migrated.tiny");
 		tinyMappingsWithSrg = mappingsWorkingDir().resolve("mappings-srg-field-migrated.tiny");
+		tinyMappingsWithMojang = mappingsWorkingDir().resolve("mappings-mojang-field-migrated.tiny");
 
 		try {
-			updateFieldMigration(project);
+			updateFieldMigration(project, extension.isNeoForge(), extension.shouldGenerateSrgTiny());
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		}
 
-		project.getLogger().info(":migrated srg fields in " + stopwatch.stop());
+		project.getLogger().info(":migrated {} fields in " + stopwatch.stop(), extension.getPlatform().get().id());
 	}
 
-	public void updateFieldMigration(Project project) throws IOException {
+	public void updateFieldMigration(Project project, boolean hasMojang, boolean hasSrg) throws IOException {
 		if (!Files.exists(migratedFieldsCache)) {
 			migratedFields.clear();
-			migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedSrgJar(), MappingsNamespace.SRG.toString(), rawTinyMappingsWithSrg).entrySet());
+
+			if (hasSrg) {
+				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedIntermediateJar(), MappingsNamespace.SRG.toString(), rawTinyMappingsWithSrg).entrySet());
+			} else if (hasMojang) {
+				migratedFields.addAll(generateNewFieldMigration(project, MinecraftPatchedProvider.get(project).getMinecraftPatchedIntermediateJar(), MappingsNamespace.MOJANG.toString(), rawTinyMappingsWithMojang).entrySet());
+			}
+
 			Map<String, String> map = new HashMap<>();
 			migratedFields.forEach(entry -> {
 				map.put(entry.getKey().owner + "#" + entry.getKey().field, entry.getValue());
@@ -131,9 +143,10 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 			Files.writeString(migratedFieldsCache, new Gson().toJson(map));
 			Files.deleteIfExists(tinyMappings);
 			Files.deleteIfExists(tinyMappingsWithSrg);
+			Files.deleteIfExists(tinyMappingsWithMojang);
 		}
 
-		if (Files.notExists(tinyMappings) || Files.notExists(tinyMappingsWithSrg)) {
+		if (Files.notExists(tinyMappings) || (hasSrg && Files.notExists(tinyMappingsWithSrg)) || (hasMojang && Files.notExists(tinyMappingsWithMojang))) {
 			Table<String, String, String> fieldDescriptorMap = HashBasedTable.create();
 
 			for (Map.Entry<FieldMember, String> entry : migratedFields) {
@@ -141,7 +154,12 @@ public final class FieldMigratedMappingConfiguration extends MappingConfiguratio
 			}
 
 			injectMigration(project, fieldDescriptorMap, rawTinyMappings, tinyMappings);
-			injectMigration(project, fieldDescriptorMap, rawTinyMappingsWithSrg, tinyMappingsWithSrg);
+
+			if (hasSrg) {
+				injectMigration(project, fieldDescriptorMap, rawTinyMappingsWithSrg, tinyMappingsWithSrg);
+			} else if (hasMojang) {
+				injectMigration(project, fieldDescriptorMap, rawTinyMappingsWithMojang, tinyMappingsWithMojang);
+			}
 		}
 	}
 

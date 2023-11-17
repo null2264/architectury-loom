@@ -40,6 +40,7 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.logging.configuration.ConsoleOutput;
 import org.gradle.api.tasks.TaskAction;
 
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.providers.forge.ConfigValue;
 import net.fabricmc.loom.configuration.providers.forge.ForgeRunTemplate;
 import net.fabricmc.loom.configuration.providers.forge.ForgeRunsProvider;
@@ -75,7 +76,7 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.property("client", "org.lwjgl.librarypath", nativesPath);
 		}
 
-		if (!getExtension().isForge()) {
+		if (!getExtension().isForgeLike()) {
 			launchConfig
 					.argument("client", "--assetIndex")
 					.argument("client", getExtension().getMinecraftProvider().getVersionInfo().assetIndex().fabricId(getExtension().getMinecraftProvider().minecraftVersion()))
@@ -98,7 +99,7 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.argument("client", "Architectury Loom");
 		}
 
-		if (getExtension().isForge()) {
+		if (getExtension().isForgeLike()) {
 			// Find the mapping files for Unprotect to use for figuring out
 			// which classes are from Minecraft.
 			String unprotectMappings = getProject().getConfigurations()
@@ -108,37 +109,46 @@ public abstract class GenerateDLIConfigTask extends AbstractLoomTask {
 					.map(File::getAbsolutePath)
 					.collect(Collectors.joining(File.pathSeparator));
 
+			final String intermediateNs = IntermediaryNamespaces.intermediary(getProject());
+			final String mappingsPath = getExtension().getPlatformMappingFile().toAbsolutePath().toString();
+
 			launchConfig
-					// Should match YarnNamingService.PATH_TO_MAPPINGS in forge-runtime
-					.property("fabric.yarnWithSrg.path", getExtension().getMappingConfiguration().tinyMappingsWithSrg.toAbsolutePath().toString())
 					.property("unprotect.mappings", unprotectMappings)
+					// See ArchitecturyNamingService in forge-runtime
+					.property("architectury.naming.sourceNamespace", intermediateNs)
+					.property("architectury.naming.mappingsPath", mappingsPath);
 
-					.property("mixin.env.remapRefMap", "true");
+			if (getExtension().isForge()) {
+				final List<String> dataGenMods = getExtension().getForge().getDataGenMods();
 
-			final List<String> dataGenMods = getExtension().getForge().getDataGenMods();
+				// Only apply the hardcoded data arguments if the deprecated data generator API is being used.
+				if (!dataGenMods.isEmpty()) {
+					launchConfig
+							.argument("data", "--all")
+							.argument("data", "--mod")
+							.argument("data", String.join(",", getExtension().getForge().getDataGenMods()))
+							.argument("data", "--output")
+							.argument("data", getProject().file("src/generated/resources").getAbsolutePath());
+				}
 
-			// Only apply the hardcoded data arguments if the deprecated data generator API is being used.
-			if (!dataGenMods.isEmpty()) {
-				launchConfig
-						.argument("data", "--all")
-						.argument("data", "--mod")
-						.argument("data", String.join(",", getExtension().getForge().getDataGenMods()))
-						.argument("data", "--output")
-						.argument("data", getProject().file("src/generated/resources").getAbsolutePath());
-			}
+				launchConfig.property("mixin.env.remapRefMap", "true");
 
-			if (PropertyUtil.getAndFinalize(getExtension().getForge().getUseCustomMixin())) {
-				launchConfig.property("mixin.forgeloom.inject.mappings.srg-named", getExtension().getMappingConfiguration().getReplacedTarget(getExtension(), "srg").toAbsolutePath().toString());
-			} else {
-				launchConfig.property("net.minecraftforge.gradle.GradleStart.srg.srg-mcp", getExtension().getMappingConfiguration().srgToNamedSrg.toAbsolutePath().toString());
-			}
+				if (PropertyUtil.getAndFinalize(getExtension().getForge().getUseCustomMixin())) {
+					// See mixin remapper service in forge-runtime
+					launchConfig
+							.property("architectury.mixinRemapper.sourceNamespace", intermediateNs)
+							.property("architectury.mixinRemapper.mappingsPath", mappingsPath);
+				} else {
+					launchConfig.property("net.minecraftforge.gradle.GradleStart.srg.srg-mcp", getExtension().getMappingConfiguration().srgToNamedSrg.toAbsolutePath().toString());
+				}
 
-			Set<String> mixinConfigs = PropertyUtil.getAndFinalize(getExtension().getForge().getMixinConfigs());
+				Set<String> mixinConfigs = PropertyUtil.getAndFinalize(getExtension().getForge().getMixinConfigs());
 
-			if (!mixinConfigs.isEmpty()) {
-				for (String config : mixinConfigs) {
-					launchConfig.argument("-mixin.config");
-					launchConfig.argument(config);
+				if (!mixinConfigs.isEmpty()) {
+					for (String config : mixinConfigs) {
+						launchConfig.argument("-mixin.config");
+						launchConfig.argument(config);
+					}
 				}
 			}
 

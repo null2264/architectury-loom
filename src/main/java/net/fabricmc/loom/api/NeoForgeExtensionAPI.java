@@ -22,37 +22,29 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test.integration.neoforge
+package net.fabricmc.loom.api;
 
-import spock.lang.Specification
-import spock.lang.Unroll
+import org.gradle.api.file.ConfigurableFileCollection;
 
-import net.fabricmc.loom.test.util.GradleProjectTestTrait
+/**
+ * This is the NeoForge extension API available to build scripts.
+ */
+public interface NeoForgeExtensionAPI {
+	/**
+	 * A collection of all project access transformers.
+	 * The collection should only contain AT files, and not directories or other files.
+	 *
+	 * <p>If this collection is empty, Loom tries to resolve the AT from the default path
+	 * ({@code META-INF/accesstransformer.cfg} in the {@code main} source set).
+	 *
+	 * @return the collection of AT files
+	 */
+	ConfigurableFileCollection getAccessTransformers();
 
-import static net.fabricmc.loom.test.LoomTestConstants.DEFAULT_GRADLE
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
-
-class NeoForge1201Test extends Specification implements GradleProjectTestTrait {
-	@Unroll
-	def "build #mcVersion #forgeVersion #mappings"() {
-		setup:
-		def gradle = gradleProject(project: "forge/simple", version: DEFAULT_GRADLE)
-		gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', mcVersion)
-				.replace('@FORGEVERSION@', forgeVersion)
-				.replace('@MAPPINGS@', mappings)
-				.replace('@REPOSITORIES@', 'maven { url "https://maven.neoforged.net/releases/" }')
-				.replace('@PACKAGE@', 'net.neoforged:forge')
-				.replace('@JAVA_VERSION@', '17')
-
-		when:
-		def result = gradle.run(task: "build")
-
-		then:
-		result.task(":build").outcome == SUCCESS
-
-		where:
-		mcVersion | forgeVersion | mappings
-		'1.20.1'  | "47.1.79"    | "loom.officialMojangMappings()"
-		'1.20.1'  | "47.1.79"    | "'net.fabricmc:yarn:1.20.1+build.1:v2'"
-	}
+	/**
+	 * Adds a {@linkplain #getAccessTransformers() project access transformer}.
+	 *
+	 * @param file the file, evaluated as per {@link org.gradle.api.Project#file(Object)}
+	 */
+	void accessTransformer(Object file);
 }

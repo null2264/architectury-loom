@@ -32,14 +32,16 @@ import org.gradle.api.Project;
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.configuration.DependencyInfo;
 import net.fabricmc.loom.util.Constants;
+import net.fabricmc.loom.util.ModPlatform;
 
 public class ForgeProvider extends DependencyProvider {
+	private final ModPlatform platform;
 	private ForgeVersion version = new ForgeVersion(null);
 	private File globalCache;
-	private File projectCache;
 
 	public ForgeProvider(Project project) {
 		super(project);
+		platform = getExtension().getPlatform().get();
 	}
 
 	@Override
@@ -55,25 +57,16 @@ public class ForgeProvider extends DependencyProvider {
 
 	public File getGlobalCache() {
 		if (globalCache == null) {
-			globalCache = getMinecraftProvider().dir("forge/" + version.getCombined());
+			globalCache = getMinecraftProvider().dir(platform.id() + "/" + version.getCombined());
 			globalCache.mkdirs();
 		}
 
 		return globalCache;
 	}
 
-	public File getProjectCache() {
-		if (projectCache == null) {
-			projectCache = new File(getDirectories().getRootProjectPersistentCache(), getMinecraftProvider().minecraftVersion() + "/forge/" + getExtension().getForgeProvider().getVersion().getCombined() + "/project-" + getProject().getPath().replace(':', '@'));
-			projectCache.mkdirs();
-		}
-
-		return projectCache;
-	}
-
 	@Override
 	public String getTargetConfig() {
-		return Constants.Configurations.FORGE;
+		return platform == ModPlatform.NEOFORGE ? Constants.Configurations.NEOFORGE : Constants.Configurations.FORGE;
 	}
 
 	/**
@@ -83,9 +76,10 @@ public class ForgeProvider extends DependencyProvider {
 	 */
 	public static Path getForgeCache(Project project) {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
+		final ModPlatform platform = extension.getPlatform().get();
 		final String version = extension.getForgeProvider().getVersion().getCombined();
 		return LoomGradleExtension.get(project).getMinecraftProvider()
-				.dir("forge/" + version).toPath();
+				.dir(platform.id() + "/" + version).toPath();
 	}
 
 	public static final class ForgeVersion {
