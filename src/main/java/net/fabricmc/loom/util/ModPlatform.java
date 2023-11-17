@@ -34,14 +34,16 @@ import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.api.LoomGradleExtensionAPI;
 
 public enum ModPlatform {
-	FABRIC(false),
-	FORGE(false),
-	QUILT(true),
-	NEOFORGE(true);
+	FABRIC("Fabric", false),
+	FORGE("Forge", false),
+	QUILT("Quilt", true),
+	NEOFORGE("NeoForge", true);
 
+	private final String displayName;
 	boolean experimental;
 
-	ModPlatform(boolean experimental) {
+	ModPlatform(String displayName, boolean experimental) {
+		this.displayName = displayName;
 		this.experimental = experimental;
 	}
 
@@ -50,6 +52,10 @@ public enum ModPlatform {
 	 */
 	public String id() {
 		return name().toLowerCase(Locale.ROOT);
+	}
+
+	public String displayName() {
+		return displayName;
 	}
 
 	public boolean isExperimental() {
@@ -67,8 +73,7 @@ public enum ModPlatform {
 	public static void assertPlatform(LoomGradleExtensionAPI extension, ModPlatform platform) {
 		assertPlatform(extension, platform, () -> {
 			String msg = "Loom is not running on %s.%nYou can switch to it by adding 'loom.platform = %s' to your gradle.properties";
-			String id = platform.id();
-			return msg.formatted(id, id);
+			return msg.formatted(platform.displayName(), platform.id());
 		});
 	}
 
