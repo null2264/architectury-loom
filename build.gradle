@@ -337,7 +337,7 @@ publishing {
 			snapshot(MavenPublication) { publication ->
 				groupId project.group
 				artifactId project.base.archivesName.get()
-				version baseVersion + '-ZI'
+				version baseVersion + '-SNAPSHOT'
 
 				from components.java
 			}
@@ -346,7 +346,7 @@ publishing {
 		snapshotPlugin(MavenPublication) {
 			groupId 'dev.architectury.loom'
 			artifactId 'dev.architectury.loom.gradle.plugin'
-			version baseVersion + '-ZI'
+			version baseVersion + '-SNAPSHOT'
 
 			pom.withXml {
 				// Based off org.gradle.plugin.devel.plugins.MavenPluginPublishPlugin
@@ -359,7 +359,7 @@ publishing {
 				Node artifactId = dependency.appendChild(document.createElement('artifactId'))
 				artifactId.setTextContent(project.archivesBaseName)
 				Node version = dependency.appendChild(document.createElement('version'))
-				version.setTextContent(baseVersion + '-ZI')
+				version.setTextContent(baseVersion + '-SNAPSHOT')
 			}
 		}
 	}
