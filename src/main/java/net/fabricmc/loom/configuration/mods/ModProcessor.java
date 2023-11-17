@@ -168,14 +168,7 @@ public class ModProcessor {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		MappingOption mappingOption = MappingOption.DEFAULT;
-
-		if ((fromM.equals(MappingsNamespace.SRG.toString()) || toM.equals(MappingsNamespace.SRG.toString())) && extension.isForge()) {
-			mappingOption = MappingOption.WITH_SRG;
-		} else if ((fromM.equals(MappingsNamespace.MOJANG.toString()) || toM.equals(MappingsNamespace.MOJANG.toString())) && extension.isNeoForge()) {
-			mappingOption = MappingOption.WITH_MOJANG;
-		}
-
+		MappingOption mappingOption = MappingOption.forPlatform(extension).forNamespaces(fromM, toM);
 		MemoryMappingTree mappings = mappingConfiguration.getMappingsService(serviceManager, mappingOption).getMappingTree();
 		LoggerFilter.replaceSystemOut();
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
