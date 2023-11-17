@@ -185,7 +185,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 				ModPlatform platform = ModPlatform.valueOf(Objects.toString(platformProperty).toUpperCase(Locale.ROOT));
 
 				if (platform.isExperimental()) {
-					project.getLogger().warn("Project " + project.getPath() + " is using experimental mod platform " + platform.name() + ". Please report any issues!");
+					project.getLogger().lifecycle("{} support is experimental. Please report any issues!", platform.displayName());
 				}
 
 				return platform;
