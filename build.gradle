@@ -372,7 +372,7 @@ publishing {
 		} else {
 			maven {
 				name = "GitHubPackages"
-				url = uri("https://maven.pkg.github.com/null2264/Respro")
+				url = uri("https://maven.pkg.github.com/null2264/architectury-loom")
 				credentials {
 					username = System.getenv("GITHUB_ACTOR")
 					password = System.getenv("GITHUB_TOKEN")
