@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 FabricMC
+ * Copyright (c) 2021-2023 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,8 @@ import net.fabricmc.loom.api.LoomGradleExtensionAPI;
 public enum ModPlatform {
 	FABRIC(false),
 	FORGE(false),
-	QUILT(true);
+	QUILT(true),
+	NEOFORGE(true);
 
 	boolean experimental;
 
@@ -44,8 +45,19 @@ public enum ModPlatform {
 		this.experimental = experimental;
 	}
 
+	/**
+	 * Returns the lowercase ID of this mod platform.
+	 */
+	public String id() {
+		return name().toLowerCase(Locale.ROOT);
+	}
+
 	public boolean isExperimental() {
 		return experimental;
+	}
+
+	public boolean isForgeLike() {
+		return this == FORGE || this == NEOFORGE;
 	}
 
 	public static void assertPlatform(Project project, ModPlatform platform) {
@@ -55,13 +67,23 @@ public enum ModPlatform {
 	public static void assertPlatform(LoomGradleExtensionAPI extension, ModPlatform platform) {
 		assertPlatform(extension, platform, () -> {
 			String msg = "Loom is not running on %s.%nYou can switch to it by adding 'loom.platform = %s' to your gradle.properties";
-			String name = platform.name().toLowerCase(Locale.ROOT);
-			return msg.formatted(name, name);
+			String id = platform.id();
+			return msg.formatted(id, id);
 		});
 	}
 
 	public static void assertPlatform(LoomGradleExtensionAPI extension, ModPlatform platform, Supplier<String> message) {
 		if (extension.getPlatform().get() != platform) {
+			throw new GradleException(message.get());
+		}
+	}
+
+	public static void assertForgeLike(LoomGradleExtensionAPI extension) {
+		assertForgeLike(extension, () -> "Loom is not running on a Forge-like platform (Forge or NeoForge).");
+	}
+
+	public static void assertForgeLike(LoomGradleExtensionAPI extension, Supplier<String> message) {
+		if (!extension.getPlatform().get().isForgeLike()) {
 			throw new GradleException(message.get());
 		}
 	}

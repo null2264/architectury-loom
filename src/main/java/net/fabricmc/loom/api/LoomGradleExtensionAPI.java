@@ -235,8 +235,16 @@ public interface LoomGradleExtensionAPI {
 
 	Provider<ModPlatform> getPlatform();
 
+	default boolean isForgeLike() {
+		return getPlatform().get().isForgeLike();
+	}
+
 	default boolean isForge() {
 		return getPlatform().get() == ModPlatform.FORGE;
+	}
+
+	default boolean isNeoForge() {
+		return getPlatform().get() == ModPlatform.NEOFORGE;
 	}
 
 	default boolean isQuilt() {
@@ -265,4 +273,15 @@ public interface LoomGradleExtensionAPI {
 	ForgeExtensionAPI getForge();
 
 	void forge(Action<ForgeExtensionAPI> action);
+
+	/**
+	 * Gets the NeoForge extension used to configure NeoForge details.
+	 *
+	 * @return the NeoForge extension
+	 * @throws UnsupportedOperationException if running on another platform
+	 * @see #isNeoForge()
+	 */
+	NeoForgeExtensionAPI getNeoForge();
+
+	void neoForge(Action<NeoForgeExtensionAPI> action);
 }

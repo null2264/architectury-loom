@@ -54,6 +54,7 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.api.processor.MinecraftJarProcessor;
 import net.fabricmc.loom.api.processor.ProcessorContext;
 import net.fabricmc.loom.api.processor.SpecContext;
+import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.DependencyDownloader;
 import net.fabricmc.loom.util.ExceptionUtil;
@@ -138,7 +139,7 @@ public class AccessTransformerJarProcessor implements MinecraftJarProcessor<Acce
 			}
 		}
 
-		accessTransformSet = accessTransformSet.remap(new TinyMappingsReader(context.getMappings(), MappingsNamespace.SRG.toString(), MappingsNamespace.NAMED.toString()).read());
+		accessTransformSet = accessTransformSet.remap(new TinyMappingsReader(context.getMappings(), IntermediaryNamespaces.intermediary(project), MappingsNamespace.NAMED.toString()).read());
 
 		final Path accessTransformerPath = tempFiles.file("accesstransformer-merged", ".cfg");
 

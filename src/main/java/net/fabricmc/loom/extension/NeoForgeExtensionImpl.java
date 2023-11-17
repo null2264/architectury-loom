@@ -22,37 +22,30 @@
  * SOFTWARE.
  */
 
-package net.fabricmc.loom.test.integration.neoforge
+package net.fabricmc.loom.extension;
 
-import spock.lang.Specification
-import spock.lang.Unroll
+import javax.inject.Inject;
 
-import net.fabricmc.loom.test.util.GradleProjectTestTrait
+import org.gradle.api.Project;
+import org.gradle.api.file.ConfigurableFileCollection;
 
-import static net.fabricmc.loom.test.LoomTestConstants.DEFAULT_GRADLE
-import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import net.fabricmc.loom.api.NeoForgeExtensionAPI;
 
-class NeoForge1201Test extends Specification implements GradleProjectTestTrait {
-	@Unroll
-	def "build #mcVersion #forgeVersion #mappings"() {
-		setup:
-		def gradle = gradleProject(project: "forge/simple", version: DEFAULT_GRADLE)
-		gradle.buildGradle.text = gradle.buildGradle.text.replace('@MCVERSION@', mcVersion)
-				.replace('@FORGEVERSION@', forgeVersion)
-				.replace('@MAPPINGS@', mappings)
-				.replace('@REPOSITORIES@', 'maven { url "https://maven.neoforged.net/releases/" }')
-				.replace('@PACKAGE@', 'net.neoforged:forge')
-				.replace('@JAVA_VERSION@', '17')
+public class NeoForgeExtensionImpl implements NeoForgeExtensionAPI {
+	private final ConfigurableFileCollection accessTransformers;
 
-		when:
-		def result = gradle.run(task: "build")
+	@Inject
+	public NeoForgeExtensionImpl(Project project) {
+		accessTransformers = project.getObjects().fileCollection();
+	}
 
-		then:
-		result.task(":build").outcome == SUCCESS
+	@Override
+	public ConfigurableFileCollection getAccessTransformers() {
+		return accessTransformers;
+	}
 
-		where:
-		mcVersion | forgeVersion | mappings
-		'1.20.1'  | "47.1.79"    | "loom.officialMojangMappings()"
-		'1.20.1'  | "47.1.79"    | "'net.fabricmc:yarn:1.20.1+build.1:v2'"
+	@Override
+	public void accessTransformer(Object file) {
+		accessTransformers.from(file);
 	}
 }
