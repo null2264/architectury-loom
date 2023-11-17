@@ -32,9 +32,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -187,9 +189,9 @@ public class ModProcessor {
 			builder.extension(kotlinRemapperClassloader.getTinyRemapperExtension());
 		}
 
-		if (extension.isNeoForge()) {
-			builder.extension(new MixinExtension());
-		}
+		final Set<InputTag> hasMixinsWithoutRefmaps = new HashSet<>();
+		// Configure the mixin extension to remap mixins from mod jars detected not to contain refmaps.
+		builder.extension(new MixinExtension(tag -> extension.isNeoForge() || hasMixinsWithoutRefmaps.contains(tag)));
 
 		final TinyRemapper remapper = builder.build();
 
@@ -217,6 +219,12 @@ public class ModProcessor {
 			InputTag tag = remapper.createInputTag();
 
 			project.getLogger().debug("Adding " + info.getInputFile() + " as a remap input");
+
+			// Note: this is done at a jar level, not at the level of an individual mixin config.
+			// If a mod has multiple mixin configs, it's assumed that either all or none of them have refmaps.
+			if (MixinDetector.hasMixinsWithoutRefmap(info.getInputFile())) {
+				hasMixinsWithoutRefmaps.add(tag);
+			}
 
 			remapper.readInputsAsync(tag, info.getInputFile());
 			tagMap.put(info, tag);

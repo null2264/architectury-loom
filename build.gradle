@@ -50,7 +50,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 }
 
 group = "dev.architectury"
-def baseVersion = '1.4'
+def baseVersion = '1.5'
 
 def ENV = System.getenv()
 def runNumber = ENV.GITHUB_RUN_NUMBER ?: "9999"
