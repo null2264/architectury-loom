@@ -39,7 +39,7 @@ import dev.architectury.tinyremapper.IMappingProvider;
 import dev.architectury.tinyremapper.TinyRemapper;
 
 import net.fabricmc.mappingio.adapter.RegularAsFlatMappingVisitor;
-import net.fabricmc.mappingio.format.Tiny2Writer;
+import net.fabricmc.mappingio.format.tiny.Tiny2FileWriter;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 
 public class MappingsProviderVerbose {
@@ -107,7 +107,7 @@ public class MappingsProviderVerbose {
 
 		Path check = Files.createTempFile("CHECK", null);
 		StringWriter stringWriter = new StringWriter();
-		Tiny2Writer tiny2Writer = new Tiny2Writer(stringWriter, false);
+		Tiny2FileWriter tiny2Writer = new Tiny2FileWriter(stringWriter, false);
 		tree.accept(tiny2Writer);
 		Files.writeString(check, stringWriter.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 		System.out.println("Saved debug check mappings to " + check);

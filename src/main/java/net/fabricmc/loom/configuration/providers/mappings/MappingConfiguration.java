@@ -73,7 +73,7 @@ import net.fabricmc.loom.util.srg.ForgeMappingsMerger;
 import net.fabricmc.loom.util.srg.SrgNamedWriter;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.format.MappingFormat;
-import net.fabricmc.mappingio.format.Tiny2Writer;
+import net.fabricmc.mappingio.format.tiny.Tiny2FileWriter;
 import net.fabricmc.stitch.Command;
 import net.fabricmc.stitch.commands.CommandProposeFieldNames;
 import net.fabricmc.stitch.commands.tinyv2.TinyFile;
@@ -214,7 +214,7 @@ public class MappingConfiguration {
 				final Stopwatch stopwatch = Stopwatch.createStarted();
 				final MappingContext context = new GradleMappingContext(project, "tmp-neoforge");
 
-				try (Tiny2Writer writer = new Tiny2Writer(Files.newBufferedWriter(tinyMappingsWithMojang), false)) {
+				try (Tiny2FileWriter writer = new Tiny2FileWriter(Files.newBufferedWriter(tinyMappingsWithMojang), false)) {
 					ForgeMappingsMerger.mergeMojang(context, tinyMappings, null, true).accept(writer);
 				}
 
@@ -228,7 +228,7 @@ public class MappingConfiguration {
 				Stopwatch stopwatch = Stopwatch.createStarted();
 				ForgeMappingsMerger.ExtraMappings extraMappings = ForgeMappingsMerger.ExtraMappings.ofMojmapTsrg(getMojmapSrgFileIfPossible(project));
 
-				try (Tiny2Writer writer = new Tiny2Writer(Files.newBufferedWriter(tinyMappingsWithSrg), false)) {
+				try (Tiny2FileWriter writer = new Tiny2FileWriter(Files.newBufferedWriter(tinyMappingsWithSrg), false)) {
 					ForgeMappingsMerger.mergeSrg(getRawSrgFile(project), tinyMappings, extraMappings, true).accept(writer);
 				}
 
@@ -394,9 +394,9 @@ public class MappingConfiguration {
 	private static boolean areMappingsMergedV2(Path path) throws IOException {
 		try (BufferedReader reader = Files.newBufferedReader(path)) {
 			reader.mark(4096); // == DETECT_HEADER_LEN
-			boolean isTinyV2 = MappingReader.detectFormat(reader) == MappingFormat.TINY_2;
+			boolean isTinyV2 = MappingReader.detectFormat(reader) == MappingFormat.TINY_2_FILE;
 			reader.reset();
-			return isTinyV2 && MappingReader.getNamespaces(reader, MappingFormat.TINY_2).containsAll(Arrays.asList("named", "intermediary", "official"));
+			return isTinyV2 && MappingReader.getNamespaces(reader, MappingFormat.TINY_2_FILE).containsAll(Arrays.asList("named", "intermediary", "official"));
 		} catch (NoSuchFileException e) {
 			return false;
 		}

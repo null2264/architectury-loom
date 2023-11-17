@@ -33,7 +33,7 @@ import spock.lang.TempDir
 import net.fabricmc.loom.util.srg.ForgeMappingsMerger
 import net.fabricmc.mappingio.MappingUtil
 import net.fabricmc.mappingio.format.MappingFormat
-import net.fabricmc.mappingio.format.Tiny2Writer
+import net.fabricmc.mappingio.format.tiny.Tiny2FileWriter
 
 class SrgMergerTest extends Specification {
 	@TempDir
@@ -69,7 +69,7 @@ class SrgMergerTest extends Specification {
 		def srgInput = extractTempFile("srgInput.tsrg")
 		def tinyInput = extractTempFile("tinyInput.tiny")
 
-		new Tiny2Writer(Files.newBufferedWriter(output), false).withCloseable { writer ->
+		new Tiny2FileWriter(Files.newBufferedWriter(output), false).withCloseable { writer ->
 			ForgeMappingsMerger.mergeSrg(srgInput, tinyInput, extraMappings, true).accept(writer)
 		}
 	}
