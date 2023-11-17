@@ -31,7 +31,7 @@ dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:$mcVersion"
 	mappings @MAPPINGS@
-	neoforge "net.neoforged:neoforge:$neoforgeVersion"
+	neoForge "net.neoforged:neoforge:$neoforgeVersion"
 }
 
 tasks.withType(JavaCompile).configureEach {
