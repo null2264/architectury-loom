@@ -333,7 +333,7 @@ publishing {
 			snapshot(MavenPublication) { publication ->
 				groupId project.group
 				artifactId project.base.archivesName.get()
-				version baseVersion + '-SNAPSHOT'
+				version baseVersion + '-ZI'
 
 				from components.java
 			}
@@ -342,7 +342,7 @@ publishing {
 		snapshotPlugin(MavenPublication) {
 			groupId 'dev.architectury.loom'
 			artifactId 'dev.architectury.loom.gradle.plugin'
-			version baseVersion + '-SNAPSHOT'
+			version baseVersion + '-ZI'
 
 			pom.withXml {
 				// Based off org.gradle.plugin.devel.plugins.MavenPluginPublishPlugin
@@ -355,7 +355,7 @@ publishing {
 				Node artifactId = dependency.appendChild(document.createElement('artifactId'))
 				artifactId.setTextContent(project.archivesBaseName)
 				Node version = dependency.appendChild(document.createElement('version'))
-				version.setTextContent(baseVersion + '-SNAPSHOT')
+				version.setTextContent(baseVersion + '-ZI')
 			}
 		}
 	}
@@ -367,6 +367,15 @@ publishing {
 				credentials {
 					username = "shedaniel"
 					password = ENV.MAVEN_PASS
+				}
+			}
+		} else {
+			maven {
+				name = "GitHubPackages"
+				url = uri("https://maven.pkg.github.com/null2264/Respro")
+				credentials {
+					username = System.getenv("GITHUB_ACTOR")
+					password = System.getenv("GITHUB_TOKEN")
 				}
 			}
 		}
