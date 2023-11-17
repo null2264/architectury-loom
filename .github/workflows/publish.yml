@@ -29,3 +29,5 @@ jobs:
           java-version: 17
       - name: Upload to Maven
         run: ./gradlew publish --stacktrace
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
