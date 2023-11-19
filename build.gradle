@@ -367,7 +367,7 @@ publishing {
 	repositories {
 		if (ENV.MAVEN_PASS != null) {
 			maven {
-				url = "https://maven.aap.my.id/"
+				url = "https://maven.aap.my.id/releases"
 				credentials {
 					username = "admin"
 					password = ENV.MAVEN_PASS
