@@ -367,19 +367,10 @@ publishing {
 	repositories {
 		if (ENV.MAVEN_PASS != null) {
 			maven {
-				url = "https://deploy.shedaniel.me/"
+				url = "https://maven.aap.my.id/"
 				credentials {
-					username = "shedaniel"
+					username = "admin"
 					password = ENV.MAVEN_PASS
-				}
-			}
-		} else {
-			maven {
-				name = "GitHubPackages"
-				url = uri("https://maven.pkg.github.com/null2264/architectury-loom")
-				credentials {
-					username = System.getenv("GITHUB_ACTOR")
-					password = System.getenv("GITHUB_TOKEN")
 				}
 			}
 		}
