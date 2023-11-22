@@ -226,7 +226,6 @@ public class MinecraftPatchedProvider {
 	}
 
 	private TinyRemapper buildRemapper(SharedServiceManager serviceManager, Path input) throws IOException {
-		Path[] libraries = TinyRemapperHelper.getMinecraftCompileLibraries(project);
 		final MappingOption mappingOption = MappingOption.forPlatform(getExtension());
 		TinyMappingsService mappingsService = getExtension().getMappingConfiguration().getMappingsService(serviceManager, mappingOption);
 		final String sourceNamespace = IntermediaryNamespaces.intermediary(project);
@@ -245,7 +244,6 @@ public class MinecraftPatchedProvider {
 			MappingsProviderVerbose.saveFile(remapper);
 		}
 
-		remapper.readClassPath(libraries);
 		remapper.prepareClasses();
 		return remapper;
 	}

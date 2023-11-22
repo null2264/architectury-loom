@@ -60,7 +60,7 @@ class FabricAPITest extends Specification implements GradleProjectTestTrait {
 				""".stripIndent()
 		}
 
-        // Set the version to something constant
+        // Change the plugin used
         gradle.buildGradle.text = gradle.buildGradle.text
                 .replace('id "fabric-loom" version "1.4.1"', 'id "dev.architectury.loom"')
                 .replace('"fabric-loom"', '"dev.architectury.loom"') + mixinApPatch
