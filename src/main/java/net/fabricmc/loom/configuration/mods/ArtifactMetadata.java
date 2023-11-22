@@ -52,10 +52,10 @@ public record ArtifactMetadata(boolean isFabricMod, RemapRequirements remapRequi
 	private static final String QUILT_INSTALLER_PATH = "quilt_installer.json";
 
 	public static ArtifactMetadata create(ArtifactRef artifact, String currentLoomVersion) throws IOException {
-		return create(artifact, ModPlatform.FABRIC);
+		return create(artifact, currentLoomVersion, ModPlatform.FABRIC);
 	}
 
-	public static ArtifactMetadata create(ArtifactRef artifact, ModPlatform platform) throws IOException {
+	public static ArtifactMetadata create(ArtifactRef artifact, String currentLoomVersion, ModPlatform platform) throws IOException {
 		boolean isFabricMod;
 		RemapRequirements remapRequirements = RemapRequirements.DEFAULT;
 		InstallerData installerData = null;

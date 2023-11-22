@@ -220,6 +220,13 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 				if (mixinAp) {
 					setupLegacyMixinRefmapRemapping(params);
+				}
+
+				// Add the mixin refmap remap type to the manifest
+				// This is used by the mod dependency remapper to determine if it should remap the refmap
+				// or if the refmap should be remapped by mixin at runtime.
+				final var refmapRemapType = mixinAp ? ArtifactMetadata.MixinRemapType.MIXIN : ArtifactMetadata.MixinRemapType.STATIC;
+				params.getManifestAttributes().put(Constants.Manifest.MIXIN_REMAP_TYPE, refmapRemapType.manifestValue());
 			} else if (extension.isForge()) {
 				throw new RuntimeException("Forge must have useLegacyMixinAp enabled");
 			}
@@ -235,13 +242,6 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 			if (!getAtAccessWideners().get().isEmpty()) {
 				params.getMappingBuildServiceUuid().set(UnsafeWorkQueueHelper.create(MappingsService.createDefault(getProject(), serviceManagerProvider.get().get(), getSourceNamespace().get(), getTargetNamespace().get())));
-				}
-
-				// Add the mixin refmap remap type to the manifest
-				// This is used by the mod dependency remapper to determine if it should remap the refmap
-				// or if the refmap should be remapped by mixin at runtime.
-				final var refmapRemapType = mixinAp ? ArtifactMetadata.MixinRemapType.MIXIN : ArtifactMetadata.MixinRemapType.STATIC;
-				params.getManifestAttributes().put(Constants.Manifest.MIXIN_REMAP_TYPE, refmapRemapType.manifestValue());
 			}
 		});
 	}
