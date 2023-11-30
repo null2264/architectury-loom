@@ -329,6 +329,10 @@ import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 
+if (ENV.S3_ENDPOINT != null) {
+	System.setProperty("org.gradle.s3.endpoint", ENV.S3_ENDPOINT)
+}
+
 publishing {
 	publications {
 		if (isSnapshot) return
@@ -365,9 +369,9 @@ publishing {
 	}
 
 	repositories {
-		if (ENV.AWS_ACCESS_KEY != null && ENV.AWS_SECRET_KEY != null && ENV.AWS_API != null) {
+		if (ENV.AWS_ACCESS_KEY != null && ENV.AWS_SECRET_KEY != null) {
 			maven {
-				url ENV.AWS_API
+				url "s3://maven"
 				credentials(AwsCredentials) {
 					accessKey ENV.AWS_ACCESS_KEY
 					secretKey ENV.AWS_SECRET_KEY

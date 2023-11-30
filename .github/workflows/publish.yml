@@ -32,4 +32,4 @@ jobs:
         env:
           AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
-          AWS_API: ${{ secrets.AWS_API }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
