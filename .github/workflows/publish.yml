@@ -30,4 +30,6 @@ jobs:
       - name: Upload to Maven
         run: ./gradlew publish --stacktrace
         env:
-          MAVEN_PASS: ${{ secrets.MAVEN_PASS }}
+          AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_API: ${{ secrets.AWS_API }}
