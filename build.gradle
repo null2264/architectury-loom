@@ -368,10 +368,9 @@ publishing {
 		if (ENV.AWS_ACCESS_KEY != null && ENV.AWS_SECRET_KEY != null && ENV.AWS_API != null) {
 			maven {
 				url ENV.AWS_API
-					credentials(AwsCredentials) {
-						accessKey ENV.AWS_ACCESS_KEY
-						secretKey ENV.AWS_SECRET_KEY
-					}
+				credentials(AwsCredentials) {
+					accessKey ENV.AWS_ACCESS_KEY
+					secretKey ENV.AWS_SECRET_KEY
 				}
 			}
 		}
