@@ -26,8 +26,6 @@ package net.fabricmc.loom.extension;
 
 import javax.inject.Inject;
 
-import dev.architectury.tinyremapper.TinyRemapper;
-import dev.architectury.tinyremapper.api.TrClass;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
@@ -41,6 +39,8 @@ import net.fabricmc.loom.api.remapping.RemapperContext;
 import net.fabricmc.loom.api.remapping.RemapperExtension;
 import net.fabricmc.loom.api.remapping.RemapperParameters;
 import net.fabricmc.loom.api.remapping.TinyRemapperExtension;
+import net.fabricmc.tinyremapper.TinyRemapper;
+import net.fabricmc.tinyremapper.api.TrClass;
 
 public abstract class RemapperExtensionHolder {
 	// Null when RemapperParameters.None.class

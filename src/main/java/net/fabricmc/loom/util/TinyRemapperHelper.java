@@ -33,8 +33,6 @@ import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableMap;
 import dev.architectury.loom.util.MappingOption;
-import dev.architectury.tinyremapper.IMappingProvider;
-import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 
 import net.fabricmc.loom.LoomGradleExtension;
@@ -45,6 +43,8 @@ import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.tree.MappingTree;
 import net.fabricmc.mappingio.tree.MappingTreeView;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
+import net.fabricmc.tinyremapper.IMappingProvider;
+import net.fabricmc.tinyremapper.TinyRemapper;
 
 /**
  * Contains shortcuts to create tiny remappers using the mappings accessibly to the project.
@@ -80,11 +80,8 @@ public final class TinyRemapperHelper {
 		int intermediaryNsId = mappingTree.getNamespaceId(MappingsNamespace.INTERMEDIARY.toString());
 
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
-				.logUnknownInvokeDynamic(false)
 				.ignoreConflicts(extension.isForgeLike())
-				.cacheMappings(true)
 				.threads(Runtime.getRuntime().availableProcessors())
-				.logger(project.getLogger()::lifecycle)
 				.withMappings(create(mappingTree, fromM, toM, true))
 				.renameInvalidLocals(true)
 				.rebuildSourceFilenames(true)

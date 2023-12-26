@@ -37,9 +37,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 
-import dev.architectury.tinyremapper.IMappingProvider;
-import dev.architectury.tinyremapper.InputTag;
-import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.model.ObjectFactory;
@@ -58,6 +55,9 @@ import net.fabricmc.loom.util.kotlin.KotlinClasspathService;
 import net.fabricmc.loom.util.kotlin.KotlinRemapperClassloader;
 import net.fabricmc.loom.util.service.SharedService;
 import net.fabricmc.loom.util.service.SharedServiceManager;
+import net.fabricmc.tinyremapper.IMappingProvider;
+import net.fabricmc.tinyremapper.InputTag;
+import net.fabricmc.tinyremapper.TinyRemapper;
 
 public class TinyRemapperService implements SharedService {
 	public static synchronized TinyRemapperService getOrCreate(SharedServiceManager serviceManager, AbstractRemapJarTask remapJarTask) {
@@ -145,7 +145,7 @@ public class TinyRemapperService implements SharedService {
 		}
 
 		if (useMixinExtension) {
-			builder.extension(new dev.architectury.tinyremapper.extension.mixin.MixinExtension());
+			builder.extension(new net.fabricmc.tinyremapper.extension.mixin.MixinExtension());
 		}
 
 		if (kotlinClasspath != null) {

@@ -44,11 +44,6 @@ import java.util.regex.Pattern;
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonObject;
 import dev.architectury.loom.util.MappingOption;
-import dev.architectury.tinyremapper.InputTag;
-import dev.architectury.tinyremapper.NonClassCopyMode;
-import dev.architectury.tinyremapper.OutputConsumerPath;
-import dev.architectury.tinyremapper.TinyRemapper;
-import dev.architectury.tinyremapper.extension.mixin.MixinExtension;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.attributes.Usage;
@@ -72,6 +67,11 @@ import net.fabricmc.loom.util.service.SharedServiceManager;
 import net.fabricmc.loom.util.srg.AtRemapper;
 import net.fabricmc.loom.util.srg.CoreModClassRemapper;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
+import net.fabricmc.tinyremapper.InputTag;
+import net.fabricmc.tinyremapper.NonClassCopyMode;
+import net.fabricmc.tinyremapper.OutputConsumerPath;
+import net.fabricmc.tinyremapper.TinyRemapper;
+import net.fabricmc.tinyremapper.extension.mixin.MixinExtension;
 
 public class ModProcessor {
 	private static final String toM = MappingsNamespace.NAMED.toString();
@@ -176,8 +176,6 @@ public class ModProcessor {
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
 				.withKnownIndyBsm(extension.getKnownIndyBsms().get())
 				.withMappings(TinyRemapperHelper.create(mappings, fromM, toM, false))
-				.logger(project.getLogger()::lifecycle)
-				.logUnknownInvokeDynamic(false)
 				.renameInvalidLocals(false)
 				.extraAnalyzeVisitor(AccessWidenerAnalyzeVisitorProvider.createFromMods(fromM, remapList, extension.getPlatform().get()));
 

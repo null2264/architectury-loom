@@ -35,12 +35,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
 
-import dev.architectury.tinyremapper.IMappingProvider;
-import dev.architectury.tinyremapper.TinyRemapper;
-
 import net.fabricmc.mappingio.adapter.RegularAsFlatMappingVisitor;
 import net.fabricmc.mappingio.format.tiny.Tiny2FileWriter;
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
+import net.fabricmc.tinyremapper.IMappingProvider;
+import net.fabricmc.tinyremapper.TinyRemapper;
 
 public class MappingsProviderVerbose {
 	public static void saveFile(TinyRemapper providers) throws IOException {

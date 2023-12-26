@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import dev.architectury.tinyremapper.TinyRemapper;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.provider.Property;
@@ -44,6 +43,7 @@ import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.configuration.InstallerData;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.LoomVersions;
+import net.fabricmc.tinyremapper.TinyRemapper;
 
 public abstract class JarManifestService implements BuildService<JarManifestService.Params> {
 	interface Params extends BuildServiceParameters {
