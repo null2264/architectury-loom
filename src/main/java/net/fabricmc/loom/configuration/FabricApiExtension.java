@@ -25,10 +25,13 @@
 package net.fabricmc.loom.configuration;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.xml.parsers.DocumentBuilder;
@@ -53,6 +56,8 @@ import org.w3c.dom.NodeList;
 
 import net.fabricmc.loom.LoomGradleExtension;
 import net.fabricmc.loom.util.download.DownloadException;
+import net.fabricmc.loom.util.fmj.FabricModJson;
+import net.fabricmc.loom.util.fmj.FabricModJsonFactory;
 import net.fabricmc.loom.util.gradle.SourceSetHelper;
 
 public abstract class FabricApiExtension {
@@ -104,7 +109,6 @@ public abstract class FabricApiExtension {
 		DataGenerationSettings settings = getProject().getObjects().newInstance(DataGenerationSettings.class);
 		settings.getOutputDirectory().set(getProject().file("src/main/generated"));
 		settings.getCreateRunConfiguration().convention(true);
-		settings.getCreateSourceSet().convention(true);
 		settings.getCreateSourceSet().convention(false);
 		settings.getStrictValidation().convention(false);
 		settings.getAddToResources().convention(true);
@@ -117,7 +121,9 @@ public abstract class FabricApiExtension {
 		if (settings.getAddToResources().get()) {
 			mainSourceSet.resources(files -> {
 				// Add the src/main/generated to the main sourceset's resources.
-				files.getSrcDirs().add(outputDirectory);
+				Set<File> srcDirs = new HashSet<>(files.getSrcDirs());
+				srcDirs.add(outputDirectory);
+				files.setSrcDirs(srcDirs);
 			});
 		}
 
@@ -133,14 +139,10 @@ public abstract class FabricApiExtension {
 		});
 
 		if (settings.getCreateSourceSet().get()) {
-			if (!settings.getModId().isPresent()) {
-				throw new IllegalStateException("DataGenerationSettings.getModId() must be set when using split sources.");
-			}
-
 			SourceSetContainer sourceSets = SourceSetHelper.getSourceSets(getProject());
 
 			// Create the new datagen sourceset, depend on the main sourceset.
-			sourceSets.create(DATAGEN_SOURCESET_NAME, sourceSet -> {
+			SourceSet dataGenSourceSet = sourceSets.create(DATAGEN_SOURCESET_NAME, sourceSet -> {
 				sourceSet.setCompileClasspath(
 							sourceSet.getCompileClasspath()
 								.plus(mainSourceSet.getOutput())
@@ -155,6 +157,20 @@ public abstract class FabricApiExtension {
 				extendsFrom(getProject(), sourceSet.getRuntimeClasspathConfigurationName(), mainSourceSet.getRuntimeClasspathConfigurationName());
 			});
 
+			settings.getModId().convention(getProject().provider(() -> {
+				try {
+					final FabricModJson fabricModJson = FabricModJsonFactory.createFromSourceSetsNullable(dataGenSourceSet);
+
+					if (fabricModJson == null) {
+						throw new RuntimeException("Could not find a fabric.mod.json file in the data source set or a value for DataGenerationSettings.getModId()");
+					}
+
+					return fabricModJson.getId();
+				} catch (IOException e) {
+					throw new org.gradle.api.UncheckedIOException("Failed to read mod id from the datagen source set.", e);
+				}
+			}));
+
 			extension.getMods().create(settings.getModId().get(), mod -> {
 				// Create a classpath group for this mod. Assume that the main sourceset is already in a group.
 				mod.sourceSet(DATAGEN_SOURCESET_NAME);
@@ -165,7 +181,7 @@ public abstract class FabricApiExtension {
 
 		if (settings.getCreateRunConfiguration().get()) {
 			extension.getRunConfigs().create("datagen", run -> {
-				run.name("Data Generation");
+				run.setConfigName("Data Generation");
 				run.inherit(extension.getRunConfigs().getByName("server"));
 
 				run.property("fabric-api.datagen");

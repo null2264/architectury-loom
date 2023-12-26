@@ -59,6 +59,7 @@ import net.fabricmc.loom.api.mappings.layered.MappingsNamespace;
 import net.fabricmc.loom.build.IntermediaryNamespaces;
 import net.fabricmc.loom.configuration.mods.dependency.ModDependency;
 import net.fabricmc.loom.configuration.providers.mappings.MappingConfiguration;
+import net.fabricmc.loom.extension.RemapperExtensionHolder;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.LoggerFilter;
 import net.fabricmc.loom.util.ModPlatform;
@@ -195,6 +196,10 @@ public class ModProcessor {
 		if (requiresStaticMixinRemap) {
 			// Configure the mixin extension to remap mixins from mod jars that were remapped with the mixin extension.
 			builder.extension(new MixinExtension(tag -> extension.isNeoForge() || remapMixins.contains(tag)));
+		}
+
+		for (RemapperExtensionHolder holder : extension.getRemapperExtensions().get()) {
+			holder.apply(builder, fromM, toM, project.getObjects());
 		}
 
 		final TinyRemapper remapper = builder.build();

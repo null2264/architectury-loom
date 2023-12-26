@@ -239,6 +239,8 @@ java {
 }
 
 spotless {
+	lineEndings = com.diffplug.spotless.LineEnding.UNIX
+
 	java {
 		licenseHeaderFile(rootProject.file("HEADER")).yearSeparator("-")
 		targetExclude("**/loom/util/DownloadUtil.java", "**/loom/util/FileSystemUtil.java")
