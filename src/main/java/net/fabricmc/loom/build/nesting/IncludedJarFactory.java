@@ -183,7 +183,7 @@ public final class IncludedJarFactory {
 
 		File tempFile = new File(tempDir, input.getName());
 
-		if (tempFile.exists() && FabricModJsonFactory.isModJar(tempFile)) {
+		if (tempFile.exists() && FabricModJsonFactory.isModJar(tempFile, LoomGradleExtension.get(project).getPlatform().get())) {
 			return tempFile;
 		}
 

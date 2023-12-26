@@ -265,8 +265,6 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 		return new LayeredMappingsDependency(getProject(), new GradleMappingContext(getProject(), builtSpec.getVersion().replace("+", "_").replace(".", "_")), builtSpec, builtSpec.getVersion());
 	}
 
-	protected abstract String getMinecraftVersion();
-
 	@Override
 	public void runs(Action<NamedDomainObjectContainer<RunConfigSettings>> action) {
 		action.execute(runConfigs);
@@ -555,11 +553,6 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 		@Override
 		public MixinExtension getMixin() {
-			throw new RuntimeException("Yeah... something is really wrong");
-		}
-
-		@Override
-		protected String getMinecraftVersion() {
 			throw new RuntimeException("Yeah... something is really wrong");
 		}
 

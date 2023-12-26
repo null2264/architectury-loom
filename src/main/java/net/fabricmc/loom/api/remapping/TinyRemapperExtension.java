@@ -24,10 +24,9 @@
 
 package net.fabricmc.loom.api.remapping;
 
+import dev.architectury.tinyremapper.TinyRemapper;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-
-import net.fabricmc.tinyremapper.TinyRemapper;
 
 /**
  * A remapper extension, that has direct access to the TinyRemapper APIs.

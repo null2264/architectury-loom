@@ -303,11 +303,6 @@ public class LoomGradleExtensionImpl extends LoomGradleExtensionApiImpl implemen
 	}
 
 	@Override
-	protected String getMinecraftVersion() {
-		return getMinecraftProvider().minecraftVersion();
-	}
-
-	@Override
 	public ForgeExtensionAPI getForge() {
 		ModPlatform.assertPlatform(this, ModPlatform.FORGE);
 		return forgeExtension.get();
