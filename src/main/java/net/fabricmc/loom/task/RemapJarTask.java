@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 FabricMC
+ * Copyright (c) 2021-2024 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ import javax.inject.Inject;
 import com.google.gson.JsonObject;
 import dev.architectury.loom.extensions.ModBuildExtensions;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
@@ -141,18 +142,13 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 	public RemapJarTask() {
 		super();
 		serviceManagerProvider = BuildSharedServiceManager.createForTask(this, getBuildEventsListenerRegistry());
-
-		final Configuration compileClasspath = getProject().getConfigurations().getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME);
-		final Configuration minecraftCompileLibraries = getProject().getConfigurations().getByName(Constants.Configurations.MINECRAFT_COMPILE_LIBRARIES);
-		// Filter out minecraft libraries from the classpath as we are 100% sure they don't play a part in the obfuscation
-		final FileCollection remapClasspath = compileClasspath.filter(file -> !minecraftCompileLibraries.getFiles().contains(file));
-
-		getClasspath().from(remapClasspath);
+		final ConfigurationContainer configurations = getProject().getConfigurations();
+		getClasspath().from(configurations.getByName(JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME));
 		getAddNestedDependencies().convention(true).finalizeValueOnRead();
 		getReadMixinConfigsFromManifest().convention(LoomGradleExtension.get(getProject()).isForgeLike()).finalizeValueOnRead();
 		getInjectAccessWidener().convention(false);
 
-		Configuration includeConfiguration = getProject().getConfigurations().getByName(Constants.Configurations.INCLUDE);
+		Configuration includeConfiguration = configurations.getByName(Constants.Configurations.INCLUDE);
 		IncludedJarFactory factory = new IncludedJarFactory(getProject());
 
 		if (!LoomGradleExtension.get(getProject()).isForgeLike()) {
@@ -187,12 +183,9 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		mustRunAfter(prepareJarTask);
 
 		getProject().getGradle().allprojects(project -> {
-			project.getTasks().configureEach(task -> {
-				if (task instanceof PrepareJarRemapTask otherTask) {
-					// Ensure that all remap jars run after all prepare tasks
-					mustRunAfter(otherTask);
-				}
-			});
+			project.getTasks()
+					.withType(PrepareJarRemapTask.class)
+					.configureEach(this::mustRunAfter);
 		});
 	}
 

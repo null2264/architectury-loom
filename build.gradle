@@ -130,7 +130,6 @@ dependencies {
 	// libraries
 	implementation libs.commons.io
 	implementation libs.gson
-	implementation libs.jackson
 	implementation libs.guava
 	implementation libs.bundles.asm
 

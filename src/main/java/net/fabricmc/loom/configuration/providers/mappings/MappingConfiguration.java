@@ -440,7 +440,7 @@ public class MappingConfiguration {
 
 		try (Reader reader = Files.newBufferedReader(recordSignaturesJsonPath, StandardCharsets.UTF_8)) {
 			//noinspection unchecked
-			signatureFixes = LoomGradlePlugin.OBJECT_MAPPER.readValue(reader, Map.class);
+			signatureFixes = LoomGradlePlugin.GSON.fromJson(reader, Map.class);
 		}
 	}
 

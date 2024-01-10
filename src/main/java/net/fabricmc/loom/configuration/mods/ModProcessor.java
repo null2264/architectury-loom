@@ -165,8 +165,6 @@ public class ModProcessor {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
 		final MappingConfiguration mappingConfiguration = extension.getMappingConfiguration();
 		String fromM = IntermediaryNamespaces.intermediary(project);
-		Path[] mcDeps = project.getConfigurations().getByName(Constants.Configurations.MINECRAFT_COMPILE_LIBRARIES).getFiles()
-				.stream().map(File::toPath).toArray(Path[]::new);
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -202,11 +200,7 @@ public class ModProcessor {
 
 		final TinyRemapper remapper = builder.build();
 
-		for (Path minecraftJar : extension.getMinecraftJars(IntermediaryNamespaces.intermediaryNamespace(project))) {
-			remapper.readClassPathAsync(minecraftJar);
-		}
-
-		remapper.readClassPathAsync(mcDeps);
+		remapper.readClassPath(extension.getMinecraftJars(IntermediaryNamespaces.intermediaryNamespace(project)).toArray(Path[]::new));
 
 		final Map<ModDependency, InputTag> tagMap = new HashMap<>();
 		final Map<ModDependency, OutputConsumerPath> outputConsumerMap = new HashMap<>();
@@ -216,7 +210,6 @@ public class ModProcessor {
 			for (File inputFile : entry.getSourceConfiguration().get().getFiles()) {
 				if (remapList.stream().noneMatch(info -> info.getInputFile().toFile().equals(inputFile))) {
 					project.getLogger().debug("Adding " + inputFile + " onto the remap classpath");
-
 					remapper.readClassPathAsync(inputFile.toPath());
 				}
 			}
