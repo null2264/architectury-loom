@@ -112,7 +112,7 @@ public abstract class RemapTaskConfiguration implements Runnable {
 		getProject().afterEvaluate(p -> {
 			if (extension.isForge()) {
 				if (PropertyUtil.getAndFinalize(extension.getForge().getConvertAccessWideners())) {
-					Aw2At.setup(getProject(), remapJarTask);
+					Aw2At.setup(getProject(), (RemapJarTask) getTasks().getByName(REMAP_JAR_TASK_NAME));
 				}
 
 				Set<String> mixinConfigs = PropertyUtil.getAndFinalize(extension.getForge().getMixinConfigs());
