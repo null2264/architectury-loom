@@ -28,6 +28,8 @@ import org.objectweb.asm.Opcodes;
 
 public class Constants {
 	public static final String PLUGIN_ID = "dev.architectury.loom";
+	public static final boolean PLUGIN_BETA = false;
+	public static final boolean PLUGIN_DEPRECATED = false;
 	public static final String LIBRARIES_BASE = "https://libraries.minecraft.net/";
 	public static final String RESOURCES_BASE = "https://resources.download.minecraft.net/";
 	public static final String VERSION_MANIFESTS = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
@@ -148,6 +150,7 @@ public class Constants {
 		public static final String DISABLE_REMAPPED_VARIANTS = "fabric.loom.disableRemappedVariants";
 		public static final String DISABLE_PROJECT_DEPENDENT_MODS = "fabric.loom.disableProjectDependentMods";
 		public static final String LIBRARY_PROCESSORS = "fabric.loom.libraryProcessors";
+		public static final String ALLOW_MISMATCHED_PLATFORM_VERSION = "loom.allowMismatchedPlatformVersion";
 	}
 
 	public static final class Manifest {
@@ -174,6 +177,13 @@ public class Constants {
 		public static final String UNDETERMINED_MAIN_CLASS = "[Forge] Main class has not been determined yet!";
 		public static final String ACCESS_TRANSFORMER_PATH = "META-INF/accesstransformer.cfg";
 		public static final String MIXIN_CONFIGS_MANIFEST_KEY = "MixinConfigs";
+
+		/**
+		 * The minimum Forge version that needs Union Relauncher to use {@code MOD_CLASSES}.
+		 */
+		public static final int MIN_UNION_RELAUNCHER_VERSION = 49;
+		public static final String UNION_RELAUNCHER_MAIN_CLASS = "juuxel.unionrelauncher.UnionRelauncher";
+		public static final String UNION_RELAUNCHER_MAIN_CLASS_PROPERTY = "unionRelauncher.mainClass";
 
 		private Forge() {
 		}
