@@ -148,10 +148,6 @@ public final class DependencyDownloader {
 
 		if (resolve) {
 			files = project.files(files.getFiles());
-
-			for (File file : files) {
-				System.out.println(file.getAbsolutePath());
-			}
 		}
 
 		return files;
