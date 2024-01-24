@@ -66,6 +66,17 @@ public final class DependencyDownloader {
 	}
 
 	/**
+	 * Adds a platform dependency.
+	 *
+	 * @param dependencyNotation the dependency notation
+	 * @return this downloader
+	 */
+	public DependencyDownloader platform(String dependencyNotation) {
+		dependencies.add(new DependencyEntry.Platform(dependencyNotation));
+		return this;
+	}
+
+	/**
 	 * Adds all dependencies from a configuration to download.
 	 *
 	 * @param configuration the dependency configuration
@@ -137,6 +148,10 @@ public final class DependencyDownloader {
 
 		if (resolve) {
 			files = project.files(files.getFiles());
+
+			for (File file : files) {
+				System.out.println(file.getAbsolutePath());
+			}
 		}
 
 		return files;
@@ -187,6 +202,13 @@ public final class DependencyDownloader {
 				}
 
 				return dependency;
+			}
+		}
+
+		record Platform(String notation) implements DependencyEntry {
+			@Override
+			public Dependency getDependency(DependencyHandler dependencies, boolean transitive) {
+				return dependencies.platform(notation);
 			}
 		}
 
