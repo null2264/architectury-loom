@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2022 FabricMC
+ * Copyright (c) 2022-2024 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ class SrgMergerTest extends Specification {
 		def output = mappingsDir.resolve("output.tiny")
 		def expected = readTestData("expectedOutput.tiny")
 		def proguardInput = extractTempFile("proguard.txt")
-		def extraMappings = new ForgeMappingsMerger.ExtraMappings(proguardInput, MappingFormat.PROGUARD, MappingUtil.NS_TARGET_FALLBACK, MappingUtil.NS_SOURCE_FALLBACK)
+		def extraMappings = new ForgeMappingsMerger.ExtraMappings(proguardInput, MappingFormat.PROGUARD_FILE, MappingUtil.NS_TARGET_FALLBACK, MappingUtil.NS_SOURCE_FALLBACK)
 
 		when:
 		merge(extraMappings, output)
