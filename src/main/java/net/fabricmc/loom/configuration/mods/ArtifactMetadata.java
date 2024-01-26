@@ -88,6 +88,11 @@ public record ArtifactMetadata(boolean isFabricMod, RemapRequirements remapRequi
 					} catch (IllegalArgumentException e) {
 						throw new IllegalStateException("Unknown mixin remap type: " + mixinRemapType);
 					}
+				} else if (platform == ModPlatform.FORGE) {
+					// Use certain refmap remap types by the current platform
+					refmapRemapType = MixinRemapType.MIXIN;
+				} else if (platform == ModPlatform.NEOFORGE) {
+					refmapRemapType = MixinRemapType.STATIC;
 				}
 
 				if (loomVersion != null && refmapRemapType != MixinRemapType.STATIC) {

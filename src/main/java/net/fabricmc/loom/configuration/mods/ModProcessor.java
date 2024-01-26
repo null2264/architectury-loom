@@ -187,12 +187,12 @@ public class ModProcessor {
 		}
 
 		final Set<InputTag> remapMixins = new HashSet<>();
-		final boolean requiresStaticMixinRemap = extension.isNeoForge() || remapList.stream()
+		final boolean requiresStaticMixinRemap = remapList.stream()
 				.anyMatch(modDependency -> modDependency.getMetadata().mixinRemapType() == ArtifactMetadata.MixinRemapType.STATIC);
 
 		if (requiresStaticMixinRemap) {
 			// Configure the mixin extension to remap mixins from mod jars that were remapped with the mixin extension.
-			builder.extension(new MixinExtension(tag -> extension.isNeoForge() || remapMixins.contains(tag)));
+			builder.extension(new MixinExtension(remapMixins::contains));
 		}
 
 		for (RemapperExtensionHolder holder : extension.getRemapperExtensions().get()) {
