@@ -1,7 +1,7 @@
 /*
  * This file is part of fabric-loom, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 FabricMC
+ * Copyright (c) 2021-2024 FabricMC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -69,10 +71,9 @@ import net.fabricmc.loom.configuration.RemapConfigurations;
 import net.fabricmc.loom.configuration.ide.RunConfig;
 import net.fabricmc.loom.configuration.ide.RunConfigSettings;
 import net.fabricmc.loom.configuration.processors.JarProcessor;
-import net.fabricmc.loom.configuration.providers.mappings.GradleMappingContext;
 import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpec;
 import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingSpecBuilderImpl;
-import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingsDependency;
+import net.fabricmc.loom.configuration.providers.mappings.LayeredMappingsFactory;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftJarConfiguration;
 import net.fabricmc.loom.configuration.providers.minecraft.MinecraftSourceSets;
 import net.fabricmc.loom.task.GenerateSourcesTask;
@@ -115,6 +116,10 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 	// A common mistake with layered mappings is to call the wrong `officialMojangMappings` method, use this to keep track of when we are building a layered mapping spec.
 	protected final ThreadLocal<Boolean> layeredSpecBuilderScope = ThreadLocal.withInitial(() -> false);
+	public static final String DEFAULT_INTERMEDIARY_URL = "https://maven.fabricmc.net/net/fabricmc/intermediary/%1$s/intermediary-%1$s-v2.jar";
+
+	protected boolean hasEvaluatedLayeredMappings = false;
+	protected final Map<LayeredMappingSpec, LayeredMappingsFactory> layeredMappingsDependencyMap = new HashMap<>();
 
 	// ===================
 	//  Architectury Loom
@@ -144,7 +149,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 				.convention(project.provider(() -> !isForgeLike()));
 		this.modProvidedJavadoc.finalizeValueOnRead();
 		this.intermediary = project.getObjects().property(String.class)
-				.convention("https://maven.fabricmc.net/net/fabricmc/intermediary/%1$s/intermediary-%1$s-v2.jar");
+				.convention(DEFAULT_INTERMEDIARY_URL);
 
 		this.intermediateMappingsProvider = project.getObjects().property(IntermediateMappingsProvider.class);
 		this.intermediateMappingsProvider.finalizeValueOnRead();
@@ -255,14 +260,19 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 	@Override
 	public Dependency layered(Action<LayeredMappingSpecBuilder> action) {
+		if (hasEvaluatedLayeredMappings) {
+			throw new IllegalStateException("Layered mappings have already been evaluated");
+		}
+
 		LayeredMappingSpecBuilderImpl builder = new LayeredMappingSpecBuilderImpl(this);
 
 		layeredSpecBuilderScope.set(true);
 		action.execute(builder);
 		layeredSpecBuilderScope.set(false);
 
-		LayeredMappingSpec builtSpec = builder.build();
-		return new LayeredMappingsDependency(getProject(), new GradleMappingContext(getProject(), builtSpec.getVersion().replace("+", "_").replace(".", "_")), builtSpec, builtSpec.getVersion());
+		final LayeredMappingSpec builtSpec = builder.build();
+		final LayeredMappingsFactory layeredMappingsFactory = layeredMappingsDependencyMap.computeIfAbsent(builtSpec, LayeredMappingsFactory::new);
+		return layeredMappingsFactory.createDependency(getProject());
 	}
 
 	@Override
