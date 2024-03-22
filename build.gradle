@@ -143,11 +143,12 @@ dependencies {
 	implementation libs.fabric.tiny.remapper
 	implementation libs.fabric.access.widener
 	implementation libs.fabric.mapping.io
-
 	implementation (libs.fabric.lorenz.tiny) {
 		transitive = false
 	}
 	implementation "dev.architectury:refmap-remapper:1.0.5"
+
+	implementation libs.fabric.loom.nativelib
 
 	// decompilers
 	fernflowerCompileOnly runtimeLibs.fernflower

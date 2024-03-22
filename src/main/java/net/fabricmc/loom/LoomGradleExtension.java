@@ -108,7 +108,7 @@ public interface LoomGradleExtension extends LoomGradleExtensionAPI {
 		return switch (mappingsNamespace) {
 		case NAMED -> getNamedMinecraftProvider().getMinecraftJarPaths();
 		case INTERMEDIARY -> getIntermediaryMinecraftProvider().getMinecraftJarPaths();
-		case OFFICIAL -> getMinecraftProvider().getMinecraftJars();
+		case OFFICIAL, CLIENT_OFFICIAL, SERVER_OFFICIAL -> getMinecraftProvider().getMinecraftJars();
 		case SRG -> {
 			ModPlatform.assertPlatform(this, ModPlatform.FORGE, () -> "SRG jars are only available on Forge.");
 			yield getSrgMinecraftProvider().getMinecraftJarPaths();
