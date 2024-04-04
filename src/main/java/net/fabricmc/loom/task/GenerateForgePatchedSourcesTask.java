@@ -111,7 +111,7 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 			// Step 3: remap
 			remap(patched, serviceManager);
 			// Step 4: add Forge's own sources
-			ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, getOutputJar().get().getAsFile().toPath());
+			ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, null, getOutputJar().get().getAsFile().toPath());
 		}
 	}
 

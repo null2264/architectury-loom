@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,6 +50,7 @@ import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -255,6 +257,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 			try (var timer = new Timer("Decompile")) {
 				outputLineNumbers = runDecompileJob(inputJar, workToDoJob.output(), existing);
+				removeForgeInnerClassSources(workToDoJob.output());
 				outputLineNumbers = filterForgeLineNumbers(outputLineNumbers);
 			}
 
@@ -316,6 +319,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 
 		try (var timer = new Timer("Decompile")) {
 			lineNumbers = runDecompileJob(inputJar, sourcesJar, null);
+			removeForgeInnerClassSources(sourcesJar);
 			lineNumbers = filterForgeLineNumbers(lineNumbers);
 		}
 
@@ -393,7 +397,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			// Inject Forge's own sources
 			if (getExtension().isForgeLike()) {
 				try (var serviceManager = new ScopedSharedServiceManager()) {
-					ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, outputJar);
+					ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, inputJar, outputJar);
 				}
 			}
 
@@ -416,7 +420,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 		// Inject Forge's own sources
 		if (getExtension().isForgeLike()) {
 			try (var serviceManager = new ScopedSharedServiceManager()) {
-				ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, outputJar);
+				ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, inputJar, outputJar);
 			}
 		}
 
@@ -445,6 +449,36 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			return new ClassLineNumbers(lineMap);
 		} else {
 			return lineNumbers;
+		}
+	}
+
+	/**
+	 * Some inner classes orders are messed up with forge recompilation, I don't know if that is why the decompiler
+	 * would occasionally split out extra inner classes (where with normal fabric setups it doesn't happen),
+	 * but this is a workaround for that.
+	 */
+	private void removeForgeInnerClassSources(Path sourcesJar) throws IOException {
+		if (!getExtension().isForgeLike()) return;
+
+		try (FileSystemUtil.Delegate outputFs = FileSystemUtil.getJarFileSystem(sourcesJar, false);
+				Stream<Path> walk = Files.walk(outputFs.getRoot())) {
+			Iterator<Path> iterator = walk.iterator();
+
+			while (iterator.hasNext()) {
+				final Path fsPath = iterator.next();
+
+				if (fsPath.startsWith("/META-INF/")) {
+					continue;
+				}
+
+				if (!Files.isRegularFile(fsPath)) {
+					continue;
+				}
+
+				if (fsPath.toString().substring(outputFs.getRoot().toString().length()).indexOf('$') != -1) {
+					Files.delete(fsPath);
+				}
+			}
 		}
 	}
 
