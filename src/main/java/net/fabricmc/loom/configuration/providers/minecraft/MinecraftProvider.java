@@ -77,7 +77,7 @@ public abstract class MinecraftProvider {
 
 	public void provide() throws Exception {
 		if (getExtension().shouldGenerateSrgTiny() && !getExtension().isForgeLike()) {
-			getProject().getDependencies().add(Constants.Configurations.SRG, "de.oceanlabs.mcp:mcp_config:" + minecraftVersion);
+			getProject().getDependencies().add(Constants.Configurations.SRG, "de.oceanlabs.mcp:mcp_config:" + minecraftVersion());
 		}
 
 		initFiles();
@@ -134,8 +134,8 @@ public abstract class MinecraftProvider {
 			}
 		}
 	}
-
-	protected final void extractBundledServerJar() throws IOException {
+	
+	public final void extractBundledServerJar() throws IOException {
 		Preconditions.checkArgument(provideServer(), "Not configured to provide server jar");
 		Objects.requireNonNull(getServerBundleMetadata(), "Cannot bundled mc jar from none bundled server jar");
 

@@ -36,7 +36,7 @@ import net.fabricmc.tinyremapper.NonClassCopyMode;
 import net.fabricmc.tinyremapper.OutputConsumerPath;
 import net.fabricmc.tinyremapper.TinyRemapper;
 
-public abstract sealed class SingleJarMinecraftProvider extends MinecraftProvider permits SingleJarMinecraftProvider.Server, SingleJarMinecraftProvider.Client {
+public abstract class SingleJarMinecraftProvider extends MinecraftProvider {
 	private final MappingsNamespace officialNamespace;
 	private Path minecraftEnvOnlyJar;
 
@@ -127,9 +127,9 @@ public abstract sealed class SingleJarMinecraftProvider extends MinecraftProvide
 		return officialNamespace;
 	}
 
-	abstract SingleJarEnvType type();
-
-	abstract Path getInputJar(SingleJarMinecraftProvider provider) throws Exception;
+	protected abstract SingleJarEnvType type();
+	
+	protected abstract Path getInputJar(SingleJarMinecraftProvider provider) throws Exception;
 
 	public static final class Server extends SingleJarMinecraftProvider {
 		private Server(MinecraftMetadataProvider metadataProvider, ConfigContext configContext, MappingsNamespace officialNamespace) {

@@ -263,11 +263,11 @@ public abstract class CompileConfiguration implements Runnable {
 		namedMinecraftProvider.provide(provideContext);
 
 		if (extension.isForge()) {
-			final SrgMinecraftProvider<?> srgMinecraftProvider = jarConfiguration.getSrgMinecraftProviderBiFunction().apply(project, minecraftProvider);
+			final SrgMinecraftProvider<?> srgMinecraftProvider = jarConfiguration.createSrgMinecraftProvider(project);
 			extension.setSrgMinecraftProvider(srgMinecraftProvider);
 			srgMinecraftProvider.provide(provideContext);
 		} else if (extension.isNeoForge()) {
-			final MojangMappedMinecraftProvider<?> mojangMappedMinecraftProvider = jarConfiguration.getMojangMappedMinecraftProviderBiFunction().apply(project, minecraftProvider);
+			final MojangMappedMinecraftProvider<?> mojangMappedMinecraftProvider = jarConfiguration.createMojangMappedMinecraftProvider(project);
 			extension.setMojangMappedMinecraftProvider(mojangMappedMinecraftProvider);
 			mojangMappedMinecraftProvider.provide(provideContext);
 		}

@@ -41,6 +41,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -93,8 +94,6 @@ import net.fabricmc.loom.decompilers.LineNumberRemapper;
 import net.fabricmc.loom.decompilers.cache.CachedData;
 import net.fabricmc.loom.decompilers.cache.CachedFileStoreImpl;
 import net.fabricmc.loom.decompilers.cache.CachedJarProcessor;
-import net.fabricmc.loom.decompilers.linemap.LineMapClassFilter;
-import net.fabricmc.loom.decompilers.linemap.LineMapVisitor;
 import net.fabricmc.loom.util.Checksum;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.ExceptionUtil;
@@ -390,6 +389,14 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			getProject().getLogger().warn("Decompile worker logging disabled as Unix Domain Sockets is not supported on your operating system.");
 
 			doWork(null, inputJar, outputJar, lineMapFile, existingJar);
+
+			// Inject Forge's own sources
+			if (getExtension().isForgeLike()) {
+				try (var serviceManager = new ScopedSharedServiceManager()) {
+					ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, outputJar);
+				}
+			}
+
 			return readLineNumbers(lineMapFile);
 		}
 
@@ -409,7 +416,7 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 		// Inject Forge's own sources
 		if (getExtension().isForgeLike()) {
 			try (var serviceManager = new ScopedSharedServiceManager()) {
-				ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, getOutputJar().get().getAsFile().toPath());
+				ForgeSourcesRemapper.addForgeSources(getProject(), serviceManager, outputJar);
 			}
 		}
 
@@ -422,17 +429,19 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			return null;
 		}
 
-		if (getParameters().getForge().get()) {
-			try {
-				// Remove Forge and NeoForge classes from linemap
-				// TODO: We should instead not decompile Forge's classes at all
-				LineMapVisitor.process(linemap, next -> new LineMapClassFilter(next, name -> {
-					// Skip both Forge and NeoForge classes.
-					return !name.startsWith("net/minecraftforge/") && !name.startsWith("net/neoforged/");
-				}));
-			} catch (IOException e) {
-				throw new UncheckedIOException("Failed to process linemap", e);
+		if (getExtension().isForgeLike()) {
+			// Remove Forge and NeoForge classes from linemap
+			// TODO: We should instead not decompile Forge's classes at all
+			var lineMap = new HashMap<String, ClassLineNumbers.Entry>();
+			for (Map.Entry<String, ClassLineNumbers.Entry> entry : lineNumbers.lineMap().entrySet()) {
+				String name = entry.getKey();
+				if (!name.startsWith("net/minecraftforge/") && !name.startsWith("net/neoforged/")) {
+					lineMap.put(name, entry.getValue());
+				}
 			}
+			return new ClassLineNumbers(lineMap);
+		} else {
+			return lineNumbers;
 		}
 	}
 
@@ -672,10 +681,6 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 		}
 	}
 
-	static File getMappedJarFileWithSuffix(RegularFileProperty runtimeJar, String suffix) {
-		return getMappedJarFileWithSuffix(suffix, runtimeJar.get().getAsFile().toPath());
-	}
-
 	private Path getMappings() {
 		Path inputMappings = getExtension().getPlatformMappingFile();
 
@@ -742,6 +747,10 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 		}
 
 		return new File(path.substring(0, path.length() - 4) + suffix);
+	}
+
+	static File getJarFileWithSuffix(RegularFileProperty runtimeJar, String suffix) {
+		return getJarFileWithSuffix(suffix, runtimeJar.get().getAsFile().toPath());
 	}
 
 	@Nullable

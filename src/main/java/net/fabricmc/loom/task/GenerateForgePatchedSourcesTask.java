@@ -82,7 +82,7 @@ public abstract class GenerateForgePatchedSourcesTask extends AbstractLoomTask {
 
 	public GenerateForgePatchedSourcesTask() {
 		getOutputs().upToDateWhen((o) -> false);
-		getOutputJar().fileProvider(getProject().provider(() -> GenerateSourcesTask.getMappedJarFileWithSuffix(getRuntimeJar(), "-sources.jar")));
+		getOutputJar().fileProvider(getProject().provider(() -> GenerateSourcesTask.getJarFileWithSuffix(getRuntimeJar(), "-sources.jar")));
 	}
 
 	@TaskAction

@@ -49,6 +49,8 @@ public record MinecraftJarConfiguration<
 				MinecraftProviderFactory<M> minecraftProviderFactory,
 				IntermediaryMinecraftProviderFactory<M> intermediaryMinecraftProviderFactory,
 				NamedMinecraftProviderFactory<M> namedMinecraftProviderFactory,
+				SrgMinecraftProviderFactory<M> srgMinecraftProviderFactory,
+				MojangMappedMinecraftProviderFactory<M> mojangMappedMinecraftProviderFactory,
 				ProcessedNamedMinecraftProviderFactory<M, N> processedNamedMinecraftProviderFactory,
 				DecompileConfigurationFactory<Q> decompileConfigurationFactory,
 				List<String> supportedEnvironments) {
@@ -72,6 +74,8 @@ public record MinecraftJarConfiguration<
 				LegacyMergedMinecraftProvider::new,
 				IntermediaryMinecraftProvider.LegacyMergedImpl::new,
 				NamedMinecraftProvider.LegacyMergedImpl::new,
+			SrgMinecraftProvider.LegacyMergedImpl::new,
+			MojangMappedMinecraftProvider.LegacyMergedImpl::new,
 				ProcessedNamedMinecraftProvider.LegacyMergedImpl::new,
 				SingleJarDecompileConfiguration::new,
 				List.of("client", "server")
@@ -128,6 +132,14 @@ public record MinecraftJarConfiguration<
 		return namedMinecraftProviderFactory.create(project, getMinecraftProvider(project));
 	}
 
+	public SrgMinecraftProvider<M> createSrgMinecraftProvider(Project project) {
+		return srgMinecraftProviderFactory.create(project, getMinecraftProvider(project));
+	}
+
+	public MojangMappedMinecraftProvider<M> createMojangMappedMinecraftProvider(Project project) {
+		return mojangMappedMinecraftProviderFactory.create(project, getMinecraftProvider(project));
+	}
+
 	public ProcessedNamedMinecraftProvider<M, N> createProcessedNamedMinecraftProvider(NamedMinecraftProvider<?> namedMinecraftProvider, MinecraftJarProcessorManager jarProcessorManager) {
 		return processedNamedMinecraftProviderFactory.create((N) namedMinecraftProvider, jarProcessorManager);
 	}
@@ -146,14 +158,6 @@ public record MinecraftJarConfiguration<
 		LoomGradleExtension extension = LoomGradleExtension.get(project);
 		//noinspection unchecked
 		return (Q) extension.getNamedMinecraftProvider();
-	}
-
-	public BiFunction<Project, MinecraftProvider, SrgMinecraftProvider<?>> getSrgMinecraftProviderBiFunction() {
-		return srgMinecraftProviderBiFunction;
-	}
-
-	public BiFunction<Project, MinecraftProvider, MojangMappedMinecraftProvider<?>> getMojangMappedMinecraftProviderBiFunction() {
-		return mojangMappedMinecraftProviderBiFunction;
 	}
 
 	public List<String> getSupportedEnvironments() {
