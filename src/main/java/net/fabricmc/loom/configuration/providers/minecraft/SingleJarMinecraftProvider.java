@@ -128,7 +128,7 @@ public abstract class SingleJarMinecraftProvider extends MinecraftProvider {
 	}
 
 	protected abstract SingleJarEnvType type();
-	
+
 	protected abstract Path getInputJar(SingleJarMinecraftProvider provider) throws Exception;
 
 	public static final class Server extends SingleJarMinecraftProvider {

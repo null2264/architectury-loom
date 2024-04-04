@@ -176,7 +176,7 @@ public record MinecraftJarConfiguration<
 	private interface NamedMinecraftProviderFactory<M extends MinecraftProvider> {
 		NamedMinecraftProvider<M> create(Project project, M minecraftProvider);
 	}
-	
+
 	private interface SrgMinecraftProviderFactory<M extends MinecraftProvider> {
 		SrgMinecraftProvider<M> create(Project project, M minecraftProvider);
 	}

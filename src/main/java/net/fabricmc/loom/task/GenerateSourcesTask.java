@@ -433,12 +433,15 @@ public abstract class GenerateSourcesTask extends AbstractLoomTask {
 			// Remove Forge and NeoForge classes from linemap
 			// TODO: We should instead not decompile Forge's classes at all
 			var lineMap = new HashMap<String, ClassLineNumbers.Entry>();
+
 			for (Map.Entry<String, ClassLineNumbers.Entry> entry : lineNumbers.lineMap().entrySet()) {
 				String name = entry.getKey();
+
 				if (!name.startsWith("net/minecraftforge/") && !name.startsWith("net/neoforged/")) {
 					lineMap.put(name, entry.getValue());
 				}
 			}
+
 			return new ClassLineNumbers(lineMap);
 		} else {
 			return lineNumbers;
