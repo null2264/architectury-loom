@@ -127,7 +127,7 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 	//  Architectury Loom
 	// ===================
 	private Provider<ModPlatform> platform;
-	private boolean silentMojangMappingsLicense = false;
+	private final Property<Boolean> silentMojangMappingsLicense;
 	public Boolean generateSrgTiny = null;
 	private final List<String> tasksBeforeRun = Collections.synchronizedList(new ArrayList<>());
 	public final List<Consumer<RunConfig>> settingsPostEdit = new ArrayList<>();
@@ -215,6 +215,8 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 			return ModPlatform.FABRIC;
 		})::get);
+		this.silentMojangMappingsLicense = project.getObjects().property(Boolean.class).convention(false);
+		this.silentMojangMappingsLicense.finalizeValueOnRead();
 	}
 
 	@Override
@@ -489,12 +491,16 @@ public abstract class LoomGradleExtensionApiImpl implements LoomGradleExtensionA
 
 	@Override
 	public void silentMojangMappingsLicense() {
-		this.silentMojangMappingsLicense = true;
+		try {
+			this.silentMojangMappingsLicense.set(true);
+		} catch (IllegalStateException e) {
+			throw new IllegalStateException("loom.silentMojangMappingsLicense() must be called before its value is read, usually with loom.layered {}.", e);
+		}
 	}
 
 	@Override
 	public boolean isSilentMojangMappingsLicenseEnabled() {
-		return silentMojangMappingsLicense;
+		return silentMojangMappingsLicense.get();
 	}
 
 	@Override
