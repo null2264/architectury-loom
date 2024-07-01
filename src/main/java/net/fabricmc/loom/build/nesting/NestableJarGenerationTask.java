@@ -250,6 +250,7 @@ public abstract class NestableJarGenerationTask extends AbstractLoomTask {
 		}
 
 		try {
+			// TODO: Generate Quilt QMJs natively
 			ZipReprocessorUtil.appendZipEntry(output.toPath(), "fabric.mod.json", modJsonFile.getBytes(StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			throw new UncheckedIOException("Failed to add dummy mod while including %s".formatted(input), e);
