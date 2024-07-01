@@ -24,6 +24,7 @@
 
 package net.fabricmc.loom.util;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.Opcodes;
 
 public class Constants {
@@ -159,6 +160,8 @@ public class Constants {
 		public static final String DISABLE_REMAPPED_VARIANTS = "fabric.loom.disableRemappedVariants";
 		public static final String DISABLE_PROJECT_DEPENDENT_MODS = "fabric.loom.disableProjectDependentMods";
 		public static final String LIBRARY_PROCESSORS = "fabric.loom.libraryProcessors";
+		@ApiStatus.Experimental
+		public static final String SANDBOX = "fabric.loom.experimental.sandbox";
 		public static final String ALLOW_MISMATCHED_PLATFORM_VERSION = "loom.allowMismatchedPlatformVersion";
 	}
 
