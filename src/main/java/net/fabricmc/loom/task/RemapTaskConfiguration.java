@@ -43,6 +43,7 @@ import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.jvm.tasks.Jar;
 
 import net.fabricmc.loom.LoomGradleExtension;
+import net.fabricmc.loom.build.nesting.NestableJarGenerationTask;
 import net.fabricmc.loom.util.Constants;
 import net.fabricmc.loom.util.PropertyUtil;
 import net.fabricmc.loom.util.aw2at.Aw2At;
@@ -75,6 +76,12 @@ public abstract class RemapTaskConfiguration implements Runnable {
 			extension.getUnmappedModCollection().from(getTasks().getByName(JavaPlugin.JAR_TASK_NAME));
 			return;
 		}
+
+		Configuration includeConfiguration = getProject().getConfigurations().getByName(Constants.Configurations.INCLUDE_INTERNAL);
+		getTasks().register(Constants.Task.PROCESS_INCLUDE_JARS, NestableJarGenerationTask.class, task -> {
+			task.from(includeConfiguration);
+			task.getOutputDirectory().set(getProject().getLayout().getBuildDirectory().dir(task.getName()));
+		});
 
 		Action<RemapJarTask> remapJarTaskAction = task -> {
 			final AbstractArchiveTask jarTask = getTasks().named(JavaPlugin.JAR_TASK_NAME, AbstractArchiveTask.class).get();
