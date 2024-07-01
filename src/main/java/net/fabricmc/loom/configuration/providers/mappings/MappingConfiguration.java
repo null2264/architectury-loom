@@ -37,16 +37,15 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.apache.tools.ant.util.StringUtils;
 import com.google.common.base.Stopwatch;
 import com.google.gson.JsonObject;
 import dev.architectury.loom.util.MappingOption;
+import org.apache.tools.ant.util.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.jetbrains.annotations.Nullable;
@@ -69,8 +68,8 @@ import net.fabricmc.loom.util.FileSystemUtil;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.service.ScopedSharedServiceManager;
 import net.fabricmc.loom.util.service.SharedServiceManager;
-import net.fabricmc.loom.util.srg.MCPReader;
 import net.fabricmc.loom.util.srg.ForgeMappingsMerger;
+import net.fabricmc.loom.util.srg.MCPReader;
 import net.fabricmc.loom.util.srg.SrgNamedWriter;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.format.MappingFormat;
@@ -334,12 +333,7 @@ public class MappingConfiguration {
 			extractExtras(delegate.fs());
 		}
 
-		if (areMappingsMergedV2(baseTinyMappings)) {
-			// Architectury Loom Patch
-			// If a merged tiny v2 mappings file is provided
-			// Skip merging, should save a lot of time
-			Files.copy(baseTinyMappings, tinyMappings, StandardCopyOption.REPLACE_EXISTING);
-		} else if (areMappingsV2(baseTinyMappings)) {
+		if (areMappingsV2(baseTinyMappings)) {
 			// These are unmerged v2 mappings
 			IntermediateMappingsService intermediateMappingsService = IntermediateMappingsService.getInstance(serviceManager, project, minecraftProvider);
 
@@ -402,17 +396,6 @@ public class MappingConfiguration {
 			return MappingReader.detectFormat(reader) == MappingFormat.TINY_2_FILE;
 		} catch (NoSuchFileException e) {
 			// TODO: just check the mappings version when Parser supports V1 in readMetadata()
-			return false;
-		}
-	}
-
-	private static boolean areMappingsMergedV2(Path path) throws IOException {
-		try (BufferedReader reader = Files.newBufferedReader(path)) {
-			reader.mark(4096); // == DETECT_HEADER_LEN
-			boolean isTinyV2 = MappingReader.detectFormat(reader) == MappingFormat.TINY_2_FILE;
-			reader.reset();
-			return isTinyV2 && MappingReader.getNamespaces(reader, MappingFormat.TINY_2_FILE).containsAll(Arrays.asList("named", "intermediary", "official"));
-		} catch (NoSuchFileException e) {
 			return false;
 		}
 	}
