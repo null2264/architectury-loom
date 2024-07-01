@@ -91,10 +91,16 @@ configurations {
 	testRuntimeClasspath.extendsFrom bootstrap
 }
 
-configurations.all {
+configurations.configureEach {
 	resolutionStrategy {
 		// I am sorry, for now
 		// failOnNonReproducibleResolution()
+	}
+
+	if (canBeConsumed)  {
+		attributes {
+			attribute(GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE, objects.named(GradlePluginApiVersion, GradleVersion.current().getVersion()))
+		}
 	}
 }
 
@@ -383,7 +389,7 @@ publishing {
 }
 
 // Need to tweak this file to pretend we are compatible with j8 so the bootstrap will run.
-tasks.withType(GenerateModuleMetadata) {
+tasks.withType(GenerateModuleMetadata).configureEach {
 	doLast {
 		def file = outputFile.get().asFile
 
@@ -398,7 +404,7 @@ tasks.withType(GenerateModuleMetadata) {
 }
 
 // A task to output a json file with a list of all the test to run
-task writeActionsTestMatrix() {
+tasks.register('writeActionsTestMatrix') {
 	doLast {
 		def testMatrix = []
 		file('src/test/groovy/net/fabricmc/loom/test/integration').traverse {
@@ -445,7 +451,7 @@ tasks.named('wrapper') {
 /**
  * Run this task to download the gradle sources next to the api jar, you may need to manually attach the sources jar
  */
-task downloadGradleSources() {
+tasks.register('downloadGradleSources') {
 	doLast {
 		// Awful hack to find the gradle api location
 		def gradleApiFile = project.configurations.detachedConfiguration(dependencies.gradleApi()).files.stream()
@@ -467,13 +473,13 @@ tasks.withType(GenerateModuleMetadata) {
 	enabled = false
 }
 
-task printActionsTestName(type: PrintActionsTestName) {
+tasks.register('printActionsTestName', PrintActionsTestName) {
 }
 
 /**
  * Replaces invalid characters in test names for GitHub Actions artifacts.
  */
-class PrintActionsTestName extends DefaultTask {
+abstract class PrintActionsTestName extends DefaultTask {
 	@Input
 	@Option(option = "name", description = "The test name")
 	String testName
