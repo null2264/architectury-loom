@@ -40,7 +40,6 @@ import java.util.regex.Pattern;
 import com.google.common.hash.Hashing;
 import com.google.gson.JsonObject;
 import org.apache.commons.io.FileUtils;
-import org.gradle.api.DefaultTask;
 import org.gradle.api.artifacts.ArtifactView;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
@@ -61,13 +60,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loom.LoomGradlePlugin;
+import net.fabricmc.loom.task.AbstractLoomTask;
 import net.fabricmc.loom.util.ZipReprocessorUtil;
+import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.fmj.FabricModJsonFactory;
 
-public abstract class NestableJarGenerationTask extends DefaultTask {
+public abstract class NestableJarGenerationTask extends AbstractLoomTask {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NestableJarGenerationTask.class);
 	private static final String SEMVER_REGEX = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$";
 	private static final Pattern SEMVER_PATTERN = Pattern.compile(SEMVER_REGEX);
+	public static final String NESTING_METADATA_PATH = "META-INF/architectury-loom-nesting-metadata.json";
 
 	@InputFiles
 	@PathSensitive(PathSensitivity.NAME_ONLY)
@@ -82,7 +84,13 @@ public abstract class NestableJarGenerationTask extends DefaultTask {
 	@TaskAction
 	void makeNestableJars() {
 		Map<String, String> fabricModJsons = new HashMap<>();
+		Map<String, String> metadataFiles = new HashMap<>();
 		getJarIds().get().forEach((fileName, metadata) -> {
+			if (getExtension().isForgeLike()) {
+				metadataFiles.put(fileName, LoomGradlePlugin.GSON.toJson(metadata));
+				return;
+			}
+
 			fabricModJsons.put(fileName, generateModForDependency(metadata));
 		});
 
@@ -97,8 +105,14 @@ public abstract class NestableJarGenerationTask extends DefaultTask {
 		getJars().forEach(file -> {
 			File targetFile = getOutputDirectory().file(file.getName()).get().getAsFile();
 			targetFile.delete();
-			String fabricModJson = Objects.requireNonNull(fabricModJsons.get(file.getName()), "Could not generate fabric.mod.json for included dependency "+file.getName());
-			makeNestableJar(file, targetFile, fabricModJson);
+			String fabricModJson = fabricModJsons.get(file.getName());
+			String nestingMetadata = metadataFiles.get(file.getName());
+
+			if (!getExtension().isForgeLike()) {
+				Objects.requireNonNull(fabricModJson, "Could not generate fabric.mod.json for included dependency "+file.getName());
+			}
+
+			makeNestableJar(file, targetFile, fabricModJson, nestingMetadata);
 		});
 	}
 
@@ -215,14 +229,22 @@ public abstract class NestableJarGenerationTask extends DefaultTask {
 		return matcher.find();
 	}
 
-	private void makeNestableJar(final File input, final File output, final String modJsonFile) {
+	private void makeNestableJar(final File input, final File output, final @Nullable String modJsonFile, final @Nullable String nestingMetadata) {
 		try {
 			FileUtils.copyFile(input, output);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Failed to copy mod file %s".formatted(input), e);
 		}
 
-		if (FabricModJsonFactory.isModJar(input)) {
+		if (nestingMetadata != null) {
+			try {
+				ZipUtils.add(input.toPath(), NESTING_METADATA_PATH, nestingMetadata);
+			} catch (IOException e) {
+				throw new UncheckedIOException("Failed to add nesting metadata to " + input, e);
+			}
+		}
+
+		if (modJsonFile == null || FabricModJsonFactory.isModJar(input, getExtension().getPlatform().get())) {
 			// Input is a mod, nothing needs to be done.
 			return;
 		}
@@ -234,7 +256,7 @@ public abstract class NestableJarGenerationTask extends DefaultTask {
 		}
 	}
 
-	protected record Metadata(String group, String name, String version, @Nullable String classifier) implements Serializable {
+	public record Metadata(String group, String name, String version, @Nullable String classifier) implements Serializable {
 		@Override
 		public String classifier() {
 			if (classifier == null) {

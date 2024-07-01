@@ -24,7 +24,6 @@
 
 package net.fabricmc.loom.task;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -44,7 +43,6 @@ import javax.inject.Inject;
 
 import com.google.gson.JsonObject;
 import dev.architectury.loom.extensions.ModBuildExtensions;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -59,7 +57,6 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.TaskDependency;
 import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -94,9 +91,6 @@ import net.fabricmc.tinyremapper.TinyRemapper;
 public abstract class RemapJarTask extends AbstractRemapJarTask {
 	@InputFiles
 	public abstract ConfigurableFileCollection getNestedJars();
-
-	@Input
-	public abstract ListProperty<NestedFile> getForgeNestedJars();
 
 	@Input
 	public abstract Property<Boolean> getAddNestedDependencies();
@@ -194,10 +188,6 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 		submitWork(RemapAction.class, params -> {
 			if (getAddNestedDependencies().get()) {
 				params.getNestedJars().from(getNestedJars());
-
-				if (extension.isForgeLike()) {
-					params.getForgeNestedJars().set(getForgeNestedJars());
-				}
 			}
 
 			if (!params.namespacesMatch()) {
@@ -280,8 +270,6 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 	public interface RemapParams extends AbstractRemapParams {
 		ConfigurableFileCollection getNestedJars();
-
-		ListProperty<NestedFile> getForgeNestedJars();
 
 		ConfigurableFileCollection getRemapClasspath();
 
@@ -458,16 +446,13 @@ public abstract class RemapJarTask extends AbstractRemapJarTask {
 
 		private void addNestedJars() {
 			FileCollection nestedJars = getParameters().getNestedJars();
-			ListProperty<NestedFile> forgeNestedJars = getParameters().getForgeNestedJars();
 
-			if (nestedJars.isEmpty() && (!forgeNestedJars.isPresent() || forgeNestedJars.get().isEmpty())) {
+			if (nestedJars.isEmpty()) {
 				LOGGER.info("No jars to nest");
 				return;
 			}
 
-			Set<File> jars = new LinkedHashSet<>(nestedJars.getFiles());
-			jars.addAll(forgeNestedJars.get().stream().map(NestedFile::file).toList());
-			JarNester.nestJars(jars, forgeNestedJars.getOrElse(List.of()), outputFile.toFile(), getParameters().getPlatform().get(), LOGGER);
+			JarNester.nestJars(nestedJars.getFiles(), outputFile.toFile(), getParameters().getPlatform().get(), LOGGER);
 		}
 
 		private void addRefmaps() throws IOException {
