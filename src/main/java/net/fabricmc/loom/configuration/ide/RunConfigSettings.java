@@ -474,7 +474,6 @@ public class RunConfigSettings implements Named {
 	 *
 	 * <p>This method is currently only available on Forge and NeoForge.
 	 */
-	@ApiStatus.Experimental
 	public NamedDomainObjectContainer<ModSettings> getMods() {
 		ModPlatform.assertForgeLike(extension);
 		return mods;
@@ -485,7 +484,6 @@ public class RunConfigSettings implements Named {
 	 *
 	 * <p>This method is currently only available on Forge.
 	 */
-	@ApiStatus.Experimental
 	public void mods(Action<NamedDomainObjectContainer<ModSettings>> action) {
 		action.execute(getMods());
 	}
