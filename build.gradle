@@ -6,7 +6,6 @@ plugins {
 	id 'eclipse'
 	id 'groovy'
 	id 'checkstyle'
-	id 'jacoco'
 	id 'codenarc'
 	alias(libs.plugins.kotlin) apply false // Delay this so we can perform magic 🪄 first.
 	alias(libs.plugins.spotless)
@@ -50,7 +49,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 }
 
 group = "dev.architectury"
-def baseVersion = '1.6'
+def baseVersion = '1.7'
 
 def ENV = System.getenv()
 def runNumber = ENV.GITHUB_RUN_NUMBER ?: "9999"
@@ -296,20 +295,6 @@ gradlePlugin {
 			id = 'dev.architectury.loom'
 			implementationClass = 'net.fabricmc.loom.bootstrap.LoomGradlePluginBootstrap'
 		}
-	}
-}
-
-jacoco {
-	toolVersion = libs.versions.jacoco.get()
-}
-
-// Run to get test coverage.
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required = false
-		csv.required = false
-		html.outputLocation = file("${layout.buildDirectory.get().asFile}/jacocoHtml")
 	}
 }
 

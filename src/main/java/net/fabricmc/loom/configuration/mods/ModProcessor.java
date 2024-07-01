@@ -166,14 +166,19 @@ public class ModProcessor {
 		final LoomGradleExtension extension = LoomGradleExtension.get(project);
 		final MappingConfiguration mappingConfiguration = extension.getMappingConfiguration();
 		String fromM = IntermediaryNamespaces.intermediary(project);
-
 		Stopwatch stopwatch = Stopwatch.createStarted();
+		Set<String> knownIndyBsms = new HashSet<>(extension.getKnownIndyBsms().get());
+
+		for (ModDependency modDependency : remapList) {
+			knownIndyBsms.addAll(modDependency.getMetadata().knownIdyBsms());
+		}
 
 		MappingOption mappingOption = MappingOption.forPlatform(extension).forNamespaces(fromM, toM);
 		MemoryMappingTree mappings = mappingConfiguration.getMappingsService(serviceManager, mappingOption).getMappingTree();
 		LoggerFilter.replaceSystemOut();
+
 		TinyRemapper.Builder builder = TinyRemapper.newRemapper()
-				.withKnownIndyBsm(extension.getKnownIndyBsms().get())
+				.withKnownIndyBsm(knownIndyBsms)
 				.withMappings(TinyRemapperHelper.create(mappings, fromM, toM, false))
 				.renameInvalidLocals(false)
 				.extraAnalyzeVisitor(AccessWidenerAnalyzeVisitorProvider.createFromMods(fromM, remapList, extension.getPlatform().get()));
