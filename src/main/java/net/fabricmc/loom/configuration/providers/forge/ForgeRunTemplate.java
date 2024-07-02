@@ -24,6 +24,7 @@
 
 package net.fabricmc.loom.configuration.providers.forge;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -147,5 +148,5 @@ public record ForgeRunTemplate(
 			List<String> jvmArgs,
 			Map<String, String> env,
 			Map<String, String> props
-	) { }
+	) implements Serializable { }
 }
