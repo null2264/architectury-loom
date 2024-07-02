@@ -238,7 +238,7 @@ public abstract class NestableJarGenerationTask extends AbstractLoomTask {
 
 		if (nestingMetadata != null) {
 			try {
-				ZipUtils.add(input.toPath(), NESTING_METADATA_PATH, nestingMetadata);
+				ZipUtils.add(output.toPath(), NESTING_METADATA_PATH, nestingMetadata);
 			} catch (IOException e) {
 				throw new UncheckedIOException("Failed to add nesting metadata to " + input, e);
 			}
