@@ -37,6 +37,8 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.inject.Inject;
+
 import com.google.common.hash.Hashing;
 import com.google.gson.JsonObject;
 import org.apache.commons.io.FileUtils;
@@ -49,18 +51,21 @@ import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.MapProperty;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loom.LoomGradlePlugin;
 import net.fabricmc.loom.task.AbstractLoomTask;
+import net.fabricmc.loom.util.ModPlatform;
 import net.fabricmc.loom.util.ZipReprocessorUtil;
 import net.fabricmc.loom.util.ZipUtils;
 import net.fabricmc.loom.util.fmj.FabricModJsonFactory;
@@ -81,12 +86,22 @@ public abstract class NestableJarGenerationTask extends AbstractLoomTask {
 	@Input
 	protected abstract MapProperty<String, Metadata> getJarIds();
 
+	@ApiStatus.Internal
+	@Input
+	protected abstract Property<ModPlatform> getModPlatform();
+
+	@Inject
+	public NestableJarGenerationTask() {
+		getModPlatform().value(getExtension().getPlatform()).finalizeValue();
+	}
+
 	@TaskAction
 	void makeNestableJars() {
+		final ModPlatform platform = getModPlatform().get();
 		Map<String, String> fabricModJsons = new HashMap<>();
 		Map<String, String> metadataFiles = new HashMap<>();
 		getJarIds().get().forEach((fileName, metadata) -> {
-			if (getExtension().isForgeLike()) {
+			if (platform.isForgeLike()) {
 				metadataFiles.put(fileName, LoomGradlePlugin.GSON.toJson(metadata));
 				return;
 			}
@@ -108,7 +123,9 @@ public abstract class NestableJarGenerationTask extends AbstractLoomTask {
 			String fabricModJson = fabricModJsons.get(file.getName());
 			String nestingMetadata = metadataFiles.get(file.getName());
 
-			if (!getExtension().isForgeLike()) {
+			if (platform.isForgeLike()) {
+				Objects.requireNonNull(nestingMetadata, "Could not generate nesting metadata for included dependency " + file.getName());
+			} else {
 				Objects.requireNonNull(fabricModJson, "Could not generate fabric.mod.json for included dependency "+file.getName());
 			}
 
@@ -244,7 +261,7 @@ public abstract class NestableJarGenerationTask extends AbstractLoomTask {
 			}
 		}
 
-		if (modJsonFile == null || FabricModJsonFactory.isModJar(input, getExtension().getPlatform().get())) {
+		if (modJsonFile == null || FabricModJsonFactory.isModJar(input, getModPlatform().get())) {
 			// Input is a mod, nothing needs to be done.
 			return;
 		}
