@@ -173,7 +173,7 @@ public class ModProcessor {
 			knownIndyBsms.addAll(modDependency.getMetadata().knownIdyBsms());
 		}
 
-		MappingOption mappingOption = MappingOption.forPlatform(extension).forNamespaces(fromM, toM);
+		MappingOption mappingOption = MappingOption.forPlatform(extension);
 		MemoryMappingTree mappings = mappingConfiguration.getMappingsService(serviceManager, mappingOption).getMappingTree();
 		LoggerFilter.replaceSystemOut();
 
