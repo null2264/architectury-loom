@@ -42,12 +42,6 @@ if (ENV.S3_ENDPOINT != null) {
 
 logger.lifecycle(":building plugin v${version}")
 
-// We must build against the version of Kotlin Gradle ships with.
-def kotlinVersion = KotlinDslVersion.current().getKotlinVersion()
-if (libs.versions.kotlin.get() != kotlinVersion) {
-	throw new IllegalStateException("Requires Kotlin version: ${kotlinVersion}")
-}
-
 repositories {
 	mavenCentral()
 	maven { url "https://maven.fabricmc.net/" }
@@ -312,7 +306,6 @@ tasks.withType(Test).configureEach {
 
 
 import org.gradle.api.internal.artifacts.configurations.ConfigurationRoles
-import org.gradle.launcher.cli.KotlinDslVersion
 import org.gradle.util.GradleVersion
 import org.w3c.dom.Document
 import org.w3c.dom.Element
