@@ -62,6 +62,10 @@ if (!isSnapshot) {
 	version = baseVersion + "-PR." + ENV.PR_NUM + "." + runNumber
 }
 
+if (ENV.S3_ENDPOINT != null) {
+	System.setProperty("org.gradle.s3.endpoint", ENV.S3_ENDPOINT)
+}
+
 logger.lifecycle(":building plugin v${version}")
 
 // We must build against the version of Kotlin Gradle ships with.
@@ -382,6 +386,14 @@ publishing {
 				credentials {
 					username = "shedaniel"
 					password = ENV.MAVEN_PASS
+				}
+			}
+		} else if (ENV.AWS_ACCESS_KEY != null && ENV.AWS_SECRET_KEY != null && ENV.S3_ENDPOINT != null) {
+			maven {
+				url = "s3://maven"
+				credentials(AwsCredentials) {
+					accessKey = ENV.AWS_ACCESS_KEY
+					secretKey = ENV.AWS_SECRET_KEY
 				}
 			}
 		}
