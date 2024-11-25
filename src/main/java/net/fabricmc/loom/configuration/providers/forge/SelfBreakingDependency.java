@@ -26,13 +26,11 @@ package net.fabricmc.loom.configuration.providers.forge;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleDependency;
 import org.gradle.api.artifacts.SelfResolvingDependency;
-import org.gradle.api.capabilities.Capability;
 import org.gradle.api.internal.artifacts.dependencies.AbstractModuleDependency;
 import org.gradle.api.tasks.TaskDependency;
 import org.jetbrains.annotations.Nullable;
@@ -82,10 +80,5 @@ public class SelfBreakingDependency extends AbstractModuleDependency implements 
 	@Override
 	public ModuleDependency copy() {
 		return this;
-	}
-
-	@Override
-	public List<Capability> getRequestedCapabilities() {
-		return Collections.emptyList();
 	}
 }

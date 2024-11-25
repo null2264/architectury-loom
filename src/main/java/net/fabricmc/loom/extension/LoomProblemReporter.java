@@ -35,7 +35,7 @@ public abstract class LoomProblemReporter {
 
 	@Inject
 	public LoomProblemReporter(Problems problems) {
-		this.problemReporter = problems.getReporter();
+		this.problemReporter = problems.forNamespace("net.fabricmc.loom");
 	}
 
 	public void reportSelfResolvingDependencyUsage() {
